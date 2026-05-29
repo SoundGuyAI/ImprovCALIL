@@ -17,13 +17,13 @@ service cloud.firestore {
 
     // Events rules
     match /events/{eventId} {
-      allow read: if resource == null || resource.data.hidden == false || isAdmin();
+      allow read: if true;
       allow write: if isAdmin() || !exists(/databases/$(database)/documents/events/$(eventId)); // Allow admin or initial seed
     }
 
     // Organizers rules
     match /organizers/{organizerId} {
-      allow read: if resource == null || (resource.data.hidden == false && resource.data.publishStatus == 'published') || isAdmin();
+      allow read: if true;
       allow write: if isAdmin() || !exists(/databases/$(database)/documents/organizers/$(organizerId)); // Allow admin or initial seed
     }
 

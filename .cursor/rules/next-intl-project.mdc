@@ -1,0 +1,45 @@
+---
+description: "next-intl conventions for locale routing, translations, and RTL (EN/HE) in this Next.js App Router project."
+globs: src/**/*.{ts,tsx},messages/**/*.json,middleware.ts
+alwaysApply: false
+---
+
+# next-intl Project Rules
+
+## Locales and routing
+
+- Supported locales: `en` (default), `he`
+- All user-facing routes live under `/[locale]/` (e.g. `/en`, `/he`)
+- Root `/` redirects via `next-intl` middleware — do not add pages outside the locale segment
+- Routing config: `src/i18n/routing.ts` using `defineRouting` and `createNavigation`
+- Middleware: `src/middleware.ts` with matcher `['/', '/(he|en)/:path*']`
+- Use navigation helpers from `@/i18n/routing` (`Link`, `redirect`, `useRouter`, `usePathname`) — not raw Next.js navigation for locale-aware links
+
+## Translations
+
+- Message files: `messages/en.json`, `messages/he.json`
+- Server components: `getTranslations({ locale, namespace })` from `next-intl/server`
+- Client components: `useTranslations(namespace)` from `next-intl`
+- Never hardcode user-visible strings in components — add keys to both locale files
+- Keep namespace structure consistent across `en` and `he` (same keys in both files)
+- Metadata: use `generateMetadata` with `getTranslations` for localized title/description
+
+## Async params (Next.js 15)
+
+- Route `params` and `searchParams` are Promises — always `await params` before destructuring
+- Example: `const { locale } = await params`
+
+## RTL (Hebrew)
+
+- Set document direction in root layout: `dir={locale === "he" ? "rtl" : "ltr"}`
+- Set `lang={locale}` on `<html>`
+- Prefer logical CSS / Tailwind logical properties over physical left/right:
+  - Use `ms-*` / `me-*` instead of `ml-*` / `mr-*`
+  - Use `ps-*` / `pe-*` instead of `pl-*` / `pr-*`
+  - Use `start` / `end` instead of `left` / `right` where possible
+- Font: Rubik with `latin` and `hebrew` subsets (see `src/app/[locale]/layout.tsx`)
+- Test both `/en` and `/he` after UI changes — layout mirroring and text alignment must work in both directions
+
+## Locale validation
+
+- Validate `locale` against `routing.locales` in layouts/pages; call `notFound()` for invalid locales

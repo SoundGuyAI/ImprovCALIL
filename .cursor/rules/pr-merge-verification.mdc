@@ -1,0 +1,48 @@
+---
+description: Run full lint, test, and build verification before merging a PR to main.
+alwaysApply: true
+---
+
+# PR merge verification
+
+Do not merge a PR, push to `main`, or close a PR as done until the full verification suite passes on the branch being merged.
+
+## Required commands (in order)
+
+Run these locally on the PR branch before merge:
+
+```bash
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+```
+
+| Step | Command | Must pass |
+|------|---------|-----------|
+| Lint | `npm run lint` | Yes |
+| Unit tests | `npm test` | Yes |
+| Production build | `npm run build` | Yes |
+| E2E tests | `npm run test:e2e` | Yes (when tests exist) |
+
+If any step fails, fix the failure on the PR branch and re-run the full suite. Do not merge with known failures.
+
+## Agent checklist before merge
+
+1. Check out the PR branch (or ensure local branch matches the PR).
+2. Run all four commands above sequentially.
+3. Confirm each exits with code 0 and report the results.
+4. Only then merge to `main` (via `gh pr merge`, squash merge, or equivalent).
+5. After merge, follow `.cursor/rules/pr-versioning.mdc` to bump `package.json` version to `0.1.{PR_NUMBER}`.
+
+## When to skip or defer
+
+- **E2E with zero tests**: `npm run test:e2e` may pass with no tests — still run it; do not skip lint, unit tests, or build.
+- **CI green is not enough alone**: If you have merge authority, local verification is still required unless the user explicitly says to rely on CI only.
+- **Hotfix urgency**: If the user explicitly accepts skipping a step, name which step was skipped and why in the merge summary.
+
+## Do not
+
+- Merge or push to `main` after only partial verification (e.g. lint only, or tests without build).
+- Close a PR as complete while build or test failures remain unfixed.
+- Claim "ready to merge" without having run the commands and seen passing output in this session.

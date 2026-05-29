@@ -1,0 +1,48 @@
+---
+description: Bump app version to 0.1.{PR_NUMBER} when a PR is merged to main.
+alwaysApply: true
+---
+
+# PR-linked versioning
+
+The app version in `package.json` tracks the last merged pull request number.
+
+## Format
+
+Use semver `MAJOR.MINOR.PATCH` as:
+
+```
+0.1.{PR_NUMBER}
+```
+
+- **MAJOR** — `0` until a deliberate 1.0 release
+- **MINOR** — `1` (fixed project line; do not use for PR numbers)
+- **PATCH** — the merged PR number (e.g. PR #56 → `0.1.56`)
+
+## When to bump
+
+After a PR is **merged to `main`**, set `package.json` `"version"` to `0.1.{that PR's number}`.
+
+If several PRs merge before a bump, use the **highest** merged PR number.
+
+## Examples
+
+| Event | `package.json` version |
+|-------|------------------------|
+| PR #42 merged | `0.1.42` |
+| PR #56 merged | `0.1.56` |
+| PR #100 merged | `0.1.100` |
+
+## Agent checklist
+
+When finishing merge work or preparing a release commit:
+
+1. Read the merged PR number (from the PR title, `gh pr view`, or merge commit).
+2. Update `"version"` in `package.json` to `0.1.{PR_NUMBER}`.
+3. Include the version bump in the merge commit or a follow-up commit on `main`.
+4. Do not bump the version on open PRs that are not yet merged.
+
+## Notes
+
+- Only `package.json` is the source of truth unless another file already mirrors it.
+- Do not skip numbers; the patch must match the actual merged PR number, not a sequential build counter.

@@ -1,37 +1,104 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Based on https://github.com/github/gitignore/blob/main/Nextjs.gitignore
+# and https://github.com/github/gitignore/blob/main/Node.gitignore
 
 # dependencies
 /node_modules
+node_modules/
+jspm_packages/
+web_modules/
 /.pnp
 .pnp.*
+.pnp.js
+
+# yarn
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
+!.yarn/sdks
 !.yarn/versions
+.yarn-integrity
 
-# testing
+# pnpm
+.pnpm-store
+.pnpm-debug.log*
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# testing / coverage
 /coverage
+coverage
+*.lcov
+.nyc_output
+lib-cov
 
 # next.js
+/dist
 /.next/
+.next
 /out/
+out
 
 # production
 /build
+build/Release
 
 # misc
 .DS_Store
 *.pem
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# caches
+.npm
+.eslintcache
+.stylelintcache
+.cache
+.parcel-cache
+.fusebox/
+.dynamodb/
+.serverless/
+.tern-port
+.vscode-test
 
-# env files (can opt-in for committing if needed)
-.env*
+# bundlers / frameworks (Node template)
+.nuxt
+dist
+.output
+.vuepress/dist
+.temp
+.svelte-kit/
+**/.vitepress/dist
+**/.vitepress/cache
+.docusaurus
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+.vite/
+
+# legacy tooling
+.grunt
+bower_components
+.lock-wscript
+
+# env files
+.env
+.env.*
+!.env.example
+.secrets/
 
 # vercel
 .vercel
@@ -40,6 +107,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# playwright reports
-/test-results/
+# optional REPL / pack output
+.node_repl_history
+*.tgz
+
+# firebase
+*-debug.log
+.firebase/
+
+# playwright
 /playwright-report/
+/test-results/
+
+# cursor agent setup temp clones
+.tmp/
+.tmp-cursor-setup/
+
+.vercel

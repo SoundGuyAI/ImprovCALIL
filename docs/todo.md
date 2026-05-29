@@ -29,6 +29,7 @@ Project backlog for the Israeli Improv Calendar. See [ISRAELI_IMPROV_CALENDAR.md
 
 - [ ] **Change color scheme to be more Israeli** — Refresh theme/Tailwind palette (Mediterranean tones, local cultural cues) while keeping contrast and accessibility for EN/HE.
 - [ ] **Add light and dark modes** — Theme toggle (system preference + manual override); define light/dark token sets and persist user choice.
+- [ ] **Add version number (like Improv Dashboard)** — Show app version in the UI (e.g. footer); source from `package.json` and follow PR-linked semver (`0.1.{PR_NUMBER}` per `.cursor/rules/pr-versioning.mdc`).
 
 ### Localization & UX
 

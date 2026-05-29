@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is admin (via custom claim or users collection isAdmin flag)
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.isAdmin == true || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+      );
+    }
+
+    // Events rules
+    match /events/{eventId} {
+      allow read: if resource == null || resource.data.hidden == false || isAdmin();
+      allow write: if isAdmin() || !exists(/databases/$(database)/documents/events/$(eventId)); // Allow admin or initial seed
+    }
+
+    // Organizers rules
+    match /organizers/{organizerId} {
+      allow read: if resource == null || (resource.data.hidden == false && resource.data.publishStatus == 'published') || isAdmin();
+      allow write: if isAdmin() || !exists(/databases/$(database)/documents/organizers/$(organizerId)); // Allow admin or initial seed
+    }
+
+    // Links rules
+    match /links/{linkId} {
+      allow read: if true;
+      allow write: if isAdmin() || !exists(/databases/$(database)/documents/links/$(linkId)); // Allow admin or initial seed
+    }
+
+    // Submissions rules
+    match /submissions/{submissionId} {
+      allow create: if true;
+      allow read, write: if isAdmin();
+    }
+
+    // Subscribers rules
+    match /subscribers/{subscriberId} {
+      allow create: if true;
+      allow read, write: if isAdmin();
+    }
+
+    // Users rules
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+    }
+  }
+}

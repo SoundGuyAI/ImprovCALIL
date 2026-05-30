@@ -32,7 +32,7 @@ On Cursor Cloud, add the same six names as **repository secrets** so agents can 
 `scripts/seed.js` reads `.env.local` with its own parser (no dotenv package).
 
 ### Lint
-`eslint.config.mjs` uses ESLint 9 flat config with `eslint-config-next` (`core-web-vitals.js`, `typescript.js` imports). `npm run lint` may still fail on pre-existing issues in `src/app/[locale]/*` until those are fixed in app code.
+`eslint.config.mjs` uses ESLint 9 flat config via `@eslint/eslintrc` `FlatCompat` with `next/core-web-vitals` and `next/typescript`. `npm run lint` may still fail on pre-existing issues in `src/app/[locale]/*` and `src/lib/db.ts` until those are fixed in app code.
 
 ### Playwright
 - E2E tests live in `e2e/` (e.g. `e2e/sanity.spec.ts`).

@@ -144,7 +144,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
             <div className="flex flex-col gap-1 text-left rtl:text-right">
               <span className="text-[10px] text-indigo-400 font-black uppercase tracking-wider">{tRegions(organizer.region)}</span>
               <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">{organizer.name}</h1>
-              <span className="text-xs text-indigo-500 font-bold">{tOrgTypes(organizer.type as any)}</span>
+              <span className="text-xs text-indigo-500 font-bold">{tOrgTypes(organizer.type as 'Group' | 'School' | 'Theater' | 'Other')}</span>
             </div>
           </div>
 
@@ -186,7 +186,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
                   >
                     <div className="flex items-center gap-3">
                       {getLinkIcon(lnk.type)}
-                      <span>{lnk.label || tLinks(lnk.type as any) || lnk.type}</span>
+                      <span>{lnk.label || tLinks(lnk.type as 'Website' | 'Facebook' | 'Facebook event' | 'WhatsApp group' | 'Instagram' | 'Other') || lnk.type}</span>
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                   </a>

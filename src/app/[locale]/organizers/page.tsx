@@ -7,7 +7,6 @@ import Header from '@/components/Header';
 import { Link } from '@/i18n/routing';
 import { 
   Building, 
-  MapPin, 
   ChevronRight, 
   Info,
   GraduationCap,
@@ -178,7 +177,7 @@ export default function OrganizersDirectory() {
                       <h3 className="text-lg font-black text-white group-hover:text-indigo-400 transition-colors leading-tight">
                         {org.name}
                       </h3>
-                      <span className="text-xs text-indigo-500 font-semibold">{tOrgTypes(org.type as any)}</span>
+                      <span className="text-xs text-indigo-500 font-semibold">{tOrgTypes(org.type as 'Group' | 'School' | 'Theater' | 'Other')}</span>
                       <p className="text-xs text-zinc-400 line-clamp-3 leading-relaxed mt-1">
                         {org.description}
                       </p>

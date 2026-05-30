@@ -5,20 +5,12 @@ import { useLocale, useTranslations } from 'next-intl';
 import { createSubmission, getOrganizers, FirestoreOrganizer } from '@/lib/db';
 import Header from '@/components/Header';
 import { 
-  FileText, 
   Sparkles, 
-  MapPin, 
   Clock, 
-  DollarSign, 
-  Globe, 
-  Link as LinkIcon, 
   Mail, 
   Phone,
   CheckCircle,
   Building,
-  GraduationCap,
-  Users,
-  Theater,
   Trash2,
   Plus
 } from 'lucide-react';
@@ -104,7 +96,7 @@ export default function SubmitContent() {
       if (lower.includes("gerard") || lower.includes("ז'ראר")) location = "Gerard Behar Center, Jerusalem";
       else if (lower.includes("carmel") || lower.includes("חיפה")) location = "Beit Hecht, Haifa";
 
-      let description = "AI PARSED FLYER TEXT:\n" + flyerText.substring(0, 150) + "...";
+      const description = "AI PARSED FLYER TEXT:\n" + flyerText.substring(0, 150) + "...";
 
       // Set forms fields
       setEventName(name);
@@ -112,7 +104,7 @@ export default function SubmitContent() {
       setEventLocation(location);
       setEventCost(cost);
       setEventLanguage(lang);
-      setEventRegion(eventRegion);
+      setEventRegion(region);
       setEventTime(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)); // 3 days in future
 
       setAiParsing(false);
@@ -785,7 +777,7 @@ export default function SubmitContent() {
                   className="p-3 text-left rtl:text-right rounded-xl border border-zinc-900 bg-zinc-950/60 hover:bg-zinc-900 transition-colors text-xs text-zinc-400 cursor-pointer"
                 >
                   <span className="font-bold block text-white text-xs mb-1">Jerusalem Free Jam Flyer</span>
-                  "🔥 COMMUNITY IMPROV JAM IN JERUSALEM! 🔥..."
+                  &quot;🔥 COMMUNITY IMPROV JAM IN JERUSALEM! 🔥...&quot;
                 </button>
 
                 <button
@@ -793,7 +785,7 @@ export default function SubmitContent() {
                   className="p-3 text-left rtl:text-right rounded-xl border border-zinc-900 bg-zinc-950/60 hover:bg-zinc-900 transition-colors text-xs text-zinc-400 cursor-pointer"
                 >
                   <span className="font-bold block text-white text-xs mb-1">Tel Aviv Harold Show Flyer</span>
-                  "🎭 GRAND HAROLD IMPROV SHOW 🎭..."
+                  &quot;🎭 GRAND HAROLD IMPROV SHOW 🎭...&quot;
                 </button>
               </div>
             </div>

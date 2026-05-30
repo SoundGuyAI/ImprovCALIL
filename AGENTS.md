@@ -3,21 +3,23 @@
 ## Cursor Cloud specific instructions
 
 ### Overview
-Improv Dashboard is a Next.js 15 (App Router) web app for running live improv sessions. It uses TypeScript, Tailwind CSS, next-intl (EN/HE with RTL), and Firebase (Firestore, Auth, Storage). The dev server runs on **port 9003**.
+**ImprovIL** (`improv-cal-il`) is a Next.js 15 (App Router) web app for discovering and submitting improv events in Israel. It uses TypeScript, Tailwind CSS, next-intl (EN/HE with RTL), and Firebase (Firestore, Auth, Storage). The dev server runs on **port 3000** (`npm run dev` → `next dev`).
 
 ### Quick reference
 | Task | Command |
 |---|---|
-| Dev server | `npm run dev` (port 9003) |
+| Dev server | `npm run dev` (http://localhost:3000) |
 | Lint | `npm run lint` |
 | Unit tests | `npm test` |
 | Unit tests (watch) | `npm run test:watch` |
-| E2E tests | `npm run test:e2e` (Playwright, Chromium only in CI) |
+| E2E tests | `npm run test:e2e` (Playwright; starts dev server on port 3000) |
 | Build | `npm run build` |
-| Seed database | `node scripts/seed.js` (requires Firebase env vars) |
+| Seed database | `node scripts/seed.js` (requires Firebase env vars in `.env.local`) |
 
-### Firebase configuration
-The Firebase SDK client is initialized in `src/lib/firebase.ts` and reads credentials from environment variables. Create a `.env.local` file with the following keys (all prefixed `NEXT_PUBLIC_FIREBASE_`):
+### Firebase configuration (required for dev and E2E)
+The Firebase client initializes at module load in `src/lib/firebase.ts` (including `getAuth`). **Without valid `NEXT_PUBLIC_FIREBASE_*` values, `/en` and other locale routes fail during SSR with `FirebaseError: auth/invalid-api-key`.**
+
+Create a `.env.local` in the repo root (never commit it) with:
 - `NEXT_PUBLIC_FIREBASE_API_KEY`
 - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
@@ -25,12 +27,20 @@ The Firebase SDK client is initialized in `src/lib/firebase.ts` and reads creden
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 
-The `scripts/seed.js` seeding script also reads these vars from `.env.local` (with its own parser, no dotenv dependency needed).
+On Cursor Cloud, add the same six names as **repository secrets** so agents can write `.env.local` before `npm run dev` or `npm run test:e2e`. Copy values from the Firebase console or your Vercel project env.
 
-The template gallery reads `sessionPlans` where `isTemplate == true` via the same client SDK (no service account). Deploy `firestore.rules` after rule changes. On Vercel, set the same six `NEXT_PUBLIC_FIREBASE_*` variables as in `.env.local`.
+`scripts/seed.js` reads `.env.local` with its own parser (no dotenv package).
 
-### Notes
-- The Playwright E2E config (`playwright.config.ts`) points to `./e2e` test directory, but no E2E test files exist yet. Running `npm run test:e2e` will succeed with zero tests.
-- Playwright Chromium browser must be installed separately via `npx playwright install --with-deps chromium`. This is handled by the update script.
-- The app's suggestion feature works with static JSON data in `data/suggestions/` and does not require Firebase to be configured.
-- Locale routing is handled by `next-intl` middleware. The root URL `/` redirects to `/en`. Use `/en` or `/he` paths.
+### Lint
+`eslint.config.mjs` uses ESLint 9 flat config via `@eslint/eslintrc` `FlatCompat` with `next/core-web-vitals` and `next/typescript`. `npm run lint` may still fail on pre-existing issues in `src/app/[locale]/*` and `src/lib/db.ts` until those are fixed in app code.
+
+### Playwright
+- E2E tests live in `e2e/` (e.g. `e2e/sanity.spec.ts`).
+- `playwright.config.ts` uses `baseURL` and `webServer` at http://localhost:3000.
+- Install Chromium once per VM: `npx playwright install --with-deps chromium` (included in the update script).
+
+### Locale routing
+`next-intl` middleware redirects `/` → `/en`. Use `/en` or `/he` for manual testing.
+
+### Verification order (before merge)
+Per `.cursor/rules/pr-merge-verification.mdc`: `npm run lint` → `npm test` → `npm run build` → `npm run test:e2e` (E2E needs Firebase configured).

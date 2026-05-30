@@ -90,7 +90,6 @@ export default function Home() {
     // Event Type
     if (selectedType !== 'all') {
       const typeLower = selectedType.toLowerCase();
-      const rec = e.recurrence.toLowerCase();
       // Jam, Show, Workshop, Festival
       if (typeLower === 'show' && !e.name.toLowerCase().includes('show') && !e.name.toLowerCase().includes('מופע') && !e.description.toLowerCase().includes('show')) return false;
       if (typeLower === 'jam' && !e.name.toLowerCase().includes('jam') && !e.name.toLowerCase().includes('ג\'אם') && !e.description.toLowerCase().includes('jam')) return false;
@@ -443,7 +442,7 @@ export default function Home() {
                         className="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-sm font-semibold transition-all hover:text-white"
                       >
                         {getLinkIcon(lnk.type)}
-                        <span>{lnk.label || tLinks(lnk.type as any) || lnk.type}</span>
+                        <span>{lnk.label || tLinks(lnk.type as 'Website' | 'Facebook' | 'Facebook event' | 'WhatsApp group' | 'Instagram' | 'Other') || lnk.type}</span>
                         <ExternalLink className="w-3 h-3 text-zinc-500" />
                       </a>
                     ))}

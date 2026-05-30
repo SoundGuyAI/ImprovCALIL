@@ -233,7 +233,7 @@ export default function AdminConsole() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'dashboard' | 'queue' | 'events' | 'organizers' | 'simulator')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                   isSelected 
                     ? 'bg-zinc-800 text-white shadow-md' 

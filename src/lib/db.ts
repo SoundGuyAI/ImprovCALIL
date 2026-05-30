@@ -59,6 +59,7 @@ export interface FirestoreSubmission {
   type: 'event' | 'organizer';
   status: 'pending' | 'approved' | 'rejected';
   source: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   links?: EventLink[];
   createdAt: number;
@@ -102,7 +103,7 @@ export async function getEvents(filters?: {
   includeHidden?: boolean;
 }): Promise<FirestoreEvent[]> {
   try {
-    let q = query(collection(db, 'events'), orderBy('time', 'asc'));
+    const q = query(collection(db, 'events'), orderBy('time', 'asc'));
     
     const snap = await getDocs(q);
     const events: FirestoreEvent[] = [];
@@ -159,7 +160,7 @@ export async function getOrganizers(filters?: {
   includeHidden?: boolean;
 }): Promise<FirestoreOrganizer[]> {
   try {
-    let q = query(collection(db, 'organizers'), orderBy('name', 'asc'));
+    const q = query(collection(db, 'organizers'), orderBy('name', 'asc'));
     const snap = await getDocs(q);
     const organizers: FirestoreOrganizer[] = [];
     
@@ -326,7 +327,7 @@ export async function approveSubmission(id: string): Promise<void> {
       
       // Create links
       if (sData.links && sData.links.length > 0) {
-        sData.links.forEach((lnk: any, idx: number) => {
+        sData.links.forEach((lnk: EventLink, idx: number) => {
           const lnkRef = doc(collection(db, 'links'));
           batch.set(lnkRef, {
             parentId: newEventId,
@@ -352,7 +353,7 @@ export async function approveSubmission(id: string): Promise<void> {
       
       // Create links
       if (sData.links && sData.links.length > 0) {
-        sData.links.forEach((lnk: any, idx: number) => {
+        sData.links.forEach((lnk: EventLink, idx: number) => {
           const lnkRef = doc(collection(db, 'links'));
           batch.set(lnkRef, {
             parentId: newOrganizerId,

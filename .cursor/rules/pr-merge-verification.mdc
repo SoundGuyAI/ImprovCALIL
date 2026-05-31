@@ -7,42 +7,43 @@ alwaysApply: true
 
 Do not merge a PR, push to `main`, or close a PR as done until the full verification suite passes on the branch being merged.
 
-## Required commands (in order)
+## Required verification loop
 
-Run these locally on the PR branch before merge:
+Execute the verification harness locally before every commit or merge:
 
 ```bash
-npm run lint
-npm test
-npm run build
-npm run test:e2e
+node scripts/verify-harness.js
 ```
 
-| Step | Command | Must pass |
-|------|---------|-----------|
-| Lint | `npm run lint` | Yes |
-| Unit tests | `npm test` | Yes |
-| Production build | `npm run build` | Yes |
-| E2E tests | `npm run test:e2e` | Yes (when tests exist) |
+This automates the execution of:
 
-If any step fails, fix the failure on the PR branch and re-run the full suite. Do not merge with known failures.
+| Step | Command | Description |
+|------|---------|-------------|
+| 1. Lint | `npm run lint` | ESLint style and rule checker |
+| 2. Unit tests | `npm test` | Vitest logic and core unit test runs |
+| 3. Production build | `npm run build` | Next.js compilation and SSR checks |
+| 4. E2E tests | `npm run test:e2e` | Playwright browser checks |
+
+If any step fails, the harness will produce self-correcting logs at `.agents/reports/failures.md` mapping the issue back to its governing rules. Correct the failures and re-run until success is achieved.
+
+## Harness maintenance checkpoints
+
+Before declaring a branch ready to merge, verify compliance with these Harness Engineering standards:
+
+1. **Test Coverage**: If new features, pages, or components were added, ensure new Playwright tests were added or expanded in `e2e/sanity.spec.ts`.
+2. **Schema Alignment**: If Firestore schemas or db data structures in `src/lib/db.ts` changed, verify that seed data and Playwright mocks are updated to align with the new structure.
+3. **LLM Ingest Quality**: If changes were made to LLM prompts, parsing logic, or ingestion fields, you MUST run:
+   ```bash
+   node scripts/run-evals.js
+   ```
+   Confirm that system accuracy is `>= 80%` with zero regressions on our Hebrew and English ground-truth evaluation fixtures in `test-fixtures/evals/`. Update fixtures if the expected outputs change due to intentional schema upgrades.
 
 ## Agent checklist before merge
 
 1. Check out the PR branch (or ensure local branch matches the PR).
-2. Run all four commands above sequentially.
-3. Confirm each exits with code 0 and report the results.
-4. Only then merge to `main` (via `gh pr merge`, squash merge, or equivalent).
-5. After merge, follow `.cursor/rules/pr-versioning.mdc` to bump `package.json` version to `0.1.{PR_NUMBER}`.
+2. Run `node scripts/verify-harness.js` sequentially.
+3. If LLM logic changed, run `node scripts/run-evals.js` and verify accuracy.
+4. Confirm everything exits with code 0 and report the results.
+5. Only then merge to `main`.
+6. After merge, follow `.cursor/rules/pr-versioning.mdc` to bump `package.json` version.
 
-## When to skip or defer
-
-- **E2E with zero tests**: `npm run test:e2e` may pass with no tests — still run it; do not skip lint, unit tests, or build.
-- **CI green is not enough alone**: If you have merge authority, local verification is still required unless the user explicitly says to rely on CI only.
-- **Hotfix urgency**: If the user explicitly accepts skipping a step, name which step was skipped and why in the merge summary.
-
-## Do not
-
-- Merge or push to `main` after only partial verification (e.g. lint only, or tests without build).
-- Close a PR as complete while build or test failures remain unfixed.
-- Claim "ready to merge" without having run the commands and seen passing output in this session.

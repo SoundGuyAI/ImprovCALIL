@@ -43,4 +43,21 @@ On Cursor Cloud, add the same six names as **repository secrets** so agents can 
 `next-intl` middleware redirects `/` → `/en`. Use `/en` or `/he` for manual testing.
 
 ### Verification order (before merge)
-Per `.cursor/rules/pr-merge-verification.mdc`: `npm run lint` → `npm test` → `npm run build` → `npm run test:e2e` (E2E needs Firebase configured).
+Per `.cursor/rules/pr-merge-verification.mdc`: Run the full verification suite via the automated harness script:
+```bash
+node scripts/verify-harness.js
+```
+This runs `npm run lint` → `npm test` → `npm run build` → `npm run test:e2e` and outputs self-correcting reports in `.agents/reports/` if errors are detected.
+
+### Harness Engineering Compliance
+To maintain the repository's high reliability, agents MUST adhere to these harness constraints on every change:
+
+1. **Test Expansion**: When introducing a new page, route, navigation link, or user flow, you MUST add corresponding Playwright E2E tests under `e2e/` (or expand `e2e/sanity.spec.ts`) to verify its rendering and functionality.
+2. **Schema & Model Updates**: If the database schema or event/organizer properties in `src/lib/db.ts` are updated, immediately update:
+   - Playwright E2E tests and mock seed structures.
+   - Ground truth files in `test-fixtures/evals/outputs/`.
+3. **LLM Parsing Regression Control**: If you modify the LLM flyer parser, prompt configurations, or event submission ingestion fields, you MUST:
+   - Run the evaluation suite: `node scripts/run-evals.js`
+   - Ensure the overall system accuracy score remains above `80%` and no regressions occur.
+   - Update ground truth files in `test-fixtures/evals/` if the expected parser behavior changes.
+

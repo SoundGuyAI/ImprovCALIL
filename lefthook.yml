@@ -1,0 +1,11 @@
+# Lefthook Git Hooks Configuration
+# Enforces deterministic constraints on every local commit for agents and developers.
+
+glob_matcher: doublestar
+
+pre-commit:
+  parallel: true
+  commands:
+    eslint:
+      glob: "**/*.{js,ts,jsx,tsx}"
+      run: npx eslint {staged_files}

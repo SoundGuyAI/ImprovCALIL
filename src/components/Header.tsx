@@ -1,9 +1,8 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { usePathname, useRouter } from '@/i18n/routing';
+import { Link, usePathname, useRouter } from '@/i18n/routing';
 import { Calendar, Users, FilePlus, ShieldAlert, Languages } from 'lucide-react';
-import Link from 'next/link';
 
 export default function Header() {
   const t = useTranslations('Navigation');
@@ -29,7 +28,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center gap-2 group">
+          <Link href="/" locale={locale} data-locale={locale} className="flex items-center gap-2 group">
             <span className="text-xl sm:text-2xl font-black tracking-tight text-gradient bg-gradient-primary pulse-hover">
               {tCommon('logo')}
             </span>

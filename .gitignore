@@ -119,6 +119,9 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 
+# agent verification reports
+/.agents/reports/
+
 # cursor agent setup temp clones
 .tmp/
 .tmp-cursor-setup/

@@ -19,4 +19,3 @@ Everything added lives under `.cursor/` and is documented in [MANIFEST.md](./MAN
 
 - [MANIFEST.md](./MANIFEST.md) — full file list with source mappings
 - [INSTALL-OTHER-PROJECT.md](./INSTALL-OTHER-PROJECT.md) — step-by-step replication
-

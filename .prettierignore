@@ -1,0 +1,10 @@
+.next/
+node_modules/
+playwright-report/
+test-results/
+.agents/
+.claude/
+.kiro/
+.cursor/
+package-lock.json
+public/

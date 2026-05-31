@@ -32,35 +32,38 @@ const ORGANIZERS = [
     id: "org-improv-school",
     name: "Improv Israel School",
     type: "School",
-    description: "The leading improvisation training program in Israel, offering courses from beginner to advanced performance levels.",
+    description:
+      "The leading improvisation training program in Israel, offering courses from beginner to advanced performance levels.",
     region: "Tel-Aviv",
     languages: ["he", "en"],
     publishStatus: "published",
     hidden: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   },
   {
     id: "org-jlm-troupe",
     name: "Jerusalem Improv Troupe",
     type: "Group",
-    description: "A community-focused ensemble performing weekly short-form and long-form shows in the heart of Jerusalem.",
+    description:
+      "A community-focused ensemble performing weekly short-form and long-form shows in the heart of Jerusalem.",
     region: "Jerusalem",
     languages: ["he"],
     publishStatus: "published",
     hidden: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   },
   {
     id: "org-haifa-theater",
     name: "Haifa Improv Theater",
     type: "Theater",
-    description: "A dedicated venue for alternative performing arts and improv matches on Mount Carmel.",
+    description:
+      "A dedicated venue for alternative performing arts and improv matches on Mount Carmel.",
     region: "Haifa",
     languages: ["he", "en"],
     publishStatus: "published",
     hidden: false,
-    createdAt: Date.now()
-  }
+    createdAt: Date.now(),
+  },
 ];
 
 const EVENTS = [
@@ -69,7 +72,8 @@ const EVENTS = [
     name: "Grand Improv Night - Summer Edition",
     organizerId: "org-improv-school",
     organizerName: "Improv Israel School",
-    description: "An evening of high-energy comedic theater made up on the spot based on your suggestions! Featuring top teachers and graduates.",
+    description:
+      "An evening of high-energy comedic theater made up on the spot based on your suggestions! Featuring top teachers and graduates.",
     time: Date.now() + 2 * 24 * 60 * 60 * 1000, // 2 days in future
     endTime: Date.now() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000, // +2 hours
     recurrence: "one-time",
@@ -81,14 +85,15 @@ const EVENTS = [
     access: "Open",
     hidden: false,
     featured: true,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   },
   {
     id: "evt-weekly-jam",
     name: "Open Community Stage & Jam",
     organizerId: "org-improv-school",
     organizerName: "Improv Israel School",
-    description: "Our weekly open stage! Come play, watch, and learn. All levels welcome, zero pressure.",
+    description:
+      "Our weekly open stage! Come play, watch, and learn. All levels welcome, zero pressure.",
     time: Date.now() + 4 * 24 * 60 * 60 * 1000, // 4 days in future
     endTime: Date.now() + 4 * 24 * 60 * 60 * 1000 + 2.5 * 60 * 60 * 1000,
     recurrence: "weekly",
@@ -100,14 +105,15 @@ const EVENTS = [
     access: "Open",
     hidden: false,
     featured: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   },
   {
     id: "evt-jlm-workshop",
     name: "Long-form Formats Masterclass",
     organizerId: "org-jlm-troupe",
     organizerName: "Jerusalem Improv Troupe",
-    description: "Dive deep into the Harold and scenic relationships. Prior basic experience is required.",
+    description:
+      "Dive deep into the Harold and scenic relationships. Prior basic experience is required.",
     time: Date.now() + 5 * 24 * 60 * 60 * 1000, // 5 days in future
     endTime: Date.now() + 5 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000,
     recurrence: "one-time",
@@ -119,14 +125,15 @@ const EVENTS = [
     access: "Private",
     hidden: false,
     featured: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   },
   {
     id: "evt-haifa-festival",
     name: "Carmel Improv Festival 2026",
     organizerId: "org-haifa-theater",
     organizerName: "Haifa Improv Theater",
-    description: "Three days of shows, jams, and international guest workshops on the bay. Re-rendered static index test.",
+    description:
+      "Three days of shows, jams, and international guest workshops on the bay. Re-rendered static index test.",
     time: Date.now() + 8 * 24 * 60 * 60 * 1000, // 8 days in future
     endTime: Date.now() + 11 * 24 * 60 * 60 * 1000, // 3 day festival
     recurrence: "one-time",
@@ -138,7 +145,7 @@ const EVENTS = [
     access: "Open",
     hidden: false,
     featured: true,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   },
   {
     id: "evt-hidden-show",
@@ -155,18 +162,68 @@ const EVENTS = [
     access: "Private",
     hidden: true,
     featured: false,
-    createdAt: Date.now()
-  }
+    createdAt: Date.now(),
+  },
 ];
 
 const LINKS = [
-  { id: "lnk-1", parentId: "org-improv-school", parentType: "organizer", url: "https://improv-israel.co.il", type: "Website", sortOrder: 0 },
-  { id: "lnk-2", parentId: "org-improv-school", parentType: "organizer", url: "https://facebook.com/improvschoolisrael", type: "Facebook", sortOrder: 1 },
-  { id: "lnk-3", parentId: "org-jlm-troupe", parentType: "organizer", url: "https://whatsapp.com/channel/jlm-improv", type: "WhatsApp group", sortOrder: 0 },
-  { id: "lnk-4", parentId: "evt-grand-show", parentType: "event", url: "https://eventer.co.il/grandshow2026", type: "Website", label: "Buy Tickets", sortOrder: 0 },
-  { id: "lnk-5", parentId: "evt-grand-show", parentType: "event", url: "https://facebook.com/events/123456", type: "Facebook event", sortOrder: 1 },
-  { id: "lnk-6", parentId: "evt-weekly-jam", parentType: "event", url: "https://chat.whatsapp.com/weekly-jam-israel", type: "WhatsApp group", sortOrder: 0 },
-  { id: "lnk-7", parentId: "evt-haifa-festival", parentType: "event", url: "https://instagram.com/carmelimprovfest", type: "Instagram", sortOrder: 0 }
+  {
+    id: "lnk-1",
+    parentId: "org-improv-school",
+    parentType: "organizer",
+    url: "https://improv-israel.co.il",
+    type: "Website",
+    sortOrder: 0,
+  },
+  {
+    id: "lnk-2",
+    parentId: "org-improv-school",
+    parentType: "organizer",
+    url: "https://facebook.com/improvschoolisrael",
+    type: "Facebook",
+    sortOrder: 1,
+  },
+  {
+    id: "lnk-3",
+    parentId: "org-jlm-troupe",
+    parentType: "organizer",
+    url: "https://whatsapp.com/channel/jlm-improv",
+    type: "WhatsApp group",
+    sortOrder: 0,
+  },
+  {
+    id: "lnk-4",
+    parentId: "evt-grand-show",
+    parentType: "event",
+    url: "https://eventer.co.il/grandshow2026",
+    type: "Website",
+    label: "Buy Tickets",
+    sortOrder: 0,
+  },
+  {
+    id: "lnk-5",
+    parentId: "evt-grand-show",
+    parentType: "event",
+    url: "https://facebook.com/events/123456",
+    type: "Facebook event",
+    sortOrder: 1,
+  },
+  {
+    id: "lnk-6",
+    parentId: "evt-weekly-jam",
+    parentType: "event",
+    url: "https://chat.whatsapp.com/weekly-jam-israel",
+    type: "WhatsApp group",
+    sortOrder: 0,
+  },
+  {
+    id: "lnk-7",
+    parentId: "evt-haifa-festival",
+    parentType: "event",
+    url: "https://instagram.com/carmelimprovfest",
+    type: "Instagram",
+    sortOrder: 0,
+  },
 ];
 
 const SUBMISSIONS = [
@@ -190,11 +247,9 @@ const SUBMISSIONS = [
       cost: "Free",
       access: "Open",
       hidden: false,
-      featured: false
+      featured: false,
     },
-    links: [
-      { url: "https://chat.whatsapp.com/latenightscenegames", type: "WhatsApp group" }
-    ]
+    links: [{ url: "https://chat.whatsapp.com/latenightscenegames", type: "WhatsApp group" }],
   },
   {
     id: "sub-2",
@@ -206,14 +261,13 @@ const SUBMISSIONS = [
     data: {
       name: "Hasharon Improv Community",
       type: "Group",
-      description: "A community theater platform hosting regular jams and workshops for residents of Kfar Saba and Ra'anana.",
+      description:
+        "A community theater platform hosting regular jams and workshops for residents of Kfar Saba and Ra'anana.",
       region: "Hasharon",
-      languages: ["he"]
+      languages: ["he"],
     },
-    links: [
-      { url: "https://facebook.com/groups/sharonimprov", type: "Facebook" }
-    ]
-  }
+    links: [{ url: "https://facebook.com/groups/sharonimprov", type: "Facebook" }],
+  },
 ];
 
 async function seed() {

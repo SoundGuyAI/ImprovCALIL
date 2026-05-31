@@ -3,10 +3,10 @@ import { test, expect } from "@playwright/test";
 test("sanity check - home page redirect and title", async ({ page }) => {
   // Navigate to root
   await page.goto("/");
-  
+
   // It should redirect to localized path /en
   await expect(page).toHaveURL(/\/en/);
-  
+
   // Check that the page has the logo or title
   const logo = page.locator("text=ImprovIL");
   await expect(logo).toBeVisible();
@@ -69,12 +69,13 @@ test("navigation - verify routing across main pages", async ({ page }) => {
   // 1. Navigate to Organizers (next-intl Link renders locale-prefixed hrefs)
   const organizersLink = page.locator("nav a[href='/en/organizers']");
   await expect(organizersLink).toBeVisible();
-  await organizersLink.click();
-  await expect(page).toHaveURL(/\/en\/organizers/);
+  await Promise.all([
+    page.waitForURL(/\/en\/organizers/, { timeout: 15000 }),
+    organizersLink.click(),
+  ]);
 
   // 2. Navigate to Submit Event
   const submitLink = page.locator("nav a[href='/en/submit']");
   await expect(submitLink).toBeVisible();
-  await submitLink.click();
-  await expect(page).toHaveURL(/\/en\/submit/);
+  await Promise.all([page.waitForURL(/\/en\/submit/, { timeout: 15000 }), submitLink.click()]);
 });

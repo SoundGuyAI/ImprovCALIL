@@ -4,10 +4,10 @@ Everything added lives under `.cursor/` and is documented in [MANIFEST.md](./MAN
 
 ## Counts
 
-| Type | Count | Location |
-|------|-------|----------|
-| Project rules | 16 | `.cursor/rules/*.mdc` |
-| Skills | 26 | `.cursor/skills/*/SKILL.md` |
+| Type          | Count | Location                    |
+| ------------- | ----- | --------------------------- |
+| Project rules | 16    | `.cursor/rules/*.mdc`       |
+| Skills        | 26    | `.cursor/skills/*/SKILL.md` |
 
 ## Replicate in another project
 
@@ -19,4 +19,3 @@ Everything added lives under `.cursor/` and is documented in [MANIFEST.md](./MAN
 
 - [MANIFEST.md](./MANIFEST.md) — full file list with source mappings
 - [INSTALL-OTHER-PROJECT.md](./INSTALL-OTHER-PROJECT.md) — step-by-step replication
-

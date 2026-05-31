@@ -46,10 +46,10 @@ Scripts install:
 
 They do **not** copy project-specific files. Add those manually:
 
-| File | Action |
-|------|--------|
+| File                                  | Action                                            |
+| ------------------------------------- | ------------------------------------------------- |
 | `.cursor/rules/next-intl-project.mdc` | Copy from Improv Dashboard and edit locales/paths |
-| `.cursor/skills/rtl-locale-testing/` | Copy if project has RTL locales |
+| `.cursor/skills/rtl-locale-testing/`  | Copy if project has RTL locales                   |
 
 ## Core Tech Stack Bootstrap Blueprint
 
@@ -75,6 +75,7 @@ npm install -D vitest@4.1.7 jsdom@29.1.1 @vitejs/plugin-react@6.0.2 @playwright/
 Configure the routing and translation engine using these 5 basic files:
 
 #### `next.config.ts` (Wrap with next-intl and inject build variables)
+
 ```typescript
 import type { NextConfig } from "next";
 import { execSync } from "node:child_process";
@@ -107,50 +108,53 @@ export default withNextIntl(nextConfig);
 ```
 
 #### `src/middleware.ts` (Routing middleware)
+
 ```typescript
-import createMiddleware from 'next-intl/middleware';
-import {routing} from './i18n/routing';
+import createMiddleware from "next-intl/middleware";
+import { routing } from "./i18n/routing";
 
 export default createMiddleware(routing);
 
 export const config = {
   // Match only internationalized pathnames
-  matcher: ['/', '/(he|en)/:path*']
+  matcher: ["/", "/(he|en)/:path*"],
 };
 ```
 
 #### `src/i18n/routing.ts` (Define locales and default locale)
+
 ```typescript
-import {defineRouting} from 'next-intl/routing';
-import {createNavigation} from 'next-intl/navigation';
+import { defineRouting } from "next-intl/routing";
+import { createNavigation } from "next-intl/navigation";
 
 export const routing = defineRouting({
-  locales: ['en', 'he'],
-  defaultLocale: 'en'
+  locales: ["en", "he"],
+  defaultLocale: "en",
 });
 
-export const {Link, redirect, usePathname, useRouter, getPathname} =
-  createNavigation(routing);
+export const { Link, redirect, usePathname, useRouter, getPathname } = createNavigation(routing);
 ```
 
 #### `src/i18n/request.ts` (Load translations dynamically)
-```typescript
-import {getRequestConfig} from 'next-intl/server';
-import {routing} from './routing';
 
-export default getRequestConfig(async ({requestLocale}) => {
+```typescript
+import { getRequestConfig } from "next-intl/server";
+import { routing } from "./routing";
+
+export default getRequestConfig(async ({ requestLocale }) => {
   let locale = await requestLocale;
   if (!locale || !(routing.locales as readonly string[]).includes(locale)) {
     locale = routing.defaultLocale;
   }
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default
+    messages: (await import(`../../messages/${locale}.json`)).default,
   };
 });
 ```
 
 #### `src/app/[locale]/layout.tsx` (RTL and font setup)
+
 ```typescript
 import { Rubik } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
@@ -193,9 +197,11 @@ export default async function RootLayout({
 ```
 
 #### Message Catalogs
+
 Create `messages/en.json` and `messages/he.json` directory structure and files in your project root:
-* `messages/en.json` contains: `{"common": {"title": "My English App"}}`
-* * `messages/he.json` contains: `{"common": {"title": "האפליקציה שלי"}}`
+
+- `messages/en.json` contains: `{"common": {"title": "My English App"}}`
+- - `messages/he.json` contains: `{"common": {"title": "האפליקציה שלי"}}`
 
 ### 3. Firebase Client SDK Setup
 
@@ -251,6 +257,7 @@ export default defineConfig({
 ```
 
 Verify your configuration with a simple placeholder test, e.g. `src/lib/version.test.ts`:
+
 ```typescript
 import { describe, it, expect } from "vitest";
 
@@ -278,13 +285,13 @@ Add your end-to-end tests inside the `./e2e` directory and configure standard ro
 
 ### 1. Edit or remove irrelevant rules
 
-| If your project… | Action |
-|------------------|--------|
-| Does not use Firebase | Remove `tailwind-react-firebase.mdc` or swap for your stack |
-| Does not use Vercel | Remove `vercel-deployment.mdc` |
-| Has no RTL/i18n | Remove `rtl-i18n.mdc`, `next-intl-project.mdc`, `rtl-locale-testing` skill |
-| Uses Jest not Vitest | Swap `vitest-unit-testing.mdc` for Jest rule from awesome-cursorrules |
-| Uses Cypress not Playwright | Swap Playwright rules/skills |
+| If your project…            | Action                                                                     |
+| --------------------------- | -------------------------------------------------------------------------- |
+| Does not use Firebase       | Remove `tailwind-react-firebase.mdc` or swap for your stack                |
+| Does not use Vercel         | Remove `vercel-deployment.mdc`                                             |
+| Has no RTL/i18n             | Remove `rtl-i18n.mdc`, `next-intl-project.mdc`, `rtl-locale-testing` skill |
+| Uses Jest not Vitest        | Swap `vitest-unit-testing.mdc` for Jest rule from awesome-cursorrules      |
+| Uses Cypress not Playwright | Swap Playwright rules/skills                                               |
 
 ### 2. Write project-specific rules
 
@@ -301,11 +308,11 @@ Use `next-intl-project.mdc` in this repo as a template.
 
 Install via Cursor **Settings → Plugins** or copy skill folders:
 
-| Stack | Suggested skills (already in Improv Dashboard under `.agents/skills/`) |
-|-------|------------------------------------------------------------------------|
-| Firebase | `firebase-basics`, `firebase-auth-basics`, `firebase-firestore`, `firebase-security-rules-auditor` |
-| Vercel deploy | `deploy-to-vercel`, `vercel-cli-with-tokens`, `vercel-react-best-practices` |
-| UI audit | `web-design-guidelines`, `vercel-composition-patterns` |
+| Stack         | Suggested skills (already in Improv Dashboard under `.agents/skills/`)                             |
+| ------------- | -------------------------------------------------------------------------------------------------- |
+| Firebase      | `firebase-basics`, `firebase-auth-basics`, `firebase-firestore`, `firebase-security-rules-auditor` |
+| Vercel deploy | `deploy-to-vercel`, `vercel-cli-with-tokens`, `vercel-react-best-practices`                        |
+| UI audit      | `web-design-guidelines`, `vercel-composition-patterns`                                             |
 
 Prefer a single canonical location: **`.cursor/skills/`**.
 

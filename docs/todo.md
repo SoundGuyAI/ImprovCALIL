@@ -79,13 +79,13 @@ Project backlog for the Israeli Improv Calendar. See [ISRAELI_IMPROV_CALENDAR.md
 
 ## Pages & polish checklist
 
-| Page | Status | Remaining work |
-|------|--------|----------------|
-| Home (`/`) | Partial | Calendar view, week scope, event type field, subscription CTA |
-| Organizers (`/organizers`) | Partial | Logos, static pre-render hook |
-| Organizer detail (`/organizers/[id]`) | Partial | Static pre-render, hidden-organizer edge cases |
-| Submit (`/submit`) | Partial | Real LLM tab, organizer update flow, validation |
-| Admin (`/admin`) | Partial | Auth gate, create/edit forms, merge, hide nav link |
+| Page                                  | Status  | Remaining work                                                |
+| ------------------------------------- | ------- | ------------------------------------------------------------- |
+| Home (`/`)                            | Partial | Calendar view, week scope, event type field, subscription CTA |
+| Organizers (`/organizers`)            | Partial | Logos, static pre-render hook                                 |
+| Organizer detail (`/organizers/[id]`) | Partial | Static pre-render, hidden-organizer edge cases                |
+| Submit (`/submit`)                    | Partial | Real LLM tab, organizer update flow, validation               |
+| Admin (`/admin`)                      | Partial | Auth gate, create/edit forms, merge, hide nav link            |
 
 ---
 

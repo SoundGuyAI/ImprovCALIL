@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useState, use } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import { getOrganizerDetails, FirestoreOrganizer, FirestoreEvent } from '@/lib/db';
-import Header from '@/components/Header';
-import { Link } from '@/i18n/routing';
-import { 
-  Building, 
-  MapPin, 
-  ChevronLeft, 
-  Calendar as CalendarIcon, 
+import { useEffect, useState, use } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { getOrganizerDetails, FirestoreOrganizer, FirestoreEvent } from "@/lib/db";
+import Header from "@/components/Header";
+import { Link } from "@/i18n/routing";
+import {
+  Building,
+  MapPin,
+  ChevronLeft,
+  Calendar as CalendarIcon,
   Clock,
   ExternalLink,
   Facebook,
@@ -19,15 +19,15 @@ import {
   GraduationCap,
   Users,
   Theater,
-  Sparkles
-} from 'lucide-react';
+  Sparkles,
+} from "lucide-react";
 
 export default function OrganizerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const tCommon = useTranslations('Common');
-  const tRegions = useTranslations('Regions');
-  const tOrgTypes = useTranslations('OrganizerTypes');
-  const tLinks = useTranslations('LinkTypes');
+  const tCommon = useTranslations("Common");
+  const tRegions = useTranslations("Regions");
+  const tOrgTypes = useTranslations("OrganizerTypes");
+  const tLinks = useTranslations("LinkTypes");
   const locale = useLocale();
 
   const [organizer, setOrganizer] = useState<FirestoreOrganizer | null>(null);
@@ -37,7 +37,9 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
   useEffect(() => {
     async function load() {
       try {
-        const { organizer: orgData, events: evtData } = await getOrganizerDetails(resolvedParams.id);
+        const { organizer: orgData, events: evtData } = await getOrganizerDetails(
+          resolvedParams.id
+        );
         setOrganizer(orgData);
         setEvents(evtData);
       } catch (err) {
@@ -51,11 +53,11 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
 
   const getOrgTypeIcon = (type: string) => {
     switch (type) {
-      case 'School':
+      case "School":
         return <GraduationCap className="w-6 h-6 text-indigo-400" />;
-      case 'Group':
+      case "Group":
         return <Users className="w-6 h-6 text-indigo-400" />;
-      case 'Theater':
+      case "Theater":
         return <Theater className="w-6 h-6 text-indigo-400" />;
       default:
         return <Building className="w-6 h-6 text-indigo-400" />;
@@ -64,12 +66,12 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
 
   const getLinkIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'facebook':
-      case 'facebook event':
+      case "facebook":
+      case "facebook event":
         return <Facebook className="w-4 h-4 text-blue-500" />;
-      case 'whatsapp group':
+      case "whatsapp group":
         return <MessageCircle className="w-4 h-4 text-emerald-500" />;
-      case 'instagram':
+      case "instagram":
         return <Instagram className="w-4 h-4 text-pink-500" />;
       default:
         return <LinkIcon className="w-4 h-4 text-indigo-400" />;
@@ -78,20 +80,20 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
 
   const formatDate = (timestamp: number) => {
     const d = new Date(timestamp);
-    return d.toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
+    return d.toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
     });
   };
 
   const formatTime = (timestamp: number) => {
     const d = new Date(timestamp);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  const upcomingEvents = events.filter(e => e.time >= Date.now() && !e.hidden);
-  const pastEvents = events.filter(e => e.time < Date.now() && !e.hidden);
+  const upcomingEvents = events.filter((e) => e.time >= Date.now() && !e.hidden);
+  const pastEvents = events.filter((e) => e.time < Date.now() && !e.hidden);
 
   if (loading) {
     return (
@@ -99,7 +101,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
         <Header />
         <div className="flex-grow flex flex-col items-center justify-center py-20 text-zinc-400 text-sm gap-2">
           <div className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-indigo-500 animate-spin"></div>
-          <span>{tCommon('loading')}</span>
+          <span>{tCommon("loading")}</span>
         </div>
       </div>
     );
@@ -110,9 +112,16 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
       <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
         <Header />
         <div className="flex-grow max-w-7xl mx-auto px-4 py-20 text-center flex flex-col items-center justify-center gap-4">
-          <p className="text-zinc-400">{locale === 'he' ? 'המארגן המבוקש לא נמצא או הוסתר.' : 'The requested organizer was not found or has been hidden.'}</p>
-          <Link href="/organizers" className="px-5 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm font-semibold transition-all">
-            {locale === 'he' ? 'חזרה לאינדקס המארגנים' : 'Back to Organizers Directory'}
+          <p className="text-zinc-400">
+            {locale === "he"
+              ? "המארגן המבוקש לא נמצא או הוסתר."
+              : "The requested organizer was not found or has been hidden."}
+          </p>
+          <Link
+            href="/organizers"
+            className="px-5 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm font-semibold transition-all"
+          >
+            {locale === "he" ? "חזרה לאינדקס המארגנים" : "Back to Organizers Directory"}
           </Link>
         </div>
       </div>
@@ -124,14 +133,13 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
       <Header />
 
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-8">
-        
         {/* BACK LINK */}
-        <Link 
-          href="/organizers" 
+        <Link
+          href="/organizers"
           className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 font-bold text-xs uppercase w-fit cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
-          <span>{locale === 'he' ? 'חזרה לאינדקס' : 'Back to Directory'}</span>
+          <span>{locale === "he" ? "חזרה לאינדקס" : "Back to Directory"}</span>
         </Link>
 
         {/* ORGANIZER HEADER PANEL */}
@@ -140,29 +148,41 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
             <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-inner">
               {getOrgTypeIcon(organizer.type)}
             </div>
-            
+
             <div className="flex flex-col gap-1 text-left rtl:text-right">
-              <span className="text-[10px] text-indigo-400 font-black uppercase tracking-wider">{tRegions(organizer.region)}</span>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">{organizer.name}</h1>
-              <span className="text-xs text-indigo-500 font-bold">{tOrgTypes(organizer.type as 'Group' | 'School' | 'Theater' | 'Other')}</span>
+              <span className="text-[10px] text-indigo-400 font-black uppercase tracking-wider">
+                {tRegions(organizer.region)}
+              </span>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                {organizer.name}
+              </h1>
+              <span className="text-xs text-indigo-500 font-bold">
+                {tOrgTypes(organizer.type as "Group" | "School" | "Theater" | "Other")}
+              </span>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs font-bold bg-zinc-950/40 p-2.5 rounded-xl border border-zinc-900">
-            <span className="text-zinc-500 uppercase">{locale === 'he' ? 'שפות:' : 'Languages:'}</span>
-            {organizer.languages.map(lang => (
-              <span key={lang} className="text-zinc-300 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 uppercase">{lang}</span>
+            <span className="text-zinc-500 uppercase">
+              {locale === "he" ? "שפות:" : "Languages:"}
+            </span>
+            {organizer.languages.map((lang) => (
+              <span
+                key={lang}
+                className="text-zinc-300 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 uppercase"
+              >
+                {lang}
+              </span>
             ))}
           </div>
         </section>
 
         {/* DESCRIPTION & OUTBOUND LINKS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
           {/* Main Description */}
           <section className="lg:col-span-2 flex flex-col gap-4 glass-card rounded-2xl p-6">
             <h3 className="text-md font-bold text-indigo-400 uppercase tracking-wide border-b border-zinc-900 pb-2">
-              {locale === 'he' ? 'אודות' : 'About'}
+              {locale === "he" ? "אודות" : "About"}
             </h3>
             <p className="text-sm sm:text-base text-zinc-300 leading-relaxed whitespace-pre-wrap">
               {organizer.description}
@@ -172,7 +192,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
           {/* Outbound Social / Website Links */}
           <section className="flex flex-col gap-4 glass-card rounded-2xl p-6">
             <h3 className="text-md font-bold text-indigo-400 uppercase tracking-wide border-b border-zinc-900 pb-2">
-              {locale === 'he' ? 'קישורים ליצירת קשר' : 'Contact Links'}
+              {locale === "he" ? "קישורים ליצירת קשר" : "Contact Links"}
             </h3>
             {organizer.links && organizer.links.length > 0 ? (
               <div className="flex flex-col gap-2.5">
@@ -186,7 +206,19 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
                   >
                     <div className="flex items-center gap-3">
                       {getLinkIcon(lnk.type)}
-                      <span>{lnk.label || tLinks(lnk.type as 'Website' | 'Facebook' | 'Facebook event' | 'WhatsApp group' | 'Instagram' | 'Other') || lnk.type}</span>
+                      <span>
+                        {lnk.label ||
+                          tLinks(
+                            lnk.type as
+                              | "Website"
+                              | "Facebook"
+                              | "Facebook event"
+                              | "WhatsApp group"
+                              | "Instagram"
+                              | "Other"
+                          ) ||
+                          lnk.type}
+                      </span>
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                   </a>
@@ -194,7 +226,9 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
               </div>
             ) : (
               <p className="text-xs text-zinc-500 italic py-2">
-                {locale === 'he' ? 'לא עודכנו קישורים עבור מארגן זה.' : 'No contact links available for this organizer.'}
+                {locale === "he"
+                  ? "לא עודכנו קישורים עבור מארגן זה."
+                  : "No contact links available for this organizer."}
               </p>
             )}
           </section>
@@ -205,46 +239,56 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
           <div className="flex items-center gap-2 border-b border-zinc-900 pb-3">
             <CalendarIcon className="w-5 h-5 text-indigo-400" />
             <h2 className="text-xl font-bold text-white">
-              {locale === 'he' ? 'לוח מופעים ואירועים' : 'Event Schedule'}
+              {locale === "he" ? "לוח מופעים ואירועים" : "Event Schedule"}
             </h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
             {/* Upcoming Events */}
             <div className="flex flex-col gap-4">
               <h3 className="text-md font-bold text-indigo-400 flex items-center gap-1.5 uppercase">
                 <Sparkles className="w-4 h-4" />
-                <span>{locale === 'he' ? 'אירועים קרובים' : 'Upcoming Events'}</span>
+                <span>{locale === "he" ? "אירועים קרובים" : "Upcoming Events"}</span>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-bold ml-1">
                   {upcomingEvents.length}
                 </span>
               </h3>
-              
+
               {upcomingEvents.length === 0 ? (
                 <div className="glass-card rounded-xl p-8 text-center text-zinc-500 text-xs italic">
-                  {locale === 'he' ? 'אין אירועים קרובים מתוכננים כרגע.' : 'No scheduled upcoming events at this time.'}
+                  {locale === "he"
+                    ? "אין אירועים קרובים מתוכננים כרגע."
+                    : "No scheduled upcoming events at this time."}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {upcomingEvents.map(event => (
-                    <div key={event.id} className="glass-card rounded-xl p-4 flex justify-between items-center border border-zinc-950">
+                  {upcomingEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="glass-card rounded-xl p-4 flex justify-between items-center border border-zinc-950"
+                    >
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-zinc-500 font-bold uppercase">{formatDate(event.time)}</span>
-                        <h4 className="text-sm sm:text-base font-black text-white leading-snug">{event.name}</h4>
+                        <span className="text-[10px] text-zinc-500 font-bold uppercase">
+                          {formatDate(event.time)}
+                        </span>
+                        <h4 className="text-sm sm:text-base font-black text-white leading-snug">
+                          {event.name}
+                        </h4>
                         <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 mt-1">
                           <MapPin className="w-3 h-3" />
                           <span>{event.location}</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-zinc-400 font-bold">{formatTime(event.time)}</span>
+                        <span className="text-xs text-zinc-400 font-bold">
+                          {formatTime(event.time)}
+                        </span>
                         {event.links && event.links.length > 0 ? (
-                          <a 
-                            href={event.links[0].url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={event.links[0].url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:text-white transition-all text-xs"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -263,7 +307,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
             <div className="flex flex-col gap-4">
               <h3 className="text-md font-bold text-zinc-500 flex items-center gap-1.5 uppercase">
                 <Clock className="w-4 h-4" />
-                <span>{locale === 'he' ? 'אירועים שעברו' : 'Past Events'}</span>
+                <span>{locale === "he" ? "אירועים שעברו" : "Past Events"}</span>
                 <span className="px-2 py-0.5 rounded-full bg-zinc-850 border border-zinc-800 text-[10px] text-zinc-500 font-bold ml-1">
                   {pastEvents.length}
                 </span>
@@ -271,36 +315,41 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
 
               {pastEvents.length === 0 ? (
                 <div className="glass-card rounded-xl p-8 text-center text-zinc-500 text-xs italic">
-                  {locale === 'he' ? 'אין אירועים בארכיון.' : 'No archive events.'}
+                  {locale === "he" ? "אין אירועים בארכיון." : "No archive events."}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {pastEvents.map(event => (
-                    <div key={event.id} className="glass-card rounded-xl p-4 flex justify-between items-center border border-zinc-950 opacity-60">
+                  {pastEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="glass-card rounded-xl p-4 flex justify-between items-center border border-zinc-950 opacity-60"
+                    >
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-zinc-500 font-bold uppercase">{formatDate(event.time)}</span>
+                        <span className="text-[10px] text-zinc-500 font-bold uppercase">
+                          {formatDate(event.time)}
+                        </span>
                         <h4 className="text-sm font-black text-white leading-snug">{event.name}</h4>
                         <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 mt-1">
                           <MapPin className="w-3 h-3" />
                           <span>{event.location}</span>
                         </div>
                       </div>
-                      
-                      <span className="text-xs text-zinc-500 font-bold">{formatTime(event.time)}</span>
+
+                      <span className="text-xs text-zinc-500 font-bold">
+                        {formatTime(event.time)}
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
           </div>
         </section>
-
       </main>
 
       {/* FOOTER */}
       <footer className="w-full border-t border-zinc-900/80 bg-zinc-950 py-6 mt-12 text-center text-xs text-zinc-500 font-semibold">
-        <p className="max-w-7xl mx-auto px-4">{tCommon('footer')}</p>
+        <p className="max-w-7xl mx-auto px-4">{tCommon("footer")}</p>
       </footer>
     </div>
   );

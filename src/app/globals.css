@@ -5,7 +5,7 @@
 :root {
   --background: 9 9 11; /* Sleek Zinc-950 dark theme */
   --foreground: 250 250 250; /* Zinc-50 */
-  
+
   --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
   --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
   --glass-bg: rgba(15, 15, 23, 0.7);
@@ -76,8 +76,15 @@ body {
 
 /* Animations */
 @keyframes pulse-subtle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: .8; transform: scale(1.02); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
 }
 
 .pulse-hover:hover {

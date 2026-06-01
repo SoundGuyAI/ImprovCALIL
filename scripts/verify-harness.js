@@ -147,11 +147,7 @@ function runCommand(step) {
 }
 
 // Write error reports for agents to consume
-function writeFailuresReport(failure) {
-  // 1. Write JSON Report
-  const wroteJson = safeWriteFile(REPORT_JSON, JSON.stringify(failure, null, 2));
-
-  // 2. Write Markdown Report
+function formatFailuresReportMarkdown(failure) {
   const ruleLinks = failure.governingRules
     .map(
       (rule) =>
@@ -159,7 +155,7 @@ function writeFailuresReport(failure) {
     )
     .join("\n");
 
-  const mdContent = `# ❌ Harness Verification Failure: ${failure.stepName}
+  return `# ❌ Harness Verification Failure: ${failure.stepName}
 
 The autonomous verification suite encountered a failure during the **${failure.stepName}** step.
 
@@ -180,8 +176,15 @@ ${failure.outputSnippet}
 ---
 *Generated automatically by ImprovIL Agent Verification Harness.*
 `;
+}
 
-  const wroteMarkdown = safeWriteFile(REPORT_MD, mdContent);
+// Write error reports for agents to consume
+function writeFailuresReport(failure) {
+  // 1. Write JSON Report
+  const wroteJson = safeWriteFile(REPORT_JSON, JSON.stringify(failure, null, 2));
+
+  // 2. Write Markdown Report
+  const wroteMarkdown = safeWriteFile(REPORT_MD, formatFailuresReportMarkdown(failure));
   console.log(`\n==================================================`);
   console.log(`❌ FAILURE REPORT WRITTEN TO:`);
   if (wroteJson) console.log(`   JSON: ${REPORT_JSON}`);
@@ -222,4 +225,14 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  STEPS,
+  formatFailuresReportMarkdown,
+  main,
+  runCommand,
+  writeFailuresReport,
+};

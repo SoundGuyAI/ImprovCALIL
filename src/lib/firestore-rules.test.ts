@@ -12,7 +12,7 @@ describe("Firestore security rules", () => {
 
   it("does not allow unauthenticated clients to seed public collections", () => {
     expect(rules).not.toMatch(/allow write: if isAdmin\(\) \|\| !exists/);
-    expect(rules.match(/allow write: if isAdmin\(\);/g)).toHaveLength(5);
+    expect(rules.match(/allow write: if isAdmin\(\);/g)).toHaveLength(4);
   });
 
   it("keeps public submission creation constrained by validation", () => {

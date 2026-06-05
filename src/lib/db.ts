@@ -322,8 +322,8 @@ export async function approveSubmission(id: string): Promise<void> {
     const batch = writeBatch(db);
 
     if (sData.type === "event") {
-      const newEventId = `evt-${Date.now()}`;
-      const eventRef = doc(db, "events", newEventId);
+      const eventRef = doc(collection(db, "events"));
+      const newEventId = eventRef.id;
 
       batch.set(eventRef, {
         ...sData.data,
@@ -348,8 +348,8 @@ export async function approveSubmission(id: string): Promise<void> {
         });
       }
     } else if (sData.type === "organizer") {
-      const newOrganizerId = `org-${Date.now()}`;
-      const organizerRef = doc(db, "organizers", newOrganizerId);
+      const organizerRef = doc(collection(db, "organizers"));
+      const newOrganizerId = organizerRef.id;
 
       batch.set(organizerRef, {
         ...sData.data,

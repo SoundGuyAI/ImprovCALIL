@@ -308,4 +308,13 @@ ${formatFieldResultsTable(rep.fields)}
   }
 }
 
-runEvals();
+if (require.main === module) {
+  runEvals();
+}
+
+module.exports = {
+  evaluateField,
+  escapeMarkdownTableCell,
+  formatFieldResultsTable,
+  runEvals,
+};

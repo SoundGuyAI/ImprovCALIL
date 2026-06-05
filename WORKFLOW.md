@@ -4,7 +4,7 @@ tracker:
   team_key: IMPCAL
   api_key: $LINEAR_API_KEY
   active_states:
-    - Todo
+    - Agent Todo
     - In Progress
   terminal_states:
     - Closed

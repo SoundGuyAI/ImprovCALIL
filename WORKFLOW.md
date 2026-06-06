@@ -13,7 +13,7 @@ tracker:
     - Duplicate
     - Done
 polling:
-  interval_ms: 30000
+  interval_ms: 60000
 workspace:
   root: c:\UnityProj\symphony_workspaces
 hooks:
@@ -58,10 +58,10 @@ Please analyze the codebase, implement a complete solution resolving the issue, 
   - Create a new draft Pull Request using the GitHub CLI:
     `gh pr create --title "[{{ issue.identifier }}] {{ issue.title }}" --body "Resolves {{ issue.url }}" --draft`
 
-
 ## 📸 Telegram Notifications & Human Attention Requests
+
 If you require manual input, approval, hit a sandbox restriction, or cannot proceed due to blocked dependencies/credentials:
+
 - Trigger a Telegram notification to the developer by executing:
   `node c:/UnityProj/symphony/scripts/notify.js "[{{ agent_name }}] requires attention on {{ issue.identifier }}: <State the blocker or help request clearly>"`
 - Do not loop or consume tokens waiting. Output a clear summary of what you tried and state that you are waiting for human attention.
-

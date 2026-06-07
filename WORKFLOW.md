@@ -23,6 +23,7 @@ hooks:
 agent:
   max_concurrent_agents: 5
   max_turns: 20
+  max_attempts: 2
 codex:
   command: agy
   approval_policy: auto-approve

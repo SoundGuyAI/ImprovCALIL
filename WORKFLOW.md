@@ -58,6 +58,15 @@ Please analyze the codebase, implement a complete solution resolving the issue, 
   - Create a new draft Pull Request using the GitHub CLI:
     `gh pr create --title "[{{ issue.identifier }}] {{ issue.title }}" --body "Resolves {{ issue.url }}" --draft`
 
+## Screenshot & Verification Policies
+
+- **Screenshot Evidence & Delivery**: When capturing visual verification (browser or Playwright E2E), save screenshots under `.screenshots/{{ issue.identifier }}/attempt-{{ attempt }}/` (or use `SYMPHONY_SCREENSHOT_DIR` when Symphony sets it).
+  - Use the shared helper at `e2e/helpers/screenshots.ts` — call `captureScreenshot(page, filename, label?)` instead of raw `page.screenshot({ path })`.
+  - Each attempt folder gets a `manifest.json`; the issue index lives at `.screenshots/{{ issue.identifier }}/manifest.json` (flat list — no directory traversal needed).
+  - **Do not commit screenshot files yourself** — save only; the Symphony orchestrator uploads to Linear and commits screenshots (including manifests) to the PR branch after session success.
+  - Reference screenshot paths from the issue manifest in task summaries and Linear comments.
+  - Create a **new** issue-specific E2E spec per task.
+
 ## 📸 Telegram Notifications & Human Attention Requests
 
 If you require manual input, approval, hit a sandbox restriction, or cannot proceed due to blocked dependencies/credentials:

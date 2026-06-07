@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable */
 const http = require('http');
 const https = require('https');
 const fs = require('fs');

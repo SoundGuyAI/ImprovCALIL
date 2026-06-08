@@ -71,3 +71,4 @@ To maintain the repository's high reliability, agents MUST adhere to these harne
    - Run the evaluation suite: `node scripts/run-evals.js`
    - Ensure the overall system accuracy score remains above `80%` and no regressions occur.
    - Update ground truth files in `test-fixtures/evals/` if the expected parser behavior changes.
+4. **Agent State Persistence**: Save the todo and implementation plan of each issue you are working on to an `.agents/work/` folder in a subfolder named with the branch name. These files must be checked in with the branch so that if an agent stops working, another agent can take over seamlessly.

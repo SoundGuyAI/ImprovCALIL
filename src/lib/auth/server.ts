@@ -298,7 +298,7 @@ export async function getProfileForSessionCookie(
 
     await syncAdminCustomClaim(
       decoded.uid,
-      shouldGrantAdminClaim(userData?.isAdmin === true || decoded.isAdmin === true, decoded.uid)
+      shouldGrantAdminClaim(userData?.isAdmin === true, decoded.uid)
     );
 
     return profile;

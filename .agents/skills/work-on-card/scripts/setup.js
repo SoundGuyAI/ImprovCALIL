@@ -20,7 +20,7 @@ if (!cardId.startsWith('IMPCAL')) {
 }
 
 const sourceRepoPath = path.resolve('C:/UnityProj/ImprovCALIL');
-const workspacesDir = path.resolve('C:/UnityProj/symphony_workspaces');
+const workspacesDir = process.env.WORKTREE_DIR || path.resolve('C:/Users/Oded/.gemini/antigravity/worktrees');
 const targetWorktreePath = path.join(workspacesDir, cardId);
 
 console.log(`Setting up worktree for card: ${cardId}`);
@@ -116,6 +116,13 @@ if (branchExistsLocally) {
 // 7. Install dependencies
 console.log('\nInstalling npm dependencies in worktree...');
 runCmd('npm install', targetWorktreePath);
+
+// 8. Create Agent State Persistence directory
+const agentWorkDir = path.join(targetWorktreePath, '.agents', 'work', branchName);
+if (!fs.existsSync(agentWorkDir)) {
+  console.log(`\nCreating Agent State Persistence directory at: ${agentWorkDir}`);
+  fs.mkdirSync(agentWorkDir, { recursive: true });
+}
 
 console.log('\n=========================================');
 console.log(`🎉 SETUP COMPLETED FOR ${cardId}!`);

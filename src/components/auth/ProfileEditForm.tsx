@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { normalizeUsername } from "@/lib/auth/profile";
 import { isSafeLocalizedPath, resolveSafeNextPath } from "@/lib/auth/redirect";
 import type { AuthProfile, ProfileLink } from "@/types/auth";
+import { useRouter } from "@/i18n/routing";
 
 function linksToText(links: ProfileLink[]): string {
   return links.map((link) => `${link.label} | ${link.url}`).join("\n");
@@ -33,6 +34,7 @@ export default function ProfileEditForm({
   profile: AuthProfile;
   nextPath?: string;
 }) {
+  const router = useRouter();
   const t = useTranslations("auth.profileEdit");
   const { refreshProfile } = useAuth();
   const [displayName, setDisplayName] = useState(profile.displayName ?? "");
@@ -107,7 +109,7 @@ export default function ProfileEditForm({
       }
 
       await refreshProfile();
-      window.location.assign(redirectPath);
+      router.push(redirectPath);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : t("genericError"));
     } finally {
@@ -205,7 +207,7 @@ export default function ProfileEditForm({
         </button>
         <button
           type="button"
-          onClick={() => window.location.assign(redirectPath)}
+          onClick={() => router.push(redirectPath)}
           disabled={submitting}
           className="inline-flex items-center rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
         >

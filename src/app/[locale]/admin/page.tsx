@@ -413,72 +413,82 @@ export default function AdminConsole() {
                           )}
                         </div>
 
-                        {editTargetId && (
-                          <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
-                            <h4 className="text-xs font-extrabold uppercase text-indigo-400">
-                              {locale === "he"
-                                ? "השוואת שינויים (הצעת עריכה)"
-                                : "Proposed Changes (Edit Request)"}
-                            </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
-                              {/* Live version */}
-                              <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-900">
-                                <div className="font-semibold text-zinc-500 mb-2 uppercase text-[9px] tracking-wider">
-                                  {locale === "he" ? "נוכחי באתר" : "Live Version"}
-                                </div>
-                                {(() => {
-                                  const original =
-                                    sub.type === "organizer"
-                                      ? organizers.find((o) => o.id === editTargetId)
-                                      : events.find((e) => e.id === editTargetId);
-                                  if (!original)
+                        {(() => {
+                          const hasTarget =
+                            editTargetId &&
+                            (sub.type === "organizer"
+                              ? organizers.some((o) => o.id === editTargetId)
+                              : events.some((e) => e.id === editTargetId));
+                          if (!hasTarget) return null;
+
+                          return (
+                            <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
+                              <h4 className="text-xs font-extrabold uppercase text-indigo-400">
+                                {locale === "he"
+                                  ? "השוואת שינויים (הצעת עריכה)"
+                                  : "Proposed Changes (Edit Request)"}
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
+                                {/* Live version */}
+                                <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-900">
+                                  <div className="font-semibold text-zinc-500 mb-2 uppercase text-[9px] tracking-wider">
+                                    {locale === "he" ? "נוכחי באתר" : "Live Version"}
+                                  </div>
+                                  {(() => {
+                                    const original =
+                                      sub.type === "organizer"
+                                        ? organizers.find((o) => o.id === editTargetId)
+                                        : events.find((e) => e.id === editTargetId);
+                                    if (!original)
+                                      return (
+                                        <span className="text-zinc-650 italic">
+                                          Record not found or deleted
+                                        </span>
+                                      );
                                     return (
-                                      <span className="text-zinc-650 italic">
-                                        Record not found or deleted
-                                      </span>
+                                      <div className="flex flex-col gap-1 text-zinc-400">
+                                        <div>
+                                          <strong className="text-zinc-500">Name:</strong>{" "}
+                                          {original.name}
+                                        </div>
+                                        <div>
+                                          <strong className="text-zinc-500">Region:</strong>{" "}
+                                          {original.region}
+                                        </div>
+                                        <div>
+                                          <strong className="text-zinc-500">Description:</strong>{" "}
+                                          {original.description?.substring(0, 100)}
+                                          {original.description?.length > 100 ? "..." : ""}
+                                        </div>
+                                      </div>
                                     );
-                                  return (
-                                    <div className="flex flex-col gap-1 text-zinc-400">
-                                      <div>
-                                        <strong className="text-zinc-500">Name:</strong>{" "}
-                                        {original.name}
-                                      </div>
-                                      <div>
-                                        <strong className="text-zinc-500">Region:</strong>{" "}
-                                        {original.region}
-                                      </div>
-                                      <div>
-                                        <strong className="text-zinc-500">Description:</strong>{" "}
-                                        {original.description?.substring(0, 100)}
-                                        {original.description?.length > 100 ? "..." : ""}
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                              {/* Proposed version */}
-                              <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-900/30">
-                                <div className="font-semibold text-indigo-400 mb-2 uppercase text-[9px] tracking-wider">
-                                  {locale === "he" ? "הצעת שינוי" : "Proposed Version"}
+                                  })()}
                                 </div>
-                                <div className="flex flex-col gap-1 text-zinc-300">
-                                  <div>
-                                    <strong className="text-zinc-400">Name:</strong> {sub.data.name}
+                                {/* Proposed version */}
+                                <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-900/30">
+                                  <div className="font-semibold text-indigo-400 mb-2 uppercase text-[9px] tracking-wider">
+                                    {locale === "he" ? "הצעת שינוי" : "Proposed Version"}
                                   </div>
-                                  <div>
-                                    <strong className="text-zinc-400">Region:</strong>{" "}
-                                    {sub.data.region}
-                                  </div>
-                                  <div>
-                                    <strong className="text-zinc-400">Description:</strong>{" "}
-                                    {sub.data.description?.substring(0, 100)}
-                                    {sub.data.description?.length > 100 ? "..." : ""}
+                                  <div className="flex flex-col gap-1 text-zinc-300">
+                                    <div>
+                                      <strong className="text-zinc-400">Name:</strong>{" "}
+                                      {sub.data.name}
+                                    </div>
+                                    <div>
+                                      <strong className="text-zinc-400">Region:</strong>{" "}
+                                      {sub.data.region}
+                                    </div>
+                                    <div>
+                                      <strong className="text-zinc-400">Description:</strong>{" "}
+                                      {sub.data.description?.substring(0, 100)}
+                                      {sub.data.description?.length > 100 ? "..." : ""}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
                       </div>
 
                       <div className="flex items-center gap-2.5 w-full md:w-auto">

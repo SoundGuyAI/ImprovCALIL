@@ -29,7 +29,7 @@ export interface UserProfileWrite {
   bio: string | null;
   locale: AuthLocale;
   isAdmin: boolean;
-  accountStatus: "active";
+  accountStatus: "active" | "deleted";
 }
 
 export interface VerifiedProfileToken {
@@ -184,6 +184,6 @@ export function buildUserProfileWrite(
     bio: editable.bio ?? normalizeBio(existingProfile?.bio),
     locale: normalizeAuthLocale(existingProfile?.locale ?? locale),
     isAdmin: existingProfile?.isAdmin === true,
-    accountStatus: "active",
+    accountStatus: existingProfile?.accountStatus === "deleted" ? "deleted" : "active",
   };
 }

@@ -52,6 +52,9 @@ export async function createSessionAndProfile(
   const userRef = db.collection(USERS_COLLECTION).doc(decodedToken.uid);
   const existingSnapshot = await userRef.get();
   const existing = existingSnapshot.exists ? (existingSnapshot.data() ?? null) : null;
+  if (existing?.accountStatus === "deleted") {
+    throw new Error("This account has been deleted");
+  }
   const profileWrite = buildUserProfileWrite(decodedToken, existing, locale, requestedProfile);
   if (profileWrite.username) {
     await assertUsernameAvailable(profileWrite.username, decodedToken.uid);
@@ -238,9 +241,13 @@ export async function deleteCurrentAccount(
     { merge: true }
   );
 
-  await batch.commit();
-  await syncAdminCustomClaim(profile.uid, false);
+  // Delete Auth user first to ensure account deletion is completed from Auth
+  // before mutating Firestore records (avoiding resurrectable profiles if auth.deleteUser fails).
   await auth.deleteUser(profile.uid);
+  await syncAdminCustomClaim(profile.uid, false);
+
+  // Then perform Firestore mutations
+  await batch.commit();
 }
 
 async function assertUsernameAvailable(username: string, uid: string): Promise<void> {

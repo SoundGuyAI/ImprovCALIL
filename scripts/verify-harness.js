@@ -387,6 +387,9 @@ async function main() {
   safeUnlink(REPORT_JSON);
   safeUnlink(REPORT_MD);
 
+  // Use production server for E2E tests in the harness to avoid lazy compilation timeouts
+  process.env.PLAYWRIGHT_START_PROD = "true";
+
   // Dynamic port allocation for E2E testing
   if (!process.env.PORT) {
     try {

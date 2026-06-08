@@ -1,7 +1,7 @@
 const LOCALE_PATH_PATTERN = /^\/(en|he)(?:\/|$)/;
 const SUPPORTED_LOCALES = ["en", "he"];
 
-export function isSafeLocalizedPath(value: string | null | undefined): value is string {
+export function isSafeLocalizedPath(value: string | null | undefined): boolean {
   if (!value) {
     return false;
   }
@@ -12,10 +12,18 @@ export function isSafeLocalizedPath(value: string | null | undefined): value is 
 }
 
 export function resolveSafeNextPath(value: string | null | undefined, locale: string): string {
-  if (isSafeLocalizedPath(value)) {
-    return value;
+  const fallbackLocale = SUPPORTED_LOCALES.includes(locale) ? locale : "en";
+
+  if (typeof value === "string") {
+    if (isSafeLocalizedPath(value)) {
+      return value;
+    }
+    if (value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")) {
+      if (!LOCALE_PATH_PATTERN.test(value)) {
+        return `/${fallbackLocale}${value}`;
+      }
+    }
   }
 
-  const fallbackLocale = SUPPORTED_LOCALES.includes(locale) ? locale : "en";
   return `/${fallbackLocale}`;
 }

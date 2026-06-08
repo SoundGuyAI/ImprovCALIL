@@ -56,6 +56,8 @@ async function postSession(
     throw new Error("Unable to create authenticated session.");
   }
 
+  await user.getIdToken(true);
+
   const data = (await response.json()) as { profile: AuthProfile };
   return data.profile;
 }
@@ -91,6 +93,7 @@ export function AuthProvider({
       }
 
       if (signingInRef.current) {
+        setLoading(false);
         return;
       }
 

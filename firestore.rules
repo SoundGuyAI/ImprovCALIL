@@ -46,9 +46,9 @@ service cloud.firestore {
         (!('targetDocumentId' in request.resource.data) ||
           request.resource.data.targetDocumentId is string && request.resource.data.targetDocumentId.size() <= 100) &&
         (
-          isAuthenticated() ||
-          (exists(/databases/$(database)/documents/config/submissions) &&
-           get(/databases/$(database)/documents/config/submissions).data.allowAnonymous == true)
+        isAuthenticated() ||
+        !exists(/databases/$(database)/documents/config/submissions) ||
+        get(/databases/$(database)/documents/config/submissions).data.allowAnonymous == true
         );
     }
 

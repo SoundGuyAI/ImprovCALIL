@@ -16,6 +16,36 @@ import type { AuthLocale, AuthProfile, EditableProfileFields } from "@/types/aut
 
 const USERS_COLLECTION = "users";
 
+function shouldGrantAdminClaim(
+  profileIsAdmin: boolean | undefined,
+  uid: string,
+): boolean {
+  if (profileIsAdmin) {
+    return true;
+  }
+  return (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_ADMIN_DEV_UID === uid
+  );
+}
+
+async function syncAdminCustomClaim(uid: string, shouldBeAdmin: boolean): Promise<void> {
+  const auth = getAdminAuth();
+  const userRecord = await auth.getUser(uid);
+  const currentIsAdmin = userRecord.customClaims?.isAdmin === true;
+  if (currentIsAdmin === shouldBeAdmin) {
+    return;
+  }
+
+  const nextClaims = { ...(userRecord.customClaims ?? {}) };
+  if (shouldBeAdmin) {
+    nextClaims.isAdmin = true;
+  } else {
+    delete nextClaims.isAdmin;
+  }
+  await auth.setCustomUserClaims(uid, nextClaims);
+}
+
 export async function createSessionAndProfile(
   idToken: string,
   locale: unknown,
@@ -40,6 +70,11 @@ export async function createSessionAndProfile(
       updatedAt: now,
     },
     { merge: true }
+  );
+
+  await syncAdminCustomClaim(
+    decodedToken.uid,
+    shouldGrantAdminClaim(profileWrite.isAdmin, decodedToken.uid),
   );
 
   const sessionCookie = await auth.createSessionCookie(idToken, {
@@ -209,6 +244,7 @@ export async function deleteCurrentAccount(
   );
 
   await batch.commit();
+  await syncAdminCustomClaim(profile.uid, false);
   await auth.deleteUser(profile.uid);
 }
 

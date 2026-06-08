@@ -6,9 +6,13 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Check if user is admin via trusted custom claims only.
+    // Check if user is admin via trusted custom claims.
     function isAdmin() {
       return isAuthenticated() && request.auth.token.isAdmin == true;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
     function isValidContact(contact) {
@@ -27,7 +31,8 @@ service cloud.firestore {
         'data',
         'links',
         'createdAt',
-        'submitterContact'
+        'submitterContact',
+        'targetDocumentId'
       ]) &&
         request.resource.data.type in ['event', 'organizer'] &&
         request.resource.data.status == 'pending' &&
@@ -37,7 +42,14 @@ service cloud.firestore {
         request.resource.data.createdAt is number &&
         isValidContact(request.resource.data.submitterContact) &&
         (!('links' in request.resource.data) ||
-          request.resource.data.links is list && request.resource.data.links.size() <= 10);
+          request.resource.data.links is list && request.resource.data.links.size() <= 10) &&
+        (!('targetDocumentId' in request.resource.data) ||
+          request.resource.data.targetDocumentId is string && request.resource.data.targetDocumentId.size() <= 100) &&
+        (
+          isAuthenticated() ||
+          (exists(/databases/$(database)/documents/config/submissions) &&
+           get(/databases/$(database)/documents/config/submissions).data.allowAnonymous == true)
+        );
     }
 
     function isValidSubscriberCreate() {
@@ -56,7 +68,11 @@ service cloud.firestore {
     // Organizers rules
     match /organizers/{organizerId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || (
+        isAuthenticated() &&
+        resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.ownerUid == request.auth.uid
+      );
     }
 
     // Links rules
@@ -79,7 +95,13 @@ service cloud.firestore {
 
     // Users rules
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Config rules
+    match /config/{configId} {
+      allow read: if true;
       allow write: if isAdmin();
     }
   }

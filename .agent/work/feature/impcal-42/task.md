@@ -1,0 +1,35 @@
+# Tasks - IMPCAL-42: Port Auth, User Profiles, Admin Gating, and Parallel Port Gating
+
+- [x] Modify package.json to add dependencies and scripts
+- [x] Modify firestore.rules for secure authentication gates
+- [x] Modify src/lib/firebase.ts to export configuration missing indicators
+- [x] Port types/auth.ts
+- [x] Port lib/permissions.ts
+- [x] Port lib/auth utilities:
+  - [x] src/lib/auth/constants.ts
+  - [x] src/lib/auth/redirect.ts
+  - [x] src/lib/auth/delete-account.ts
+  - [x] src/lib/auth/email-lookup-rate-limit.ts
+  - [x] src/lib/auth/profile.ts
+  - [x] src/lib/auth/server.ts
+- [x] Port API Auth routes:
+  - [x] src/app/api/auth/session/route.ts
+  - [x] src/app/api/auth/me/route.ts
+  - [x] src/app/api/auth/profile/route.ts
+  - [x] src/app/api/auth/account/route.ts
+  - [x] src/app/api/auth/email-status/route.ts
+- [x] Port src/lib/firebase-admin.ts
+- [x] Port and adapt Auth React Components:
+  - [x] src/components/auth/AuthProvider.tsx
+  - [x] src/components/auth/LoginForm.tsx
+  - [x] src/components/auth/ProfileMenu.tsx
+  - [x] src/components/auth/ProfileEditForm.tsx
+  - [x] src/components/auth/DeleteAccountPanel.tsx
+  - [x] src/components/EnvConfigAlert.tsx
+- [x] Modify layout.tsx and Header.tsx to integrate AuthProvider and ProfileMenu
+- [x] Create and configure admin gating layout and access denied page
+- [x] Modify admin/page.tsx to add Settings and Edit moderation queue
+- [x] Add bilingual privacy policy page
+- [x] Add AppVersion footer widget
+- [x] Add translation strings for en.json and he.json
+- [x] Run verification suite and fix any linting, formatting, or compilation errors

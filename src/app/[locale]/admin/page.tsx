@@ -11,6 +11,8 @@ import {
   updateRecordVisibility,
   updateEventFeatured,
   deleteRecord,
+  getSubmissionsConfig,
+  updateSubmissionsConfig,
   FirestoreEvent,
   FirestoreOrganizer,
   FirestoreSubmission,
@@ -31,6 +33,7 @@ import {
   MessageSquare,
   Search,
   Activity,
+  Settings,
 } from "lucide-react";
 
 export default function AdminConsole() {
@@ -40,7 +43,7 @@ export default function AdminConsole() {
   const locale = useLocale();
 
   const [activeTab, setActiveTab] = useState<
-    "dashboard" | "queue" | "events" | "organizers" | "simulator"
+    "dashboard" | "queue" | "events" | "organizers" | "simulator" | "settings"
   >("dashboard");
 
   const [events, setEvents] = useState<FirestoreEvent[]>([]);
@@ -58,6 +61,10 @@ export default function AdminConsole() {
   const [simulating, setSimulating] = useState(false);
   const [simSuccess, setSimSuccess] = useState(false);
 
+  // Settings State
+  const [allowAnonymous, setAllowAnonymous] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -65,9 +72,11 @@ export default function AdminConsole() {
         const evts = await getEvents({ includeHidden: true });
         const orgs = await getOrganizers({ includeHidden: true });
         const subs = await getPendingSubmissions();
+        const cfg = await getSubmissionsConfig();
         setEvents(evts);
         setOrganizers(orgs);
         setSubmissions(subs);
+        setAllowAnonymous(cfg.allowAnonymous);
       } catch (err) {
         console.error(err);
       } finally {
@@ -83,13 +92,26 @@ export default function AdminConsole() {
       const evts = await getEvents({ includeHidden: true });
       const orgs = await getOrganizers({ includeHidden: true });
       const subs = await getPendingSubmissions();
+      const cfg = await getSubmissionsConfig();
       setEvents(evts);
       setOrganizers(orgs);
       setSubmissions(subs);
+      setAllowAnonymous(cfg.allowAnonymous);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await updateSubmissionsConfig(allowAnonymous);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -252,6 +274,11 @@ export default function AdminConsole() {
             { id: "events", label: tAdmin("events"), icon: CalendarIcon },
             { id: "organizers", label: tAdmin("organizers"), icon: Users },
             { id: "simulator", label: tAdmin("simulator"), icon: Bot },
+            {
+              id: "settings",
+              label: locale === "he" ? "הגדרות מערכת" : "System Settings",
+              icon: Settings,
+            },
           ].map((tab) => {
             const Icon = tab.icon;
             const isSelected = activeTab === tab.id;
@@ -260,7 +287,13 @@ export default function AdminConsole() {
                 key={tab.id}
                 onClick={() =>
                   setActiveTab(
-                    tab.id as "dashboard" | "queue" | "events" | "organizers" | "simulator"
+                    tab.id as
+                      | "dashboard"
+                      | "queue"
+                      | "events"
+                      | "organizers"
+                      | "simulator"
+                      | "settings"
                   )
                 }
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
@@ -368,6 +401,73 @@ export default function AdminConsole() {
                             <span>Submitter: {sub.submitterContact.email}</span>
                           )}
                         </div>
+
+                        {sub.targetDocumentId && (
+                          <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
+                            <h4 className="text-xs font-extrabold uppercase text-indigo-400">
+                              {locale === "he"
+                                ? "השוואת שינויים (הצעת עריכה)"
+                                : "Proposed Changes (Edit Request)"}
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
+                              {/* Live version */}
+                              <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-900">
+                                <div className="font-semibold text-zinc-500 mb-2 uppercase text-[9px] tracking-wider">
+                                  {locale === "he" ? "נוכחי באתר" : "Live Version"}
+                                </div>
+                                {(() => {
+                                  const original =
+                                    sub.type === "organizer"
+                                      ? organizers.find((o) => o.id === sub.targetDocumentId)
+                                      : events.find((e) => e.id === sub.targetDocumentId);
+                                  if (!original)
+                                    return (
+                                      <span className="text-zinc-650 italic">
+                                        Record not found or deleted
+                                      </span>
+                                    );
+                                  return (
+                                    <div className="flex flex-col gap-1 text-zinc-400">
+                                      <div>
+                                        <strong className="text-zinc-500">Name:</strong>{" "}
+                                        {original.name}
+                                      </div>
+                                      <div>
+                                        <strong className="text-zinc-500">Region:</strong>{" "}
+                                        {original.region}
+                                      </div>
+                                      <div>
+                                        <strong className="text-zinc-500">Description:</strong>{" "}
+                                        {original.description?.substring(0, 100)}
+                                        {original.description?.length > 100 ? "..." : ""}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                              {/* Proposed version */}
+                              <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-900/30">
+                                <div className="font-semibold text-indigo-400 mb-2 uppercase text-[9px] tracking-wider">
+                                  {locale === "he" ? "הצעת שינוי" : "Proposed Version"}
+                                </div>
+                                <div className="flex flex-col gap-1 text-zinc-300">
+                                  <div>
+                                    <strong className="text-zinc-400">Name:</strong> {sub.data.name}
+                                  </div>
+                                  <div>
+                                    <strong className="text-zinc-400">Region:</strong>{" "}
+                                    {sub.data.region}
+                                  </div>
+                                  <div>
+                                    <strong className="text-zinc-400">Description:</strong>{" "}
+                                    {sub.data.description?.substring(0, 100)}
+                                    {sub.data.description?.length > 100 ? "..." : ""}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2.5 w-full md:w-auto">
@@ -734,6 +834,65 @@ export default function AdminConsole() {
                   <span>{simulating ? "LLM Parsing Ingestion..." : tAdmin("simBtn")}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* F. SYSTEM SETTINGS */}
+        {activeTab === "settings" && (
+          <div className="glass-card rounded-2xl p-6 flex flex-col gap-6 animate-fadeIn">
+            <div className="border-b border-zinc-850 pb-3">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Settings className="w-5 h-5 text-indigo-400" />
+                <span>{locale === "he" ? "הגדרות מערכת" : "System Settings"}</span>
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                {locale === "he"
+                  ? "נהלו את הגדרות פלטפורמת לוח האירועים וההרשאות הגלובליות."
+                  : "Manage the event calendar platform settings and global configuration rules."}
+              </p>
+            </div>
+
+            <div className="max-w-xl flex flex-col gap-6">
+              {/* Toggle option */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-zinc-900 bg-zinc-950/40">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold text-white">
+                    {locale === "he" ? "אפשר הגשות אנונימיות" : "Allow Anonymous Submissions"}
+                  </span>
+                  <span className="text-xs text-zinc-500">
+                    {locale === "he"
+                      ? "כאשר מופעל, משתמשים לא מחוברים יכולים להגיש אירועים ומארגנים ללוח"
+                      : "When enabled, guest users can submit events and organizers for review."}
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allowAnonymous}
+                    onChange={(e) => setAllowAnonymous(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-850 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-455 after:border-zinc-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                </label>
+              </div>
+
+              {/* Action Button */}
+              <button
+                onClick={handleSaveSettings}
+                disabled={savingSettings}
+                className="py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <span>
+                  {savingSettings
+                    ? locale === "he"
+                      ? "שומר..."
+                      : "Saving..."
+                    : locale === "he"
+                      ? "שמור הגדרות"
+                      : "Save Settings"}
+                </span>
+              </button>
             </div>
           </div>
         )}

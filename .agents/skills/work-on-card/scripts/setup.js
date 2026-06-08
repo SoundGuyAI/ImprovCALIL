@@ -55,7 +55,7 @@ if (!fs.existsSync(sourceRepoPath)) {
 
 // 2. Fetch origin and prune worktrees
 console.log('\nFetching origin and pruning old worktrees...');
-runCmd('git fetch origin main');
+runCmd('git fetch origin master');
 runCmd('git worktree prune');
 
 // 3. Remove worktree path if empty directory exists
@@ -75,7 +75,7 @@ if (fs.existsSync(targetWorktreePath)) {
 const isWorktree = fs.existsSync(path.join(targetWorktreePath, '.git'));
 if (!isWorktree) {
   console.log('\nCreating new Git worktree...');
-  runCmd(`git worktree add "${targetWorktreePath}" origin/main --detach --force`);
+  runCmd(`git worktree add "${targetWorktreePath}" origin/master --detach --force`);
 }
 
 // 5. Copy .env.local to target worktree
@@ -107,9 +107,9 @@ if (branchExistsLocally) {
   console.log(`Branch '${branchName}' exists on remote origin. Tracking and checking it out...`);
   runCmd(`git checkout -b "${branchName}" --track "origin/${branchName}"`, targetWorktreePath);
 } else {
-  console.log(`Creating and checking out new feature branch '${branchName}' off main...`);
-  // Make sure we are detached on origin/main first, then branch off
-  runCmd(`git checkout --detach origin/main`, targetWorktreePath);
+  console.log(`Creating and checking out new feature branch '${branchName}' off master...`);
+  // Make sure we are detached on origin/master first, then branch off
+  runCmd(`git checkout --detach origin/master`, targetWorktreePath);
   runCmd(`git checkout -b "${branchName}"`, targetWorktreePath);
 }
 

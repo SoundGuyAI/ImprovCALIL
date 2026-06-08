@@ -43,6 +43,7 @@ export default function SubmitContent() {
 
   // 2. Structured Organizer Form State
   const [isUpdate, setIsUpdate] = useState(false);
+  const [orgTargetId, setOrgTargetId] = useState("");
   const [orgName, setOrgName] = useState("");
   const [orgType, setOrgType] = useState("Group");
   const [orgDesc, setOrgDesc] = useState("");
@@ -158,7 +159,7 @@ export default function SubmitContent() {
     e.preventDefault();
     setError(false);
 
-    if (!orgName || !orgDesc || !submitterEmail) {
+    if (!orgName || !orgDesc || !submitterEmail || (isUpdate && !orgTargetId)) {
       setError(true);
       return;
     }
@@ -167,11 +168,13 @@ export default function SubmitContent() {
       await createSubmission({
         type: "organizer",
         source: "web_form",
+        ...(isUpdate && orgTargetId ? { targetDocumentId: orgTargetId } : {}),
         submitterContact: {
           email: submitterEmail,
           phone: submitterPhone,
         },
         data: {
+          ...(isUpdate && orgTargetId ? { id: orgTargetId } : {}),
           name: orgName,
           type: orgType,
           description: orgDesc,
@@ -206,6 +209,7 @@ export default function SubmitContent() {
   };
 
   const clearOrganizerForm = () => {
+    setOrgTargetId("");
     setOrgName("");
     setOrgDesc("");
     setOrgLinks([]);
@@ -660,7 +664,10 @@ export default function SubmitContent() {
                 <div className="flex gap-4 mt-1">
                   <button
                     type="button"
-                    onClick={() => setIsUpdate(false)}
+                    onClick={() => {
+                      setIsUpdate(false);
+                      setOrgTargetId("");
+                    }}
                     className={`flex-1 py-3 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
                       !isUpdate
                         ? "border-indigo-500 bg-indigo-500/10 text-white"
@@ -682,6 +689,29 @@ export default function SubmitContent() {
                   </button>
                 </div>
               </div>
+
+              {isUpdate ? (
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <label className="text-xs font-extrabold uppercase text-zinc-400">
+                    {tSub("organizerSelect")} *
+                  </label>
+                  <select
+                    required
+                    value={orgTargetId}
+                    onChange={(e) => setOrgTargetId(e.target.value)}
+                    className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
+                  >
+                    <option value="">
+                      {locale === "he" ? "-- בחר מארגן מהאינדקס --" : "-- Choose from Directory --"}
+                    </option>
+                    {organizers.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
 
               {/* Name */}
               <div className="flex flex-col gap-2">

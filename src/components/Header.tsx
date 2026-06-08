@@ -3,6 +3,9 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/routing";
 import { Calendar, Users, FilePlus, ShieldAlert, Languages } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { isUserAdmin } from "@/lib/permissions";
+import ProfileMenu from "@/components/auth/ProfileMenu";
 
 export default function Header() {
   const t = useTranslations("Navigation");
@@ -10,6 +13,8 @@ export default function Header() {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
+  const { profile } = useAuth();
+  const isAdminUser = isUserAdmin(profile);
 
   const switchLocale = () => {
     const nextLocale = locale === "en" ? "he" : "en";
@@ -20,7 +25,7 @@ export default function Header() {
     { href: "/", label: t("calendar"), icon: Calendar },
     { href: "/organizers", label: t("organizers"), icon: Users },
     { href: "/submit", label: t("submit"), icon: FilePlus },
-    { href: "/admin", label: t("admin"), icon: ShieldAlert },
+    ...(isAdminUser ? [{ href: "/admin", label: t("admin"), icon: ShieldAlert }] : []),
   ];
 
   return (
@@ -63,7 +68,7 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Actions (Language Switcher) */}
+          {/* Actions (Language Switcher & Profile) */}
           <div className="flex items-center gap-2">
             <button
               onClick={switchLocale}
@@ -72,6 +77,7 @@ export default function Header() {
               <Languages className="w-4 h-4 text-indigo-400" />
               <span>{locale === "en" ? "עברית" : "English"}</span>
             </button>
+            <ProfileMenu />
           </div>
         </div>
 

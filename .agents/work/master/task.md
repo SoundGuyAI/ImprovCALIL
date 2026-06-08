@@ -1,0 +1,4 @@
+- [x] Add the missing composite index to `firestore.indexes.json`
+- [x] Deploy Firestore indexes to Firebase
+- [x] Create Playwright E2E tests in `e2e/organizers.spec.ts`
+- [x] Run verification harness (`node scripts/verify-harness.js`) to check prettier, lint, types, unit tests, build, and E2E tests

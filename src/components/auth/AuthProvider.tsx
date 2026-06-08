@@ -121,7 +121,6 @@ export function AuthProvider({
       }
 
       if (signingInRef.current) {
-        setLoading(false);
         return;
       }
 

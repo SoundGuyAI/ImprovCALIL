@@ -15,6 +15,11 @@ describe("Firestore security rules", () => {
     expect(rules.match(/allow write: if isAdmin\(\);/g)).toHaveLength(4);
   });
 
+  it("allows owners to create organizers with matching ownerUid", () => {
+    expect(rules).toContain("allow create: if isAdmin() || (");
+    expect(rules).toContain("request.resource.data.ownerUid == request.auth.uid");
+  });
+
   it("keeps public submission creation constrained by validation", () => {
     expect(rules).toContain("allow create: if isValidSubmissionCreate();");
     expect(rules).toContain("request.resource.data.status == 'pending'");

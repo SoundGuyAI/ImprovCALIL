@@ -68,7 +68,11 @@ service cloud.firestore {
     // Organizers rules
     match /organizers/{organizerId} {
       allow read: if true;
-      allow write: if isAdmin() || (
+      allow create: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.ownerUid == request.auth.uid
+      );
+      allow update, delete: if isAdmin() || (
         isAuthenticated() &&
         resource.data.ownerUid == request.auth.uid &&
         request.resource.data.ownerUid == request.auth.uid

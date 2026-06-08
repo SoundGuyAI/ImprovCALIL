@@ -12,6 +12,7 @@ import {
   toAuthProfile,
 } from "@/lib/auth/profile";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase-admin";
+import { isUserAdmin } from "@/lib/permissions";
 import type { AuthLocale, AuthProfile, EditableProfileFields } from "@/types/auth";
 
 const USERS_COLLECTION = "users";
@@ -278,11 +279,27 @@ export async function getProfileForSessionCookie(
     const db = getAdminFirestore();
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
     const snapshot = await db.collection(USERS_COLLECTION).doc(decoded.uid).get();
+    const userData = snapshot.exists ? (snapshot.data() ?? null) : null;
+    const profile = toAuthProfile(userData, decoded.uid);
 
-    return toAuthProfile(snapshot.exists ? (snapshot.data() ?? null) : null, decoded.uid);
+    await syncAdminCustomClaim(
+      decoded.uid,
+      shouldGrantAdminClaim(userData?.isAdmin === true, decoded.uid),
+    );
+
+    return profile;
   } catch {
     return null;
   }
+}
+
+export async function createCustomTokenForCurrentProfile(): Promise<string | null> {
+  const profile = await getCurrentProfile();
+  if (!profile || !isUserAdmin(profile)) {
+    return null;
+  }
+
+  return getAdminAuth().createCustomToken(profile.uid);
 }
 
 export async function getCurrentProfile(): Promise<AuthProfile | null> {

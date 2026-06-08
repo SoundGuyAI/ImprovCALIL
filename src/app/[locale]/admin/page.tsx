@@ -861,7 +861,7 @@ export default function AdminConsole() {
         )}
 
         {/* F. SYSTEM SETTINGS */}
-        {activeTab === "settings" && (
+        {!loading && activeTab === "settings" && (
           <div className="glass-card rounded-2xl p-6 flex flex-col gap-6 animate-fadeIn">
             <div className="border-b border-zinc-850 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">

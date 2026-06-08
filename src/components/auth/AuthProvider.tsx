@@ -49,6 +49,12 @@ function profileToAuthUser(profile: AuthProfile): AuthUser {
 }
 
 async function fetchCookieProfile(): Promise<AuthProfile | null> {
+  if (
+    typeof document !== "undefined" &&
+    !document.cookie.includes("improv_cal_il_logged_in=true")
+  ) {
+    return null;
+  }
   const response = await fetch("/api/auth/me", { cache: "no-store" });
   if (!response.ok) {
     return null;
@@ -248,8 +254,7 @@ export function AuthProvider({
   }, [firebaseUser]);
 
   const user = useMemo<AuthUser | null>(
-    () =>
-      firebaseUser ? toAuthUser(firebaseUser) : profile ? profileToAuthUser(profile) : null,
+    () => (firebaseUser ? toAuthUser(firebaseUser) : profile ? profileToAuthUser(profile) : null),
     [firebaseUser, profile]
   );
 

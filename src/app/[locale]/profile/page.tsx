@@ -49,9 +49,7 @@ export default function ProfilePage() {
             <dd className="mt-1 text-sm">{profile.displayName || t("empty")}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-zinc-500">
-              {t("email")}
-            </dt>
+            <dt className="text-xs uppercase tracking-wide text-zinc-500">{t("email")}</dt>
             <dd className="mt-1 text-sm">{profile.email || t("empty")}</dd>
           </div>
         </dl>

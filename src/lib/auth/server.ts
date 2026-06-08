@@ -17,17 +17,11 @@ import type { AuthLocale, AuthProfile, EditableProfileFields } from "@/types/aut
 
 const USERS_COLLECTION = "users";
 
-function shouldGrantAdminClaim(
-  profileIsAdmin: boolean | undefined,
-  uid: string,
-): boolean {
+function shouldGrantAdminClaim(profileIsAdmin: boolean | undefined, uid: string): boolean {
   if (profileIsAdmin) {
     return true;
   }
-  return (
-    process.env.NODE_ENV === "development" &&
-    process.env.NEXT_PUBLIC_ADMIN_DEV_UID === uid
-  );
+  return process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_ADMIN_DEV_UID === uid;
 }
 
 async function syncAdminCustomClaim(uid: string, shouldBeAdmin: boolean): Promise<void> {
@@ -75,7 +69,7 @@ export async function createSessionAndProfile(
 
   await syncAdminCustomClaim(
     decodedToken.uid,
-    shouldGrantAdminClaim(profileWrite.isAdmin, decodedToken.uid),
+    shouldGrantAdminClaim(profileWrite.isAdmin, decodedToken.uid)
   );
 
   const sessionCookie = await auth.createSessionCookie(idToken, {
@@ -284,7 +278,7 @@ export async function getProfileForSessionCookie(
 
     await syncAdminCustomClaim(
       decoded.uid,
-      shouldGrantAdminClaim(userData?.isAdmin === true, decoded.uid),
+      shouldGrantAdminClaim(userData?.isAdmin === true, decoded.uid)
     );
 
     return profile;

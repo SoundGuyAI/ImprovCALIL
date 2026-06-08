@@ -21,11 +21,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <Header />
       <main className="mx-auto max-w-md px-4 py-10">
-        <Suspense
-          fallback={
-            <p className="text-center text-sm text-zinc-400">{t("loading")}</p>
-          }
-        >
+        <Suspense fallback={<p className="text-center text-sm text-zinc-400">{t("loading")}</p>}>
           <LoginPageContent />
         </Suspense>
       </main>

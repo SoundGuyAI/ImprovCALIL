@@ -20,6 +20,13 @@ export async function DELETE(request: Request) {
       maxAge: 0,
       path: "/",
     });
+    response.cookies.set("improv_cal_il_logged_in", "", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0,
+      path: "/",
+    });
 
     return response;
   } catch (error) {

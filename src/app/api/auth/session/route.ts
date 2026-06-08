@@ -26,6 +26,13 @@ export async function POST(request: Request) {
       maxAge: AUTH_SESSION_MAX_AGE_SECONDS,
       path: "/",
     });
+    response.cookies.set("improv_cal_il_logged_in", "true", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: AUTH_SESSION_MAX_AGE_SECONDS,
+      path: "/",
+    });
 
     return response;
   } catch (error) {
@@ -38,6 +45,13 @@ export async function DELETE() {
   const response = NextResponse.json({ ok: true });
   response.cookies.set(AUTH_SESSION_COOKIE, "", {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 0,
+    path: "/",
+  });
+  response.cookies.set("improv_cal_il_logged_in", "", {
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 0,

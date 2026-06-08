@@ -386,129 +386,129 @@ export default function AdminConsole() {
                   .map((sub) => {
                     const editTargetId = sub.targetDocumentId || sub.data?.id;
                     return (
-                    <div
-                      key={sub.id}
-                      className="glass-card rounded-xl p-5 border border-zinc-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
-                    >
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2 items-center">
-                          <span className="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-bold uppercase">
-                            {sub.type === "event" ? "Event Proposal" : "Organizer Listing"}
-                          </span>
-                          <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold uppercase">
-                            Source: {sub.source}
-                          </span>
-                        </div>
+                      <div
+                        key={sub.id}
+                        className="glass-card rounded-xl p-5 border border-zinc-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
+                      >
+                        <div className="flex flex-col gap-2">
+                          <div className="flex gap-2 items-center">
+                            <span className="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-bold uppercase">
+                              {sub.type === "event" ? "Event Proposal" : "Organizer Listing"}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold uppercase">
+                              Source: {sub.source}
+                            </span>
+                          </div>
 
-                        <h3 className="text-md font-bold text-white">{sub.data.name}</h3>
-                        <p className="text-xs text-zinc-400 max-w-2xl">{sub.data.description}</p>
+                          <h3 className="text-md font-bold text-white">{sub.data.name}</h3>
+                          <p className="text-xs text-zinc-400 max-w-2xl">{sub.data.description}</p>
 
-                        <div className="flex flex-wrap items-center gap-4 text-[10px] text-zinc-500 font-bold mt-1">
-                          {sub.data.location && <span>Location: {sub.data.location}</span>}
-                          {sub.data.time && (
-                            <span>Time: {new Date(sub.data.time).toLocaleString()}</span>
-                          )}
-                          {sub.submitterContact?.email && (
-                            <span>Submitter: {sub.submitterContact.email}</span>
-                          )}
-                        </div>
+                          <div className="flex flex-wrap items-center gap-4 text-[10px] text-zinc-500 font-bold mt-1">
+                            {sub.data.location && <span>Location: {sub.data.location}</span>}
+                            {sub.data.time && (
+                              <span>Time: {new Date(sub.data.time).toLocaleString()}</span>
+                            )}
+                            {sub.submitterContact?.email && (
+                              <span>Submitter: {sub.submitterContact.email}</span>
+                            )}
+                          </div>
 
-                        {(() => {
-                          const hasTarget =
-                            editTargetId &&
-                            (sub.type === "organizer"
-                              ? organizers.some((o) => o.id === editTargetId)
-                              : events.some((e) => e.id === editTargetId));
-                          if (!hasTarget) return null;
+                          {(() => {
+                            const hasTarget =
+                              editTargetId &&
+                              (sub.type === "organizer"
+                                ? organizers.some((o) => o.id === editTargetId)
+                                : events.some((e) => e.id === editTargetId));
+                            if (!hasTarget) return null;
 
-                          return (
-                            <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
-                              <h4 className="text-xs font-extrabold uppercase text-indigo-400">
-                                {locale === "he"
-                                  ? "השוואת שינויים (הצעת עריכה)"
-                                  : "Proposed Changes (Edit Request)"}
-                              </h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
-                                {/* Live version */}
-                                <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-900">
-                                  <div className="font-semibold text-zinc-500 mb-2 uppercase text-[9px] tracking-wider">
-                                    {locale === "he" ? "נוכחי באתר" : "Live Version"}
-                                  </div>
-                                  {(() => {
-                                    const original =
-                                      sub.type === "organizer"
-                                        ? organizers.find((o) => o.id === editTargetId)
-                                        : events.find((e) => e.id === editTargetId);
-                                    if (!original)
+                            return (
+                              <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
+                                <h4 className="text-xs font-extrabold uppercase text-indigo-400">
+                                  {locale === "he"
+                                    ? "השוואת שינויים (הצעת עריכה)"
+                                    : "Proposed Changes (Edit Request)"}
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
+                                  {/* Live version */}
+                                  <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-900">
+                                    <div className="font-semibold text-zinc-500 mb-2 uppercase text-[9px] tracking-wider">
+                                      {locale === "he" ? "נוכחי באתר" : "Live Version"}
+                                    </div>
+                                    {(() => {
+                                      const original =
+                                        sub.type === "organizer"
+                                          ? organizers.find((o) => o.id === editTargetId)
+                                          : events.find((e) => e.id === editTargetId);
+                                      if (!original)
+                                        return (
+                                          <span className="text-zinc-650 italic">
+                                            Record not found or deleted
+                                          </span>
+                                        );
                                       return (
-                                        <span className="text-zinc-650 italic">
-                                          Record not found or deleted
-                                        </span>
+                                        <div className="flex flex-col gap-1 text-zinc-400">
+                                          <div>
+                                            <strong className="text-zinc-500">Name:</strong>{" "}
+                                            {original.name}
+                                          </div>
+                                          <div>
+                                            <strong className="text-zinc-500">Region:</strong>{" "}
+                                            {original.region}
+                                          </div>
+                                          <div>
+                                            <strong className="text-zinc-500">Description:</strong>{" "}
+                                            {original.description?.substring(0, 100)}
+                                            {original.description?.length > 100 ? "..." : ""}
+                                          </div>
+                                        </div>
                                       );
-                                    return (
-                                      <div className="flex flex-col gap-1 text-zinc-400">
-                                        <div>
-                                          <strong className="text-zinc-500">Name:</strong>{" "}
-                                          {original.name}
-                                        </div>
-                                        <div>
-                                          <strong className="text-zinc-500">Region:</strong>{" "}
-                                          {original.region}
-                                        </div>
-                                        <div>
-                                          <strong className="text-zinc-500">Description:</strong>{" "}
-                                          {original.description?.substring(0, 100)}
-                                          {original.description?.length > 100 ? "..." : ""}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                                {/* Proposed version */}
-                                <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-900/30">
-                                  <div className="font-semibold text-indigo-400 mb-2 uppercase text-[9px] tracking-wider">
-                                    {locale === "he" ? "הצעת שינוי" : "Proposed Version"}
+                                    })()}
                                   </div>
-                                  <div className="flex flex-col gap-1 text-zinc-300">
-                                    <div>
-                                      <strong className="text-zinc-400">Name:</strong>{" "}
-                                      {sub.data.name}
+                                  {/* Proposed version */}
+                                  <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-900/30">
+                                    <div className="font-semibold text-indigo-400 mb-2 uppercase text-[9px] tracking-wider">
+                                      {locale === "he" ? "הצעת שינוי" : "Proposed Version"}
                                     </div>
-                                    <div>
-                                      <strong className="text-zinc-400">Region:</strong>{" "}
-                                      {sub.data.region}
-                                    </div>
-                                    <div>
-                                      <strong className="text-zinc-400">Description:</strong>{" "}
-                                      {sub.data.description?.substring(0, 100)}
-                                      {sub.data.description?.length > 100 ? "..." : ""}
+                                    <div className="flex flex-col gap-1 text-zinc-300">
+                                      <div>
+                                        <strong className="text-zinc-400">Name:</strong>{" "}
+                                        {sub.data.name}
+                                      </div>
+                                      <div>
+                                        <strong className="text-zinc-400">Region:</strong>{" "}
+                                        {sub.data.region}
+                                      </div>
+                                      <div>
+                                        <strong className="text-zinc-400">Description:</strong>{" "}
+                                        {sub.data.description?.substring(0, 100)}
+                                        {sub.data.description?.length > 100 ? "..." : ""}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
+                            );
+                          })()}
+                        </div>
 
-                      <div className="flex items-center gap-2.5 w-full md:w-auto">
-                        <button
-                          onClick={() => handleApprove(sub.id)}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 font-bold text-xs cursor-pointer"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>{tAdmin("approve")}</span>
-                        </button>
+                        <div className="flex items-center gap-2.5 w-full md:w-auto">
+                          <button
+                            onClick={() => handleApprove(sub.id)}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 font-bold text-xs cursor-pointer"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>{tAdmin("approve")}</span>
+                          </button>
 
-                        <button
-                          onClick={() => handleReject(sub.id)}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 font-bold text-xs cursor-pointer"
-                        >
-                          <X className="w-4 h-4" />
-                          <span>{tAdmin("reject")}</span>
-                        </button>
+                          <button
+                            onClick={() => handleReject(sub.id)}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 font-bold text-xs cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                            <span>{tAdmin("reject")}</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
                     );
                   })}
               </div>

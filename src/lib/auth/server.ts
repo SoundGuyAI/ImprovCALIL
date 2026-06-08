@@ -241,9 +241,13 @@ export async function deleteCurrentAccount(
     { merge: true }
   );
 
-  await batch.commit();
-  await syncAdminCustomClaim(profile.uid, false);
+  // Delete Auth user first to ensure account deletion is completed from Auth
+  // before mutating Firestore records (avoiding resurrectable profiles if auth.deleteUser fails).
   await auth.deleteUser(profile.uid);
+  await syncAdminCustomClaim(profile.uid, false);
+
+  // Then perform Firestore mutations
+  await batch.commit();
 }
 
 async function assertUsernameAvailable(username: string, uid: string): Promise<void> {

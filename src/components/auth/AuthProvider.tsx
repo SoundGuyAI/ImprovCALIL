@@ -108,6 +108,10 @@ export function AuthProvider({
       return;
     }
     return onAuthStateChanged(auth, async (nextUser) => {
+      if (signingInRef.current) {
+        return;
+      }
+
       setFirebaseUser(nextUser);
       if (!nextUser) {
         try {
@@ -117,10 +121,6 @@ export function AuthProvider({
         } finally {
           setLoading(false);
         }
-        return;
-      }
-
-      if (signingInRef.current) {
         return;
       }
 
@@ -142,9 +142,17 @@ export function AuthProvider({
     setLoading(true);
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
-      const nextProfile = await postSession(credential.user, locale);
-      setProfile(nextProfile);
-      return nextProfile;
+      try {
+        const nextProfile = await postSession(credential.user, locale);
+        setFirebaseUser(credential.user);
+        setProfile(nextProfile);
+        return nextProfile;
+      } catch (error) {
+        await firebaseSignOut(auth).catch(() => undefined);
+        setFirebaseUser(null);
+        setProfile(null);
+        throw error;
+      }
     } catch (error) {
       setProfile(null);
       throw error;
@@ -163,9 +171,17 @@ export function AuthProvider({
       setLoading(true);
       try {
         const credential = await signInWithEmailAndPassword(auth, email, password);
-        const nextProfile = await postSession(credential.user, locale);
-        setProfile(nextProfile);
-        return nextProfile;
+        try {
+          const nextProfile = await postSession(credential.user, locale);
+          setFirebaseUser(credential.user);
+          setProfile(nextProfile);
+          return nextProfile;
+        } catch (error) {
+          await firebaseSignOut(auth).catch(() => undefined);
+          setFirebaseUser(null);
+          setProfile(null);
+          throw error;
+        }
       } catch (error) {
         setProfile(null);
         throw error;
@@ -188,6 +204,7 @@ export function AuthProvider({
         const credential = await createUserWithEmailAndPassword(auth, email, password);
         try {
           const nextProfile = await postSession(credential.user, locale, requestedProfile);
+          setFirebaseUser(credential.user);
           setProfile(nextProfile);
           return nextProfile;
         } catch (error) {

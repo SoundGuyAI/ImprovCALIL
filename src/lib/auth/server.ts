@@ -253,11 +253,11 @@ export async function deleteCurrentAccount(
     },
     { merge: true }
   );
-  // Clear admin custom claims first while user exists, then delete Auth user, and finally commit Firestore mutations.
-  // This guarantees that failed Auth deletion leaves Firestore completely untouched, letting the user retry.
+  // Clear admin custom claims first while user exists, then commit Firestore mutations, and finally delete Auth user.
+  // This guarantees that if the Firestore commit fails, the Auth user is not orphaned with active PII.
   await syncAdminCustomClaim(profile.uid, false);
-  await auth.deleteUser(profile.uid);
   await batch.commit();
+  await auth.deleteUser(profile.uid);
 }
 
 async function assertUsernameAvailable(username: string, uid: string): Promise<void> {

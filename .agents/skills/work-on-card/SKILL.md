@@ -55,9 +55,10 @@ cd <path_to_worktree>/<CARD_ID>
 Work on the codebase inside the worktree to implement the ticket's requested changes. Follow project conventions, maintain documentation integrity, and make sure that you write appropriate tests (unit, e2e, etc.) to cover your changes.
 
 **Critical Workflow & Persistence Rules:**
-1. **Agent State Persistence**: As mandated by `AGENTS.md`, you MUST save your todo list and implementation plan in an `.agents/work/<branch_name>/` folder inside your worktree workspace (the setup script creates this for you). These files must be checked in with your branch so another agent can seamlessly take over if you stop.
-2. **Review `WORKFLOW.md`**: Read and adhere to the project's `WORKFLOW.md`. Pay special attention to the **Screenshot & Verification Policies**.
-3. **Screenshot Evidence**: If your changes involve UI or E2E testing, you must capture visual verification. Save screenshots under `.screenshots/<CARD_ID>/attempt-<number>/` using the helper at `e2e/helpers/screenshots.ts` (e.g., `captureScreenshot(page, filename)`). **Make sure to add and commit these screenshot files yourself** alongside your other changes.
+1. **Issue Tracking**: When you begin work, use the `linear-mcp-server` to transition the ticket status to **In Progress**.
+2. **Agent State Persistence**: As mandated by `AGENTS.md`, you MUST save your todo list and implementation plan in an `.agents/work/<branch_name>/` folder inside your worktree workspace (the setup script creates this for you). These files must be checked in with your branch so another agent can seamlessly take over if you stop.
+3. **Review `WORKFLOW.md`**: Read and adhere to the project's `WORKFLOW.md`. Pay special attention to the **Screenshot & Verification Policies**.
+4. **Screenshot Evidence**: If your changes involve UI or E2E testing, you must capture visual verification. Save screenshots under `.screenshots/<CARD_ID>/attempt-<number>/` using the helper at `e2e/helpers/screenshots.ts` (e.g., `captureScreenshot(page, filename)`). **Make sure to add and commit these screenshot files yourself** alongside your other changes.
 
 ---
 

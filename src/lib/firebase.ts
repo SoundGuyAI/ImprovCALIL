@@ -3,7 +3,7 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
-const firebaseConfig = {
+const requiredConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -12,8 +12,39 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const db: Firestore = getFirestore(app);
+const missingConfig = Object.entries(requiredConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
+
+const isConfigMissing = missingConfig.length > 0;
+
+const isMock =
+  isConfigMissing ||
+  !requiredConfig.projectId ||
+  requiredConfig.projectId === "mock-project-id" ||
+  requiredConfig.projectId.includes("mock");
+
+if (isConfigMissing && typeof window !== "undefined") {
+  console.warn(
+    `[Firebase Config Warning] Missing client configuration keys: ${missingConfig.join(", ")}. Falling back to mock data.`
+  );
+}
+
+let app: FirebaseApp = null as unknown as FirebaseApp;
+let db: Firestore = null as unknown as Firestore;
+
+if (!isConfigMissing) {
+  const firebaseConfig = {
+    apiKey: requiredConfig.apiKey,
+    authDomain: requiredConfig.authDomain,
+    projectId: requiredConfig.projectId,
+    storageBucket: requiredConfig.storageBucket,
+    messagingSenderId: requiredConfig.messagingSenderId,
+    appId: requiredConfig.appId,
+  };
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  db = getFirestore(app);
+}
 
 // Defer auth/storage until first use on the client. Eager getAuth() during SSR/build
 // with CI mock credentials can throw FirebaseError: auth/invalid-api-key.
@@ -73,4 +104,14 @@ function createLazyServiceProxy<T extends object>(getInstance: () => T): T {
 const auth = createLazyServiceProxy(getFirebaseAuth);
 const storage = createLazyServiceProxy(getFirebaseStorage);
 
-export { app, db, auth, storage, getFirebaseAuth, getFirebaseStorage };
+export {
+  app,
+  db,
+  auth,
+  storage,
+  getFirebaseAuth,
+  getFirebaseStorage,
+  isConfigMissing,
+  missingConfig,
+  isMock,
+};

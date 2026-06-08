@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev2": "next dev -p 3001",
+    "dev3": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -16,6 +18,7 @@
   },
   "dependencies": {
     "firebase": "^12.14.0",
+    "firebase-admin": "^13.10.0",
     "lucide-react": "^0.468.0",
     "next": "^15.5.18",
     "next-intl": "^4.13.0",

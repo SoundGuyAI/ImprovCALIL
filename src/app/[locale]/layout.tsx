@@ -3,6 +3,9 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import EnvConfigAlert from "@/components/EnvConfigAlert";
+import AppVersion from "@/components/AppVersion";
 import "../globals.css";
 
 const rubik = Rubik({
@@ -29,9 +32,17 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={locale === "he" ? "rtl" : "ltr"}>
       <body
-        className={`${rubik.variable} font-sans antialiased bg-zinc-950 text-zinc-100 min-h-screen`}
+        className={`${rubik.variable} font-sans antialiased bg-zinc-950 text-zinc-100 min-h-screen flex flex-col`}
       >
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          <EnvConfigAlert />
+          <AuthProvider locale={locale as "en" | "he"}>
+            <div className="flex-grow flex flex-col">{children}</div>
+            <div className="py-4 bg-zinc-950/20 border-t border-zinc-900/50">
+              <AppVersion />
+            </div>
+          </AuthProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

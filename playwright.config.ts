@@ -4,6 +4,7 @@ const PORT = process.env.PORT || "3000";
 
 export default defineConfig({
   testDir: "./e2e",
+  timeout: 60000, // 60 seconds timeout per test to prevent slow VM flakiness
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -20,7 +21,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: PORT === "3000" ? "npm run dev" : `npx next dev -p ${PORT}`,
+    command:
+      process.env.PLAYWRIGHT_START_PROD === "true"
+        ? `npx next start -p ${PORT}`
+        : PORT === "3000"
+          ? "npm run dev"
+          : `npx next dev -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
   },

@@ -182,7 +182,7 @@ export function buildUserProfileWrite(
     phone: editable.phone ?? normalizePhone(existingProfile?.phone),
     links: editable.links.length > 0 ? editable.links : storedLinks(existingProfile),
     bio: editable.bio ?? normalizeBio(existingProfile?.bio),
-    locale: normalizeAuthLocale(locale),
+    locale: normalizeAuthLocale(existingProfile?.locale ?? locale),
     isAdmin: existingProfile?.isAdmin === true,
     accountStatus: "active",
   };

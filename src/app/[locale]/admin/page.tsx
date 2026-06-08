@@ -383,7 +383,9 @@ export default function AdminConsole() {
               <div className="flex flex-col gap-4">
                 {submissions
                   .filter((s) => s.status === "pending")
-                  .map((sub) => (
+                  .map((sub) => {
+                    const editTargetId = sub.targetDocumentId || sub.data?.id;
+                    return (
                     <div
                       key={sub.id}
                       className="glass-card rounded-xl p-5 border border-zinc-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
@@ -411,7 +413,7 @@ export default function AdminConsole() {
                           )}
                         </div>
 
-                        {sub.targetDocumentId && (
+                        {editTargetId && (
                           <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
                             <h4 className="text-xs font-extrabold uppercase text-indigo-400">
                               {locale === "he"
@@ -427,8 +429,8 @@ export default function AdminConsole() {
                                 {(() => {
                                   const original =
                                     sub.type === "organizer"
-                                      ? organizers.find((o) => o.id === sub.targetDocumentId)
-                                      : events.find((e) => e.id === sub.targetDocumentId);
+                                      ? organizers.find((o) => o.id === editTargetId)
+                                      : events.find((e) => e.id === editTargetId);
                                   if (!original)
                                     return (
                                       <span className="text-zinc-650 italic">
@@ -497,7 +499,8 @@ export default function AdminConsole() {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
               </div>
             )}
           </div>

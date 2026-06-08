@@ -5,6 +5,7 @@ import { Save } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { normalizeUsername } from "@/lib/auth/profile";
+import { isSafeLocalizedPath, resolveSafeNextPath } from "@/lib/auth/redirect";
 import type { AuthProfile, ProfileLink } from "@/types/auth";
 
 function linksToText(links: ProfileLink[]): string {
@@ -43,6 +44,10 @@ export default function ProfileEditForm({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const storedUsername = profile.username ?? "";
+  const redirectPath = resolveSafeNextPath(
+    isSafeLocalizedPath(nextPath) ? nextPath : `/${profile.locale}${nextPath}`,
+    profile.locale
+  );
 
   const handleUsernameChange = (val: string) => {
     setUsername(val);
@@ -102,7 +107,7 @@ export default function ProfileEditForm({
       }
 
       await refreshProfile();
-      window.location.assign(nextPath);
+      window.location.assign(redirectPath);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : t("genericError"));
     } finally {
@@ -200,7 +205,7 @@ export default function ProfileEditForm({
         </button>
         <button
           type="button"
-          onClick={() => window.location.assign(nextPath)}
+          onClick={() => window.location.assign(redirectPath)}
           disabled={submitting}
           className="inline-flex items-center rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
         >

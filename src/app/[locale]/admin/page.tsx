@@ -68,18 +68,28 @@ export default function AdminConsole() {
   const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
+    async function loadSettings() {
+      try {
+        const cfg = await getSubmissionsConfig();
+        setAllowAnonymous(cfg.allowAnonymous);
+        persistedAllowAnonymousRef.current = cfg.allowAnonymous;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
     async function load() {
       setLoading(true);
       try {
         const evts = await getEvents({ includeHidden: true });
         const orgs = await getOrganizers({ includeHidden: true });
         const subs = await getPendingSubmissions();
-        const cfg = await getSubmissionsConfig();
         setEvents(evts);
         setOrganizers(orgs);
         setSubmissions(subs);
-        setAllowAnonymous(cfg.allowAnonymous);
-        persistedAllowAnonymousRef.current = cfg.allowAnonymous;
       } catch (err) {
         console.error(err);
       } finally {
@@ -95,12 +105,9 @@ export default function AdminConsole() {
       const evts = await getEvents({ includeHidden: true });
       const orgs = await getOrganizers({ includeHidden: true });
       const subs = await getPendingSubmissions();
-      const cfg = await getSubmissionsConfig();
       setEvents(evts);
       setOrganizers(orgs);
       setSubmissions(subs);
-      setAllowAnonymous(cfg.allowAnonymous);
-      persistedAllowAnonymousRef.current = cfg.allowAnonymous;
     } catch (err) {
       console.error(err);
     } finally {

@@ -93,6 +93,9 @@ export async function updateCurrentProfile(
   const userRef = db.collection(USERS_COLLECTION).doc(profile.uid);
   const snapshot = await userRef.get();
   const existing = snapshot.exists ? (snapshot.data() ?? null) : null;
+  if (existing?.accountStatus === "deleted") {
+    throw new Error("This account has been deleted");
+  }
 
   const existingUsername = typeof existing?.username === "string" ? existing.username : null;
   const isUsernameChanging = input.username !== undefined && input.username !== existingUsername;

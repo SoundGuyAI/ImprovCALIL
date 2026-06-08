@@ -196,27 +196,32 @@ export async function deleteCurrentAccount(
     });
   });
 
-  // 2. Orphan submissions by UID
+  // 2. Collect submission updates to avoid duplicate writes per document
+  const submissionUpdates = new Map<string, Record<string, unknown>>();
+
+  // Collect by UID
   const submissionsSnapshot = await db
     .collection("submissions")
     .where("ownerUid", "==", profile.uid)
     .get();
   submissionsSnapshot.docs.forEach((doc) => {
-    batch.update(doc.ref, {
+    submissionUpdates.set(doc.id, {
       ownerUid: null,
       ownerStatus: "orphaned",
       ownerDeletedAt: now,
     });
   });
 
-  // 3. Orphan submissions by Email
+  // Collect by Email
   if (profile.email) {
     const submissionsByEmailSnapshot = await db
       .collection("submissions")
       .where("submitterContact.email", "==", profile.email)
       .get();
     submissionsByEmailSnapshot.docs.forEach((doc) => {
-      batch.update(doc.ref, {
+      const existingUpdate = submissionUpdates.get(doc.id) || {};
+      submissionUpdates.set(doc.id, {
+        ...existingUpdate,
         submitterContact: {
           email: "deleted-user@soundguy.ai",
           phone: null,
@@ -227,7 +232,12 @@ export async function deleteCurrentAccount(
     });
   }
 
-  // 4. Mark user profile as deleted
+  // Apply all submission updates to the batch
+  submissionUpdates.forEach((data, id) => {
+    batch.update(db.collection("submissions").doc(id), data);
+  });
+
+  // 3. Mark user profile as deleted
   batch.set(
     db.collection(USERS_COLLECTION).doc(profile.uid),
     {
@@ -243,10 +253,11 @@ export async function deleteCurrentAccount(
     },
     { merge: true }
   );
-
+  // Clear admin custom claims first while user exists, then delete Auth user, and finally commit Firestore mutations.
+  // This guarantees that failed Auth deletion leaves Firestore completely untouched, letting the user retry.
   await syncAdminCustomClaim(profile.uid, false);
-  await batch.commit();
   await auth.deleteUser(profile.uid);
+  await batch.commit();
 }
 
 async function assertUsernameAvailable(username: string, uid: string): Promise<void> {
@@ -287,7 +298,7 @@ export async function getProfileForSessionCookie(
 
     await syncAdminCustomClaim(
       decoded.uid,
-      shouldGrantAdminClaim(userData?.isAdmin === true, decoded.uid)
+      shouldGrantAdminClaim(userData?.isAdmin === true || decoded.isAdmin === true, decoded.uid)
     );
 
     return profile;

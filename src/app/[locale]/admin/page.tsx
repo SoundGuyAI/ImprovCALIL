@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   getEvents,
@@ -63,6 +63,7 @@ export default function AdminConsole() {
 
   // Settings State
   const [allowAnonymous, setAllowAnonymous] = useState(true);
+  const persistedAllowAnonymousRef = useRef(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
 
@@ -78,6 +79,7 @@ export default function AdminConsole() {
         setOrganizers(orgs);
         setSubmissions(subs);
         setAllowAnonymous(cfg.allowAnonymous);
+        persistedAllowAnonymousRef.current = cfg.allowAnonymous;
       } catch (err) {
         console.error(err);
       } finally {
@@ -98,6 +100,7 @@ export default function AdminConsole() {
       setOrganizers(orgs);
       setSubmissions(subs);
       setAllowAnonymous(cfg.allowAnonymous);
+      persistedAllowAnonymousRef.current = cfg.allowAnonymous;
     } catch (err) {
       console.error(err);
     } finally {
@@ -108,12 +111,13 @@ export default function AdminConsole() {
   const handleSaveSettings = async () => {
     setSavingSettings(true);
     setSettingsError(null);
-    const previousAllowAnonymous = allowAnonymous;
+    const persistedAllowAnonymous = persistedAllowAnonymousRef.current;
     try {
       await updateSubmissionsConfig(allowAnonymous);
+      persistedAllowAnonymousRef.current = allowAnonymous;
     } catch (err) {
       console.error(err);
-      setAllowAnonymous(previousAllowAnonymous);
+      setAllowAnonymous(persistedAllowAnonymous);
       setSettingsError(
         locale === "he"
           ? "שמירת ההגדרות נכשלה. נסו שוב."

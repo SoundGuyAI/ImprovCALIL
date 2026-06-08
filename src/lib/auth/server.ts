@@ -3,7 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { FieldValue } from "firebase-admin/firestore";
 import { AUTH_SESSION_COOKIE, AUTH_SESSION_EXPIRES_IN_MS } from "@/lib/auth/constants";
-import { isMatchingAccountEmail } from "@/lib/auth/delete-account";
+import { buildActiveUserProfileRestore, isMatchingAccountEmail } from "@/lib/auth/delete-account";
 import {
   buildUserProfileWrite,
   normalizeAuthLocale,
@@ -180,6 +180,7 @@ export async function deleteCurrentAccount(
 
   const auth = getAdminAuth();
   const db = getAdminFirestore();
+  const userRef = db.collection(USERS_COLLECTION).doc(profile.uid);
   const now = FieldValue.serverTimestamp();
   const batch = db.batch();
 
@@ -229,7 +230,7 @@ export async function deleteCurrentAccount(
 
   // 4. Mark user profile as deleted
   batch.set(
-    db.collection(USERS_COLLECTION).doc(profile.uid),
+    userRef,
     {
       accountStatus: "deleted",
       displayName: "Deleted user",
@@ -244,12 +245,21 @@ export async function deleteCurrentAccount(
     { merge: true }
   );
 
-  // Perform Firestore mutations first
   await batch.commit();
 
-  // Then delete Auth user
-  await syncAdminCustomClaim(profile.uid, false);
-  await auth.deleteUser(profile.uid);
+  try {
+    await syncAdminCustomClaim(profile.uid, false);
+    await auth.deleteUser(profile.uid);
+  } catch (error) {
+    await userRef.set(
+      {
+        ...buildActiveUserProfileRestore(profile),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    throw error;
+  }
 }
 
 async function assertUsernameAvailable(username: string, uid: string): Promise<void> {

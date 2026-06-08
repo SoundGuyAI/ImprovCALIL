@@ -313,7 +313,7 @@ export async function createCustomTokenForCurrentProfile(): Promise<string | nul
     return null;
   }
 
-  return getAdminAuth().createCustomToken(profile.uid);
+  return getAdminAuth().createCustomToken(profile.uid, { isAdmin: true });
 }
 
 export async function getCurrentProfile(): Promise<AuthProfile | null> {

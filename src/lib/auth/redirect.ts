@@ -27,3 +27,7 @@ export function resolveSafeNextPath(value: string | null | undefined, locale: st
 
   return `/${fallbackLocale}`;
 }
+
+export function stripLocalePrefix(value: string): string {
+  return value.replace(/^\/(?:en|he)(?:\/|$)/, "/");
+}

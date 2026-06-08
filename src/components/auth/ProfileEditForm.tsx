@@ -5,7 +5,7 @@ import { Save } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { normalizeUsername } from "@/lib/auth/profile";
-import { isSafeLocalizedPath, resolveSafeNextPath } from "@/lib/auth/redirect";
+import { isSafeLocalizedPath, resolveSafeNextPath, stripLocalePrefix } from "@/lib/auth/redirect";
 import type { AuthProfile, ProfileLink } from "@/types/auth";
 import { useRouter } from "@/i18n/routing";
 
@@ -46,9 +46,11 @@ export default function ProfileEditForm({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const storedUsername = profile.username ?? "";
-  const redirectPath = resolveSafeNextPath(
-    isSafeLocalizedPath(nextPath) ? nextPath : `/${profile.locale}${nextPath}`,
-    profile.locale
+  const redirectPath = stripLocalePrefix(
+    resolveSafeNextPath(
+      isSafeLocalizedPath(nextPath) ? nextPath : `/${profile.locale}${nextPath}`,
+      profile.locale
+    )
   );
 
   const handleUsernameChange = (val: string) => {

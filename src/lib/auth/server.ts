@@ -281,6 +281,9 @@ export async function getProfileForSessionCookie(
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
     const snapshot = await db.collection(USERS_COLLECTION).doc(decoded.uid).get();
     const userData = snapshot.exists ? (snapshot.data() ?? null) : null;
+    if (userData?.accountStatus === "deleted") {
+      return null;
+    }
     const profile = toAuthProfile(userData, decoded.uid);
 
     await syncAdminCustomClaim(

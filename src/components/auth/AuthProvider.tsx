@@ -40,6 +40,23 @@ function toAuthUser(user: User): AuthUser {
   };
 }
 
+function profileToAuthUser(profile: AuthProfile): AuthUser {
+  return {
+    uid: profile.uid,
+    displayName: profile.displayName,
+    email: profile.email,
+  };
+}
+
+async function fetchCookieProfile(): Promise<AuthProfile | null> {
+  const response = await fetch("/api/auth/me", { cache: "no-store" });
+  if (!response.ok) {
+    return null;
+  }
+  const data = (await response.json()) as { profile: AuthProfile | null };
+  return data.profile;
+}
+
 async function postSession(
   user: User,
   locale: AuthLocale,
@@ -87,8 +104,13 @@ export function AuthProvider({
     return onAuthStateChanged(auth, async (nextUser) => {
       setFirebaseUser(nextUser);
       if (!nextUser) {
-        setProfile(null);
-        setLoading(false);
+        try {
+          setProfile(await fetchCookieProfile());
+        } catch {
+          setProfile(null);
+        } finally {
+          setLoading(false);
+        }
         return;
       }
 
@@ -183,14 +205,9 @@ export function AuthProvider({
       setProfile(null);
       return null;
     }
-    const response = await fetch("/api/auth/me", { cache: "no-store" });
-    if (!response.ok) {
-      setProfile(null);
-      return null;
-    }
-    const data = (await response.json()) as { profile: AuthProfile | null };
-    setProfile(data.profile);
-    return data.profile;
+    const nextProfile = await fetchCookieProfile();
+    setProfile(nextProfile);
+    return nextProfile;
   }, []);
 
   const deleteAccount = useCallback(async (email: string) => {
@@ -230,9 +247,15 @@ export function AuthProvider({
     return firebaseUser ? firebaseUser.getIdToken() : null;
   }, [firebaseUser]);
 
+  const user = useMemo<AuthUser | null>(
+    () =>
+      firebaseUser ? toAuthUser(firebaseUser) : profile ? profileToAuthUser(profile) : null,
+    [firebaseUser, profile]
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
-      user: firebaseUser ? toAuthUser(firebaseUser) : null,
+      user,
       profile,
       loading,
       signInWithGoogle,
@@ -244,7 +267,7 @@ export function AuthProvider({
       getIdToken,
     }),
     [
-      firebaseUser,
+      user,
       profile,
       loading,
       signInWithGoogle,

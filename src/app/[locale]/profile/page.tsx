@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Header from "@/components/Header";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DeleteAccountPanel from "@/components/auth/DeleteAccountPanel";
@@ -11,14 +11,15 @@ export default function ProfilePage() {
   const t = useTranslations("auth.profile");
   const tEdit = useTranslations("auth.profileEdit");
   const tMenu = useTranslations("auth.profileMenu");
+  const locale = useLocale();
   const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login?next=/profile");
+      router.replace(`/login?next=${encodeURIComponent(`/${locale}/profile`)}`);
     }
-  }, [loading, user, router]);
+  }, [loading, locale, user, router]);
 
   if (loading || !user || !profile) {
     return (

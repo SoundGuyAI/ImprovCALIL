@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Header from "@/components/Header";
 import ProfileEditForm from "@/components/auth/ProfileEditForm";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -22,14 +22,15 @@ function ProfileEditPageContent() {
 
 export default function ProfileEditPage() {
   const t = useTranslations("auth.profileMenu");
+  const locale = useLocale();
   const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login?next=/profile/edit");
+      router.replace(`/login?next=${encodeURIComponent(`/${locale}/profile/edit`)}`);
     }
-  }, [loading, user, router]);
+  }, [loading, locale, user, router]);
 
   if (loading || !user || !profile) {
     return (

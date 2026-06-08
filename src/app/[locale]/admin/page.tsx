@@ -64,6 +64,7 @@ export default function AdminConsole() {
   // Settings State
   const [allowAnonymous, setAllowAnonymous] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -106,10 +107,18 @@ export default function AdminConsole() {
 
   const handleSaveSettings = async () => {
     setSavingSettings(true);
+    setSettingsError(null);
+    const previousAllowAnonymous = allowAnonymous;
     try {
       await updateSubmissionsConfig(allowAnonymous);
     } catch (err) {
       console.error(err);
+      setAllowAnonymous(previousAllowAnonymous);
+      setSettingsError(
+        locale === "he"
+          ? "שמירת ההגדרות נכשלה. נסו שוב."
+          : "Failed to save settings. Please try again."
+      );
     } finally {
       setSavingSettings(false);
     }
@@ -876,6 +885,12 @@ export default function AdminConsole() {
                   <div className="w-11 h-6 bg-zinc-850 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-455 after:border-zinc-350 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white peer-checked:after:border-white"></div>
                 </label>
               </div>
+
+              {settingsError ? (
+                <p className="text-sm text-red-400" role="alert">
+                  {settingsError}
+                </p>
+              ) : null}
 
               {/* Action Button */}
               <button

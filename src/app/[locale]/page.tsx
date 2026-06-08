@@ -21,6 +21,9 @@ import {
   ChevronLeft,
   Sparkles,
   Info,
+  List,
+  CalendarDays,
+  CalendarRange,
 } from "lucide-react";
 
 const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other"];
@@ -50,6 +53,11 @@ export default function Home() {
 
   // Hero Featured Carousel State
   const [featuredIndex, setFeaturedIndex] = useState(0);
+
+  // View & Date Navigation State
+  const [viewMode, setViewMode] = useState<"list" | "week" | "month">("list");
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(() => new Date());
 
   useEffect(() => {
     async function load() {
@@ -161,6 +169,112 @@ export default function Home() {
   const formatTime = (timestamp: number) => {
     const d = new Date(timestamp);
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  // Date Helpers for Calendar Views
+  const getStartOfWeek = (d: Date): Date => {
+    const date = new Date(d.getTime());
+    const day = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    date.setDate(date.getDate() - day);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const getWeekDays = (startOfWeek: Date): Date[] => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startOfWeek.getTime());
+      d.setDate(d.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  };
+
+  const isSameDay = (d1: Date, d2: Date): boolean => {
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
+
+  const getMonthDaysGrid = (refDate: Date): Date[] => {
+    const year = refDate.getFullYear();
+    const month = refDate.getMonth();
+
+    // First day of the current month
+    const firstDay = new Date(year, month, 1);
+    const firstDayOfWeek = firstDay.getDay(); // Sunday starts at 0
+
+    // Start date is the Sunday of the week containing the 1st of the month
+    const startDate = new Date(firstDay.getTime());
+    startDate.setDate(startDate.getDate() - firstDayOfWeek);
+
+    const cells: Date[] = [];
+    // 42 cells (6 weeks of 7 days)
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(startDate.getTime());
+      d.setDate(d.getDate() + i);
+      cells.push(d);
+    }
+    return cells;
+  };
+
+  const getEventsForDay = (dayDate: Date): FirestoreEvent[] => {
+    return filteredEvents.filter((event) => isSameDay(new Date(event.time), dayDate));
+  };
+
+  const handlePrev = () => {
+    if (viewMode === "week") {
+      setCurrentDate((prev) => {
+        const nextD = new Date(prev.getTime());
+        nextD.setDate(nextD.getDate() - 7);
+        return nextD;
+      });
+    } else if (viewMode === "month") {
+      setCurrentDate((prev) => {
+        const nextD = new Date(prev.getTime());
+        nextD.setMonth(nextD.getMonth() - 1);
+        return nextD;
+      });
+    }
+  };
+
+  const handleNext = () => {
+    if (viewMode === "week") {
+      setCurrentDate((prev) => {
+        const nextD = new Date(prev.getTime());
+        nextD.setDate(nextD.getDate() + 7);
+        return nextD;
+      });
+    } else if (viewMode === "month") {
+      setCurrentDate((prev) => {
+        const nextD = new Date(prev.getTime());
+        nextD.setMonth(nextD.getMonth() + 1);
+        return nextD;
+      });
+    }
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedCalendarDay(today);
+  };
+
+  const getWeekRangeLabel = (): string => {
+    const start = getStartOfWeek(currentDate);
+    const end = new Date(start.getTime());
+    end.setDate(end.getDate() + 6);
+
+    const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+    const localeStr = locale === "he" ? "he-IL" : "en-US";
+    return `${start.toLocaleDateString(localeStr, options)} - ${end.toLocaleDateString(localeStr, options)}`;
+  };
+
+  const getMonthLabel = (): string => {
+    const localeStr = locale === "he" ? "he-IL" : "en-US";
+    return currentDate.toLocaleDateString(localeStr, { month: "long", year: "numeric" });
   };
 
   // Group events by day for weekly view
@@ -376,89 +490,422 @@ export default function Home() {
 
         {/* 3. EVENT GRID / CHRONOLOGICAL CALENDAR FEED */}
         <section className="w-full flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-900 pb-4">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-indigo-400" />
+              <span>{locale === "he" ? "לוח אירועים" : "Event Schedule"}</span>
+            </h3>
+
+            {/* View Mode Switcher */}
+            <div className="flex bg-zinc-900/40 border border-zinc-800 rounded-xl p-1 w-full sm:w-auto self-end">
+              <button
+                id="view-mode-list"
+                onClick={() => setViewMode("list")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                  viewMode === "list"
+                    ? "bg-indigo-600 text-white shadow"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <List className="w-4 h-4" />
+                <span>{t("listView")}</span>
+              </button>
+              <button
+                id="view-mode-week"
+                onClick={() => setViewMode("week")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                  viewMode === "week"
+                    ? "bg-indigo-600 text-white shadow"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <CalendarRange className="w-4 h-4" />
+                <span>{t("weekView")}</span>
+              </button>
+              <button
+                id="view-mode-month"
+                onClick={() => setViewMode("month")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                  viewMode === "month"
+                    ? "bg-indigo-600 text-white shadow"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <CalendarDays className="w-4 h-4" />
+                <span>{t("monthView")}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Calendar Navigation Bar (only for Week and Month views) */}
+          {viewMode !== "list" && (
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-zinc-900/30 border border-zinc-800/80 rounded-2xl p-4 w-full">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex gap-2">
+                  <button
+                    id="cal-prev-btn"
+                    onClick={handlePrev}
+                    className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                  >
+                    {t("prev")}
+                  </button>
+                  <button
+                    id="cal-today-btn"
+                    onClick={handleToday}
+                    className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                  >
+                    {t("today")}
+                  </button>
+                  <button
+                    id="cal-next-btn"
+                    onClick={handleNext}
+                    className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                  >
+                    {t("next")}
+                  </button>
+                </div>
+              </div>
+              <h3 className="text-lg font-black text-white capitalize text-center sm:text-left rtl:sm:text-right">
+                {viewMode === "week" ? getWeekRangeLabel() : getMonthLabel()}
+              </h3>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-zinc-400 text-sm gap-2">
               <div className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-indigo-500 animate-spin"></div>
               <span>{t("loading")}</span>
             </div>
-          ) : filteredEvents.length === 0 ? (
-            <div className="glass-card rounded-2xl py-16 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
-              <span>{t("noEvents")}</span>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-8">
-              {Object.keys(groupedEvents).map((dayStr) => (
-                <div key={dayStr} className="flex flex-col gap-4">
-                  {/* Date Heading */}
-                  <h4 className="text-md sm:text-lg font-bold text-indigo-400 border-b border-zinc-900 pb-2 capitalize">
-                    {dayStr}
-                  </h4>
+          ) : viewMode === "list" ? (
+            filteredEvents.length === 0 ? (
+              <div className="glass-card rounded-2xl py-16 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
+                <span>{t("noEvents")}</span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-8">
+                {Object.keys(groupedEvents).map((dayStr) => (
+                  <div key={dayStr} className="flex flex-col gap-4">
+                    {/* Date Heading */}
+                    <h4 className="text-md sm:text-lg font-bold text-indigo-400 border-b border-zinc-900 pb-2 capitalize">
+                      {dayStr}
+                    </h4>
 
-                  {/* Events of the day */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {groupedEvents[dayStr].map((event) => (
-                      <div
-                        key={event.id}
-                        className="glass-card rounded-xl p-5 flex flex-col justify-between gap-4 border border-zinc-900"
+                    {/* Events of the day */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {groupedEvents[dayStr].map((event) => (
+                        <div
+                          key={event.id}
+                          className="glass-card rounded-xl p-5 flex flex-col justify-between gap-4 border border-zinc-900"
+                        >
+                          <div className="flex flex-col gap-2">
+                            {/* Badges bar */}
+                            <div className="flex flex-wrap gap-1.5 items-center">
+                              <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold">
+                                {tRegions(event.region)}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                                  event.cost === "Free"
+                                    ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+                                    : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                                }`}
+                              >
+                                {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[10px] text-indigo-400 font-semibold uppercase">
+                                {event.language}
+                              </span>
+                            </div>
+
+                            <h5 className="text-md sm:text-lg font-black text-white leading-snug">
+                              {event.name}
+                            </h5>
+                            <p className="text-xs text-indigo-400 font-bold">
+                              {event.organizerId ? (
+                                <a
+                                  href={`/${locale}/organizers/${event.organizerId}`}
+                                  className="hover:underline text-indigo-400"
+                                >
+                                  {event.organizerName}
+                                </a>
+                              ) : (
+                                <span>{event.organizerName}</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-zinc-400 line-clamp-2 mt-1">
+                              {event.description}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between border-t border-zinc-900 pt-3 mt-1">
+                            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-bold">
+                              <Clock className="w-3.5 h-3.5 text-zinc-600" />
+                              <span>{formatTime(event.time)}</span>
+                            </div>
+
+                            <button
+                              onClick={() => setSelectedEvent(event)}
+                              className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                            >
+                              {t("details")}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : viewMode === "week" ? (
+            <div id="week-view-grid" className="grid grid-cols-1 md:grid-cols-7 gap-4 w-full">
+              {getWeekDays(getStartOfWeek(currentDate)).map((day) => {
+                const dayEvents = getEventsForDay(day);
+                const isToday = isSameDay(day, new Date());
+                const localeStr = locale === "he" ? "he-IL" : "en-US";
+                const dayName = day.toLocaleDateString(localeStr, { weekday: "short" });
+                const dayNum = day.getDate();
+
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={`flex flex-col min-h-[250px] rounded-xl border p-3 bg-zinc-900/20 transition-all ${
+                      isToday
+                        ? "border-indigo-500 bg-indigo-500/5 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                        : "border-zinc-800"
+                    }`}
+                  >
+                    {/* Day Header */}
+                    <div className="flex justify-between items-center border-b border-zinc-800 pb-2 mb-2">
+                      <span
+                        className={`text-xs font-bold uppercase tracking-wider ${isToday ? "text-indigo-400" : "text-zinc-500"}`}
                       >
-                        <div className="flex flex-col gap-2">
-                          {/* Badges bar */}
-                          <div className="flex flex-wrap gap-1.5 items-center">
-                            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold">
+                        {dayName}
+                      </span>
+                      <span
+                        className={`text-sm font-black rounded-full w-6 h-6 flex items-center justify-center ${
+                          isToday ? "bg-indigo-600 text-white" : "text-zinc-300"
+                        }`}
+                      >
+                        {dayNum}
+                      </span>
+                    </div>
+
+                    {/* Day Events list */}
+                    <div className="flex flex-col gap-2 flex-grow overflow-y-auto max-h-[200px] pr-1">
+                      {dayEvents.length === 0 ? (
+                        <div className="text-[11px] text-zinc-500 italic mt-2 text-center">
+                          {locale === "he" ? "אין אירועים" : "No events"}
+                        </div>
+                      ) : (
+                        dayEvents.map((event) => (
+                          <button
+                            key={event.id}
+                            onClick={() => setSelectedEvent(event)}
+                            className="group flex flex-col text-left rtl:text-right p-2 rounded-lg bg-zinc-900 border border-zinc-800/80 hover:border-indigo-500 hover:bg-zinc-800 transition-all cursor-pointer w-full"
+                          >
+                            <span className="text-[10px] text-indigo-400 font-bold">
+                              {formatTime(event.time)}
+                            </span>
+                            <span className="text-xs font-black text-white line-clamp-2 leading-snug group-hover:text-indigo-400 transition-colors mt-0.5">
+                              {event.name}
+                            </span>
+                            <span className="text-[9px] text-zinc-500 mt-1 uppercase font-semibold">
                               {tRegions(event.region)}
                             </span>
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                                event.cost === "Free"
-                                  ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
-                                  : "bg-amber-500/5 border-amber-500/20 text-amber-400"
-                              }`}
-                            >
-                              {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
-                            </span>
-                            <span className="px-2 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[10px] text-indigo-400 font-semibold uppercase">
-                              {event.language}
-                            </span>
-                          </div>
-
-                          <h5 className="text-md sm:text-lg font-black text-white leading-snug">
-                            {event.name}
-                          </h5>
-                          <p className="text-xs text-indigo-400 font-bold">
-                            {event.organizerId ? (
-                              <a
-                                href={`/${locale}/organizers/${event.organizerId}`}
-                                className="hover:underline text-indigo-400"
-                              >
-                                {event.organizerName}
-                              </a>
-                            ) : (
-                              <span>{event.organizerName}</span>
-                            )}
-                          </p>
-                          <p className="text-xs text-zinc-400 line-clamp-2 mt-1">
-                            {event.description}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between border-t border-zinc-900 pt-3 mt-1">
-                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-bold">
-                            <Clock className="w-3.5 h-3.5 text-zinc-600" />
-                            <span>{formatTime(event.time)}</span>
-                          </div>
-
-                          <button
-                            onClick={() => setSelectedEvent(event)}
-                            className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
-                          >
-                            {t("details")}
                           </button>
-                        </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6 w-full animate-in fade-in duration-200">
+              {/* Month View Grid */}
+              <div
+                id="month-view-grid"
+                className="grid grid-cols-7 gap-1 md:gap-2 w-full bg-zinc-900/10 border border-zinc-800/80 rounded-2xl p-2 md:p-4"
+              >
+                {/* Day of week headers */}
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, idx) => {
+                  const label =
+                    locale === "he" ? ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"][idx] : dayName;
+                  return (
+                    <div
+                      key={dayName}
+                      className="text-center text-xs font-bold text-zinc-500 py-2 uppercase border-b border-zinc-800"
+                    >
+                      {label}
+                    </div>
+                  );
+                })}
+
+                {/* Grid cells */}
+                {getMonthDaysGrid(currentDate).map((day) => {
+                  const dayEvents = getEventsForDay(day);
+                  const isToday = isSameDay(day, new Date());
+                  const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                  const isSelected = selectedCalendarDay && isSameDay(day, selectedCalendarDay);
+
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      onClick={() => setSelectedCalendarDay(day)}
+                      className={`flex flex-col justify-between p-1 md:p-2.5 rounded-xl transition-all cursor-pointer min-h-[60px] md:min-h-[120px] ${
+                        isCurrentMonth ? "bg-zinc-900/30" : "bg-zinc-950/10 text-zinc-700"
+                      } ${
+                        isToday
+                          ? "border border-indigo-500/80 shadow-[0_0_10px_rgba(99,102,241,0.05)]"
+                          : isSelected
+                            ? "border border-zinc-500"
+                            : "border border-zinc-800 hover:border-zinc-700"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span
+                          className={`text-[10px] md:text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
+                            isToday
+                              ? "bg-indigo-600 text-white font-black"
+                              : isSelected
+                                ? "bg-zinc-700 text-zinc-100"
+                                : isCurrentMonth
+                                  ? "text-zinc-400"
+                                  : "text-zinc-500"
+                          }`}
+                        >
+                          {day.getDate()}
+                        </span>
+                        {/* Event count badge on desktop */}
+                        {dayEvents.length > 0 && (
+                          <span className="hidden md:inline-flex px-1.5 py-0.5 rounded bg-indigo-500/10 text-[9px] font-bold text-indigo-400">
+                            {dayEvents.length}
+                          </span>
+                        )}
                       </div>
-                    ))}
+
+                      {/* Desktop event links inside cells */}
+                      <div className="hidden md:flex flex-col gap-1 mt-2 overflow-y-auto max-h-[70px] pr-0.5">
+                        {dayEvents.slice(0, 3).map((event) => (
+                          <button
+                            key={event.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEvent(event);
+                            }}
+                            className="text-left rtl:text-right text-[10px] font-semibold text-indigo-400 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:text-white px-1.5 py-0.5 rounded truncate w-full transition-all"
+                          >
+                            {formatTime(event.time)} {event.name}
+                          </button>
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <span className="text-[9px] text-zinc-500 italic px-1 font-bold">
+                            +{dayEvents.length - 3} {locale === "he" ? "עוד" : "more"}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Mobile indicators (dots) */}
+                      {dayEvents.length > 0 && (
+                        <div className="flex md:hidden justify-center gap-0.5 mt-auto pb-1">
+                          {dayEvents.slice(0, 3).map((event) => (
+                            <span
+                              key={event.id}
+                              className={`w-1 h-1 rounded-full ${
+                                event.cost === "Free" ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                            />
+                          ))}
+                          {dayEvents.length > 3 && (
+                            <span className="w-1 h-1 rounded-full bg-zinc-500" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Month View Selected Day Events Panel */}
+              {selectedCalendarDay && (
+                <div className="border border-zinc-800 bg-zinc-900/10 rounded-2xl p-5 flex flex-col gap-4">
+                  <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+                    <h4 className="text-sm sm:text-md font-bold text-white flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                      <span>
+                        {selectedCalendarDay.toLocaleDateString(
+                          locale === "he" ? "he-IL" : "en-US",
+                          {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )}
+                      </span>
+                    </h4>
+                    <span className="text-xs text-zinc-500 font-bold bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-lg">
+                      {getEventsForDay(selectedCalendarDay).length}{" "}
+                      {locale === "he" ? "אירועים" : "events"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {getEventsForDay(selectedCalendarDay).length === 0 ? (
+                      <p className="text-zinc-500 text-sm italic py-2">
+                        {locale === "he"
+                          ? "אין אירועים ביום זה. נסו לבדוק תאריכים אחרים או לשנות את הסינונים!"
+                          : "No events on this day. Try checking other dates or clearing filters!"}
+                      </p>
+                    ) : (
+                      getEventsForDay(selectedCalendarDay).map((event) => (
+                        <div
+                          key={event.id}
+                          className="glass-card rounded-xl p-4 flex flex-col justify-between gap-3 border border-zinc-800"
+                        >
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex gap-1.5 items-center">
+                              <span className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[9px] text-zinc-400 font-semibold">
+                                {tRegions(event.region)}
+                              </span>
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border ${
+                                  event.cost === "Free"
+                                    ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+                                    : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                                }`}
+                              >
+                                {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[9px] text-indigo-400 font-semibold uppercase">
+                                {event.language}
+                              </span>
+                            </div>
+                            <h5 className="text-sm font-bold text-white leading-snug">
+                              {event.name}
+                            </h5>
+                            <p className="text-xs text-zinc-400 line-clamp-2">
+                              {event.description}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between border-t border-zinc-900 pt-2 mt-1">
+                            <span className="text-[10px] text-zinc-500 font-semibold">
+                              {formatTime(event.time)}
+                            </span>
+                            <button
+                              onClick={() => setSelectedEvent(event)}
+                              className="px-2.5 py-1 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                            >
+                              {t("details")}
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </section>

@@ -16,7 +16,13 @@
     "edit": "ערוך",
     "cancel": "ביטול",
     "unknown": "לא ידוע",
-    "featured": "מומלץ"
+    "featured": "מומלץ",
+    "listView": "תצוגת רשימה",
+    "weekView": "תצוגת שבוע",
+    "monthView": "תצוגת חודש",
+    "today": "היום",
+    "next": "הבא",
+    "prev": "הקודם"
   },
   "Navigation": {
     "calendar": "לוח אירועים",

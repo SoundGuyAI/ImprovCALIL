@@ -244,11 +244,8 @@ export async function deleteCurrentAccount(
     { merge: true }
   );
 
-  // Perform Firestore mutations first
-  await batch.commit();
-
-  // Then delete Auth user
   await syncAdminCustomClaim(profile.uid, false);
+  await batch.commit();
   await auth.deleteUser(profile.uid);
 }
 

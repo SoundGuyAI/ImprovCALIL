@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Organizer Record",
+  "description": "Schema representing a single Israeli improv organizer record",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the organizer"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["Group", "School", "Theater", "Other"],
+      "description": "The category of the organizer"
+    },
+    "description": {
+      "type": "string",
+      "description": "A description of the organizer's activities"
+    },
+    "region": {
+      "type": "string",
+      "enum": ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"],
+      "description": "The primary region where the organizer operates"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["he", "en"]
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Languages supported/used by the organizer"
+    },
+    "logoUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URL to the organizer's logo or image"
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The destination URL"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Website",
+              "Facebook",
+              "Facebook event",
+              "WhatsApp group",
+              "Instagram",
+              "Other"
+            ],
+            "description": "The type of the link"
+          },
+          "label": {
+            "type": "string",
+            "description": "Optional human-readable label for the link"
+          }
+        },
+        "required": ["url", "type"],
+        "additionalProperties": false
+      },
+      "description": "A list of typed links associated with the organizer"
+    }
+  },
+  "required": ["name", "type", "description", "region", "languages"],
+  "additionalProperties": false
+}

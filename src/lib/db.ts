@@ -193,7 +193,7 @@ function getMockEvents(): FirestoreEvent[] {
       organizerId: "org-haifa-theater",
       organizerName: "Haifa Improv Theater",
       description:
-        "Three days of shows, jams, and international guest workshops on the bay. Re-rendered static index test.",
+        "Three days of shows, jams, and international guest workshops on the bay.",
       time: baseTime + 8 * 24 * 60 * 60 * 1000,
       endTime: baseTime + 11 * 24 * 60 * 60 * 1000,
       recurrence: "one-time",

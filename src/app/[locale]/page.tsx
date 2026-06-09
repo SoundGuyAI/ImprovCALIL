@@ -798,6 +798,7 @@ export default function Home() {
                             key={event.id}
                             onClick={(e) => {
                               e.stopPropagation();
+                              setSelectedCalendarDay(day);
                               setSelectedEvent(event);
                             }}
                             className="text-left rtl:text-right text-[10px] font-semibold text-indigo-400 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:text-white px-1.5 py-0.5 rounded truncate w-full transition-all"

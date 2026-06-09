@@ -1,7 +1,7 @@
 [
   {
     "name": "Improv Theater Israel / תיאטרון האימפרוב",
-    "type": "Theater",
+    "type": "School",
     "description": "Main improv school & performance home in Israel (since 2007). Courses, jams, festival, long-form shows (e.g. שלושה מאלתרים). Tel Aviv · Haifa · Jerusalem.",
     "region": "Tel-Aviv",
     "languages": ["he", "en"],
@@ -113,7 +113,7 @@
     "name": "Shlofta / שלופתא",
     "type": "Group",
     "description": "Established improv group (~12+ years): corporate workshops + improv show in one session. Hebrew & English.",
-    "region": "Tel-Aviv",
+    "region": "Other areas",
     "languages": ["he", "en"],
     "links": [
       {
@@ -172,7 +172,7 @@
   },
   {
     "name": "Improv NOW!",
-    "type": "Group",
+    "type": "Other",
     "description": "WhatsApp group for instant/current updates on improv jams, workshops, and community events.",
     "region": "Tel-Aviv",
     "languages": ["he", "en"],

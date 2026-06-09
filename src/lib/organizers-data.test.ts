@@ -28,9 +28,9 @@ const organizers = JSON.parse(readFileSync(dataPath, "utf-8")) as ExpectedOrgani
 describe("organizer schema and data integrity", () => {
   it("schema defines the correct structure and enums", () => {
     expect(schema.$schema).toBe("http://json-schema.org/draft-07/schema#");
-    expect(schema.type).toBe("object");
-    expect(schema.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
-    expect(schema.properties.region.enum).toEqual([
+    expect(schema.type).toBe("array");
+    expect(schema.items.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
+    expect(schema.items.properties.region.enum).toEqual([
       "Tel-Aviv",
       "Jerusalem",
       "Beer-Sheva",
@@ -38,8 +38,8 @@ describe("organizer schema and data integrity", () => {
       "Hasharon",
       "Other areas",
     ]);
-    expect(schema.properties.languages.items.enum).toEqual(["he", "en"]);
-    expect(schema.properties.links.items.properties.type.enum).toEqual([
+    expect(schema.items.properties.languages.items.enum).toEqual(["he", "en"]);
+    expect(schema.items.properties.links.items.properties.type.enum).toEqual([
       "Website",
       "Facebook",
       "Facebook event",
@@ -53,10 +53,10 @@ describe("organizer schema and data integrity", () => {
     expect(Array.isArray(organizers)).toBe(true);
     expect(organizers.length).toBe(17);
 
-    const validTypes = schema.properties.type.enum;
-    const validRegions = schema.properties.region.enum;
-    const validLanguages = schema.properties.languages.items.enum;
-    const validLinkTypes = schema.properties.links.items.properties.type.enum;
+    const validTypes = schema.items.properties.type.enum;
+    const validRegions = schema.items.properties.region.enum;
+    const validLanguages = schema.items.properties.languages.items.enum;
+    const validLinkTypes = schema.items.properties.links.items.properties.type.enum;
 
     organizers.forEach((org: ExpectedOrganizer, idx: number) => {
       const name = org.name;

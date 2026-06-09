@@ -51,7 +51,7 @@ describe("organizer schema and data integrity", () => {
 
   it("israeli_improv_organizers.json contains valid data conforming to the schema", () => {
     expect(Array.isArray(organizers)).toBe(true);
-    expect(organizers.length).toBeGreaterThan(0);
+    expect(organizers.length).toBe(17);
 
     const validTypes = schema.properties.type.enum;
     const validRegions = schema.properties.region.enum;
@@ -71,6 +71,9 @@ describe("organizer schema and data integrity", () => {
 
       expect(Array.isArray(org.languages), `Organizer #${idx} languages is array`).toBe(true);
       expect(org.languages.length, `Organizer #${idx} languages is not empty`).toBeGreaterThan(0);
+      expect(org.languages.length, `Organizer #${idx} languages must be unique`).toBe(
+        new Set(org.languages).size
+      );
       org.languages.forEach((lang: string) => {
         expect(validLanguages, `Organizer #${idx} language "${lang}"`).toContain(lang);
       });

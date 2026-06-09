@@ -14,6 +14,11 @@ import {
   writeBatch,
 } from "firebase/firestore";
 
+function normalizeRegion(region?: string | null): string {
+  if (!region || region === "Other") return "Other areas";
+  return region;
+}
+
 export interface EventLink {
   url: string;
   type: string;
@@ -256,7 +261,7 @@ function getMockOrganizers(): FirestoreOrganizer[] {
       name,
       type: org.type || "Other",
       description,
-      region: org.region === "Other areas" ? "Other" : org.region || "Other",
+      region: normalizeRegion(org.region),
       languages: org.languages || ["he"],
       publishStatus: "published",
       hidden: false,
@@ -358,7 +363,12 @@ export async function getEvents(filters?: {
     const filtered: FirestoreEvent[] = [];
     for (const data of allEvents) {
       if (!filters?.includeHidden && data.hidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (
         filters?.type &&
         filters.type !== "all" &&
@@ -387,7 +397,12 @@ export async function getEvents(filters?: {
 
       // Client-side filtering to bypass Firestore index dependencies on first load
       if (!filters?.includeHidden && data.hidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (
         filters?.type &&
         filters.type !== "all" &&
@@ -415,7 +430,7 @@ export async function getEvents(filters?: {
         recurrence: data.recurrence || "one-time",
         location: data.location || "",
         mapLink: data.mapLink,
-        region: data.region || "Other",
+        region: normalizeRegion(data.region),
         language: data.language || "he",
         cost: data.cost || "Free",
         access: data.access || "Open",
@@ -444,7 +459,12 @@ export async function getOrganizers(filters?: {
     for (const data of allOrgs) {
       if (!filters?.includeHidden && data.hidden) continue;
       if (data.publishStatus !== "published" && !filters?.includeHidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (filters?.type && filters.type !== "all" && data.type !== filters.type) continue;
       filtered.push(data);
     }
@@ -461,7 +481,12 @@ export async function getOrganizers(filters?: {
 
       if (!filters?.includeHidden && data.hidden) continue;
       if (data.publishStatus !== "published" && !filters?.includeHidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (filters?.type && filters.type !== "all" && data.type !== filters.type) continue;
 
       const links = await fetchLinksForParent(d.id);
@@ -471,7 +496,7 @@ export async function getOrganizers(filters?: {
         name: data.name || "",
         type: data.type || "Other",
         description: data.description || "",
-        region: data.region || "Other",
+        region: normalizeRegion(data.region),
         languages: data.languages || ["he"],
         logoUrl: data.logoUrl,
         publishStatus: data.publishStatus || "draft",
@@ -516,7 +541,7 @@ export async function getOrganizerDetails(id: string): Promise<{
       name: data.name || "",
       type: data.type || "Other",
       description: data.description || "",
-      region: data.region || "Other",
+      region: normalizeRegion(data.region),
       languages: data.languages || ["he"],
       logoUrl: data.logoUrl,
       publishStatus: data.publishStatus || "draft",
@@ -550,7 +575,7 @@ export async function getOrganizerDetails(id: string): Promise<{
         recurrence: evtData.recurrence || "one-time",
         location: evtData.location || "",
         mapLink: evtData.mapLink,
-        region: evtData.region || "Other",
+        region: normalizeRegion(evtData.region),
         language: evtData.language || "he",
         cost: evtData.cost || "Free",
         access: evtData.access || "Open",

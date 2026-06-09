@@ -5,6 +5,9 @@ test.describe("Organizers Directory and Details E2E Tests", () => {
     // Navigate to the organizers page
     await page.goto("/en/organizers");
 
+    // Wait for the loading state to finish
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible({ timeout: 20000 });
+
     // Check directory title
     await expect(page.locator("h1")).toContainText("Improv Organizers Directory");
 
@@ -45,6 +48,9 @@ test.describe("Organizers Directory and Details E2E Tests", () => {
   test("should navigate to organizer details and show details and events", async ({ page }) => {
     // Navigate to a specific organizer details page
     await page.goto("/en/organizers/org-improv-school");
+
+    // Wait for the loading state to finish
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible({ timeout: 20000 });
 
     // Check organizer title
     await expect(page.locator("h1")).toContainText("Improv Israel School");

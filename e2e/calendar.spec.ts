@@ -1,11 +1,19 @@
 import { test, expect } from "@playwright/test";
+import { captureScreenshot } from "./helpers/screenshots";
 
 test.describe("Calendar Views E2E Tests", () => {
+  test.beforeAll(() => {
+    process.env.SYMPHONY_ISSUE_ID = "IMPCAL-13";
+    process.env.SYMPHONY_ATTEMPT = "1";
+  });
+
   test.beforeEach(async ({ page }) => {
     // Navigate to localized home page
     await page.goto("/en");
     // Ensure page is loaded
     await expect(page.locator("text=ImprovIL")).toBeVisible();
+    // Wait for the loading state to finish
+    await expect(page.locator("text=Loading...")).not.toBeVisible();
   });
 
   test("should render view switcher and toggle views", async ({ page }) => {
@@ -41,12 +49,18 @@ test.describe("Calendar Views E2E Tests", () => {
     const eventCard = page.locator("#week-view-grid button:has-text('Grand Improv Night')").first();
     await expect(eventCard).toBeVisible();
 
+    // Capture screenshot of Week View
+    await captureScreenshot(page, "week-view.png", "Week View");
+
     // Click event to open detail modal
     await eventCard.click();
 
     // Verify modal is open
     const modalTitle = page.locator("h3:has-text('Grand Improv Night')");
     await expect(modalTitle).toBeVisible();
+
+    // Capture screenshot of Event Details Modal
+    await captureScreenshot(page, "event-details-modal.png", "Event Details Modal from Week View");
 
     // Close modal
     const closeModalBtn = page.locator("button:has(svg.rotate-90)").first();
@@ -69,6 +83,9 @@ test.describe("Calendar Views E2E Tests", () => {
     // Switch to Month View
     await page.locator("#view-mode-month").click();
     await expect(page.locator("#month-view-grid")).toBeVisible();
+
+    // Capture screenshot of Month View
+    await captureScreenshot(page, "month-view.png", "Month View");
 
     // Verify month grid headers (Sun-Sat) using exact text to avoid matching details
     const sunHeader = page.getByText("Sun", { exact: true });

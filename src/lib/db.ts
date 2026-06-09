@@ -23,6 +23,7 @@ export interface EventLink {
 export interface FirestoreEvent {
   id: string;
   name: string;
+  type?: string;
   organizerId?: string;
   organizerName: string;
   description: string;
@@ -112,6 +113,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-grand-show",
       name: "Grand Improv Night - Summer Edition",
+      type: "Show",
       organizerId: "org-improv-school",
       organizerName: "Improv Israel School",
       description:
@@ -143,6 +145,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-weekly-jam",
       name: "Open Community Stage & Jam",
+      type: "Jam",
       organizerId: "org-improv-school",
       organizerName: "Improv Israel School",
       description:
@@ -169,6 +172,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-jlm-workshop",
       name: "Long-form Formats Masterclass",
+      type: "Workshop",
       organizerId: "org-jlm-troupe",
       organizerName: "Jerusalem Improv Troupe",
       description:
@@ -190,6 +194,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-haifa-festival",
       name: "Carmel Improv Festival 2026",
+      type: "Festival",
       organizerId: "org-haifa-theater",
       organizerName: "Haifa Improv Theater",
       description: "Three days of shows, jams, and international guest workshops on the bay.",
@@ -363,7 +368,7 @@ export async function getEvents(filters?: {
         filters?.type &&
         filters.type !== "all" &&
         data.recurrence !== filters.type &&
-        (data as { type?: string }).type !== filters.type
+        data.type !== filters.type
       ) {
         continue;
       }

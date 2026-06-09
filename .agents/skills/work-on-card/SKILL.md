@@ -12,6 +12,8 @@ Automate the lifecycle of picking up, implementing, verifying, committing, and n
 
 This skill automates setting up detached Git worktrees, handling feature branch routing, local verification, draft PR creation via GitHub CLI, and developer notifications via Telegram.
 
+When selecting candidate cards to implement, ensure they are in the **Agent Todo** state (not the general unstarted "Todo" state).
+
 ---
 
 ## 🛠️ Step 1: Environment Setup & Pre-requisites
@@ -35,7 +37,7 @@ node c:/UnityProj/ImprovCALIL/.agents/skills/work-on-card/scripts/setup.js <CARD
 
 ### What the Setup Phase does:
 1. Resolves the card workspace `C:/UnityProj/ImprovCALIL`.
-2. Creates/updates a dedicated Git worktree under `C:/UnityProj/symphony_workspaces/<CARD_ID>`.
+2. Creates/updates a dedicated Git worktree under your configured worktree directory (e.g., `<home>/.gemini/antigravity/worktrees/<CARD_ID>`) to ensure the agent has permission access.
 3. Copies the repository's `.env.local` to the new worktree root.
 4. Checks out/creates the branch `feature/<card-id-lowercase>`.
 5. Runs `npm install` inside the worktree workspace to ensure dependencies are resolved.
@@ -46,11 +48,17 @@ node c:/UnityProj/ImprovCALIL/.agents/skills/work-on-card/scripts/setup.js <CARD
 
 Once setup completes, **switch your working directory context** to the new worktree workspace:
 ```bash
-# Example:
-cd C:/UnityProj/symphony_workspaces/<CARD_ID>
+# Example (check the setup script output for the exact path):
+cd <path_to_worktree>/<CARD_ID>
 ```
 
 Work on the codebase inside the worktree to implement the ticket's requested changes. Follow project conventions, maintain documentation integrity, and make sure that you write appropriate tests (unit, e2e, etc.) to cover your changes.
+
+**Critical Workflow & Persistence Rules:**
+1. **Issue Tracking**: When you begin work, use the `linear-mcp-server` to transition the ticket status to **In Progress**.
+2. **Agent State Persistence**: As mandated by `AGENTS.md`, you MUST save your todo list and implementation plan in an `.agents/work/<branch_name>/` folder inside your worktree workspace (the setup script creates this for you). These files must be checked in with your branch so another agent can seamlessly take over if you stop.
+3. **Review `WORKFLOW.md`**: Read and adhere to the project's `WORKFLOW.md`. Pay special attention to the **Screenshot & Verification Policies**.
+4. **Screenshot Evidence**: If your changes involve UI or E2E testing, you must capture visual verification. Save screenshots under `.screenshots/<CARD_ID>/attempt-<number>/` using the helper at `e2e/helpers/screenshots.ts` (e.g., `captureScreenshot(page, filename)`). **Make sure to add and commit these screenshot files yourself** alongside your other changes.
 
 ---
 

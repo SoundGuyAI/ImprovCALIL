@@ -19,7 +19,7 @@ if (!cardId.startsWith('IMPCAL')) {
   process.exit(1);
 }
 
-const workspacesDir = path.resolve('C:/UnityProj/symphony_workspaces');
+const workspacesDir = process.env.WORKTREE_DIR || path.resolve('C:/Users/Oded/.gemini/antigravity/worktrees');
 const targetWorktreePath = path.join(workspacesDir, cardId);
 
 // Parse options

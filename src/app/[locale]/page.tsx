@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { getEvents, FirestoreEvent } from "@/lib/db";
+import { getEvents, FirestoreEvent, normalizeRegion } from "@/lib/db";
 import Header from "@/components/Header";
 import {
   MapPin,
@@ -26,7 +26,7 @@ import {
   CalendarRange,
 } from "lucide-react";
 
-const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other"];
+const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
 const EVENT_TYPES = ["Show", "Jam", "Workshop", "Festival", "Other"];
 
 export default function Home() {
@@ -57,7 +57,7 @@ export default function Home() {
   // View & Date Navigation State
   const [viewMode, setViewMode] = useState<"list" | "week" | "month">("list");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(null);
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(() => new Date());
 
   useEffect(() => {
     async function load() {
@@ -99,7 +99,8 @@ export default function Home() {
       return false;
     }
     // Region
-    if (selectedRegion !== "all" && e.region !== selectedRegion) return false;
+    if (selectedRegion !== "all" && normalizeRegion(e.region) !== normalizeRegion(selectedRegion))
+      return false;
     // Event Type
     if (selectedType !== "all") {
       const typeLower = selectedType.toLowerCase();
@@ -836,7 +837,7 @@ export default function Home() {
 
               {/* Month View Selected Day Events Panel */}
               {selectedCalendarDay && (
-                <div className="md:hidden border border-zinc-800 bg-zinc-900/10 rounded-2xl p-5 flex flex-col gap-4">
+                <div className="border border-zinc-800 bg-zinc-900/10 rounded-2xl p-5 flex flex-col gap-4">
                   <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
                     <h4 className="text-sm sm:text-md font-bold text-white flex items-center gap-2">
                       <CalendarIcon className="w-4 h-4 text-indigo-400" />
@@ -1043,7 +1044,7 @@ export default function Home() {
                             ) ||
                             lnk.type}
                         </span>
-                        <ExternalLink className="w-3 h-3 text-zinc-500" />
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
                       </a>
                     ))}
                   </div>

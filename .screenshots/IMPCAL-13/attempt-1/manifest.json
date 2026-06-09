@@ -1,28 +1,28 @@
 {
   "issue_identifier": "IMPCAL-13",
   "attempt": 1,
-  "updated_at": "2026-06-09T00:25:55.929Z",
+  "updated_at": "2026-06-09T00:34:25.793Z",
   "screenshots": [
     {
       "filename": "month-view.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/month-view.png",
       "label": "Month View",
       "source": "playwright",
-      "captured_at": "2026-06-09T00:25:52.650Z"
+      "captured_at": "2026-06-09T00:34:23.553Z"
     },
     {
       "filename": "week-view.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/week-view.png",
       "label": "Week View",
       "source": "playwright",
-      "captured_at": "2026-06-09T00:25:55.699Z"
+      "captured_at": "2026-06-09T00:34:25.602Z"
     },
     {
       "filename": "event-details-modal.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/event-details-modal.png",
       "label": "Event Details Modal from Week View",
       "source": "playwright",
-      "captured_at": "2026-06-09T00:25:55.929Z"
+      "captured_at": "2026-06-09T00:34:25.793Z"
     }
   ]
 }

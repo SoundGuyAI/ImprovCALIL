@@ -198,6 +198,14 @@ export default function Home() {
     );
   };
 
+  const addMonths = (date: Date, months: number): Date => {
+    const day = date.getDate();
+    const result = new Date(date.getFullYear(), date.getMonth() + months, 1);
+    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+    result.setDate(Math.min(day, lastDay));
+    return result;
+  };
+
   const getMonthDaysGrid = (refDate: Date): Date[] => {
     const year = refDate.getFullYear();
     const month = refDate.getMonth();
@@ -232,11 +240,8 @@ export default function Home() {
         return nextD;
       });
     } else if (viewMode === "month") {
-      setCurrentDate((prev) => {
-        const nextD = new Date(prev.getTime());
-        nextD.setMonth(nextD.getMonth() - 1);
-        return nextD;
-      });
+      setCurrentDate((prev) => addMonths(prev, -1));
+      setSelectedCalendarDay((prev) => (prev ? addMonths(prev, -1) : null));
     }
   };
 
@@ -248,11 +253,8 @@ export default function Home() {
         return nextD;
       });
     } else if (viewMode === "month") {
-      setCurrentDate((prev) => {
-        const nextD = new Date(prev.getTime());
-        nextD.setMonth(nextD.getMonth() + 1);
-        return nextD;
-      });
+      setCurrentDate((prev) => addMonths(prev, 1));
+      setSelectedCalendarDay((prev) => (prev ? addMonths(prev, 1) : null));
     }
   };
 
@@ -576,87 +578,85 @@ export default function Home() {
               <div className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-indigo-500 animate-spin"></div>
               <span>{t("loading")}</span>
             </div>
+          ) : filteredEvents.length === 0 ? (
+            <div className="glass-card rounded-2xl py-16 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
+              <span>{t("noEvents")}</span>
+            </div>
           ) : viewMode === "list" ? (
-            filteredEvents.length === 0 ? (
-              <div className="glass-card rounded-2xl py-16 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
-                <span>{t("noEvents")}</span>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-8">
-                {Object.keys(groupedEvents).map((dayStr) => (
-                  <div key={dayStr} className="flex flex-col gap-4">
-                    {/* Date Heading */}
-                    <h4 className="text-md sm:text-lg font-bold text-indigo-400 border-b border-zinc-900 pb-2 capitalize">
-                      {dayStr}
-                    </h4>
+            <div className="flex flex-col gap-8">
+              {Object.keys(groupedEvents).map((dayStr) => (
+                <div key={dayStr} className="flex flex-col gap-4">
+                  {/* Date Heading */}
+                  <h4 className="text-md sm:text-lg font-bold text-indigo-400 border-b border-zinc-900 pb-2 capitalize">
+                    {dayStr}
+                  </h4>
 
-                    {/* Events of the day */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {groupedEvents[dayStr].map((event) => (
-                        <div
-                          key={event.id}
-                          className="glass-card rounded-xl p-5 flex flex-col justify-between gap-4 border border-zinc-900"
-                        >
-                          <div className="flex flex-col gap-2">
-                            {/* Badges bar */}
-                            <div className="flex flex-wrap gap-1.5 items-center">
-                              <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold">
-                                {tRegions(event.region)}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                                  event.cost === "Free"
-                                    ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
-                                    : "bg-amber-500/5 border-amber-500/20 text-amber-400"
-                                }`}
-                              >
-                                {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
-                              </span>
-                              <span className="px-2 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[10px] text-indigo-400 font-semibold uppercase">
-                                {event.language}
-                              </span>
-                            </div>
-
-                            <h5 className="text-md sm:text-lg font-black text-white leading-snug">
-                              {event.name}
-                            </h5>
-                            <p className="text-xs text-indigo-400 font-bold">
-                              {event.organizerId ? (
-                                <a
-                                  href={`/${locale}/organizers/${event.organizerId}`}
-                                  className="hover:underline text-indigo-400"
-                                >
-                                  {event.organizerName}
-                                </a>
-                              ) : (
-                                <span>{event.organizerName}</span>
-                              )}
-                            </p>
-                            <p className="text-xs text-zinc-400 line-clamp-2 mt-1">
-                              {event.description}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center justify-between border-t border-zinc-900 pt-3 mt-1">
-                            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-bold">
-                              <Clock className="w-3.5 h-3.5 text-zinc-600" />
-                              <span>{formatTime(event.time)}</span>
-                            </div>
-
-                            <button
-                              onClick={() => setSelectedEvent(event)}
-                              className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                  {/* Events of the day */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {groupedEvents[dayStr].map((event) => (
+                      <div
+                        key={event.id}
+                        className="glass-card rounded-xl p-5 flex flex-col justify-between gap-4 border border-zinc-900"
+                      >
+                        <div className="flex flex-col gap-2">
+                          {/* Badges bar */}
+                          <div className="flex flex-wrap gap-1.5 items-center">
+                            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-semibold">
+                              {tRegions(event.region)}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                                event.cost === "Free"
+                                  ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+                                  : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                              }`}
                             >
-                              {t("details")}
-                            </button>
+                              {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[10px] text-indigo-400 font-semibold uppercase">
+                              {event.language}
+                            </span>
                           </div>
+
+                          <h5 className="text-md sm:text-lg font-black text-white leading-snug">
+                            {event.name}
+                          </h5>
+                          <p className="text-xs text-indigo-400 font-bold">
+                            {event.organizerId ? (
+                              <a
+                                href={`/${locale}/organizers/${event.organizerId}`}
+                                className="hover:underline text-indigo-400"
+                              >
+                                {event.organizerName}
+                              </a>
+                            ) : (
+                              <span>{event.organizerName}</span>
+                            )}
+                          </p>
+                          <p className="text-xs text-zinc-400 line-clamp-2 mt-1">
+                            {event.description}
+                          </p>
                         </div>
-                      ))}
-                    </div>
+
+                        <div className="flex items-center justify-between border-t border-zinc-900 pt-3 mt-1">
+                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-bold">
+                            <Clock className="w-3.5 h-3.5 text-zinc-600" />
+                            <span>{formatTime(event.time)}</span>
+                          </div>
+
+                          <button
+                            onClick={() => setSelectedEvent(event)}
+                            className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                          >
+                            {t("details")}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )
+                </div>
+              ))}
+            </div>
           ) : viewMode === "week" ? (
             <div id="week-view-grid" className="grid grid-cols-1 md:grid-cols-7 gap-4 w-full">
               {getWeekDays(getStartOfWeek(currentDate)).map((day) => {

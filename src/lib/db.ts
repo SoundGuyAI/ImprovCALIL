@@ -365,7 +365,7 @@ export async function getEvents(filters?: {
         data.recurrence !== filters.type &&
         (data as { type?: string }).type !== filters.type
       ) {
-        // Match original empty block
+        continue;
       }
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
         continue;
@@ -394,9 +394,9 @@ export async function getEvents(filters?: {
         data.recurrence !== filters.type &&
         data.type !== filters.type
       ) {
-        // Handle "type" checks (could be one-time/weekly or Show/Jam categories)
-        // Check both recurrence and custom properties
+        continue;
       }
+
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
         continue;
       if (filters?.cost && filters.cost !== "all" && data.cost !== filters.cost) continue;

@@ -256,7 +256,7 @@ function getMockOrganizers(): FirestoreOrganizer[] {
       name,
       type: org.type || "Other",
       description,
-      region: org.region || "Other",
+      region: org.region === "Other areas" ? "Other" : org.region || "Other",
       languages: org.languages || ["he"],
       publishStatus: "published",
       hidden: false,
@@ -365,7 +365,7 @@ export async function getEvents(filters?: {
         data.recurrence !== filters.type &&
         (data as { type?: string }).type !== filters.type
       ) {
-        // Match original empty block
+        continue;
       }
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
         continue;

@@ -23,7 +23,13 @@
     "englishNative": "English",
     "hebrewNative": "עברית",
     "switchToEnglish": "שנה שפה לאנגלית",
-    "switchToHebrew": "שנה שפה לעברית"
+    "switchToHebrew": "שנה שפה לעברית",
+    "listView": "תצוגת רשימה",
+    "weekView": "תצוגת שבוע",
+    "monthView": "תצוגת חודש",
+    "today": "היום",
+    "next": "הבא",
+    "prev": "הקודם"
   },
   "Navigation": {
     "calendar": "לוח אירועים",

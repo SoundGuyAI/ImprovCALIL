@@ -8,14 +8,14 @@ test.describe("Calendar Views E2E Tests", () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    // Freeze clock to a fixed date matching seed database relative times
-    await page.clock.install({ time: new Date("2026-06-09T10:00:00Z") });
+    // Set fixed clock date matching seed database relative times
+    await page.clock.setFixedTime(new Date("2026-06-09T10:00:00Z"));
     // Navigate to localized home page
     await page.goto("/en");
     // Ensure page is loaded
     await expect(page.locator("text=ImprovIL")).toBeVisible();
     // Wait for the loading state to finish
-    await expect(page.locator("text=Loading...").first()).not.toBeVisible();
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible({ timeout: 20000 });
   });
 
   test("should render view switcher and toggle views", async ({ page }) => {

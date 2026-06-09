@@ -23,7 +23,13 @@
     "englishNative": "English",
     "hebrewNative": "עברית",
     "switchToEnglish": "Switch to English",
-    "switchToHebrew": "Switch to Hebrew"
+    "switchToHebrew": "Switch to Hebrew",
+    "listView": "List View",
+    "weekView": "Week View",
+    "monthView": "Month View",
+    "today": "Today",
+    "next": "Next",
+    "prev": "Previous"
   },
   "Navigation": {
     "calendar": "Calendar",

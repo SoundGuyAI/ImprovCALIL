@@ -20,8 +20,8 @@ test("localization - switch language to Hebrew and verify RTL", async ({ page })
   // Take screenshot of English home page
   await captureScreenshot(page, "01_english_home.png", "English home page with language switcher");
 
-  // Locate the language switcher button by its aria-label (announces target language)
-  const switcherBtn = page.locator("button[aria-label='Switch to Hebrew']");
+  // Locate the language switcher button by its aria-haspopup attribute
+  const switcherBtn = page.locator("button[aria-haspopup='true']");
   await expect(switcherBtn).toBeVisible();
 
   // Click the switcher to open dropdown
@@ -50,8 +50,8 @@ test("localization - switch language to Hebrew and verify RTL", async ({ page })
   await expect(html).toHaveAttribute("dir", "rtl");
   await expect(html).toHaveAttribute("lang", "he");
 
-  // Verify that the switcher button now has aria-label for switching back to English
-  const switcherBtnBack = page.locator("button[aria-label='שנה שפה לאנגלית']");
+  // Verify that the switcher button now has aria-label "בחר שפה"
+  const switcherBtnBack = page.locator("button[aria-label='בחר שפה']");
   await expect(switcherBtnBack).toBeVisible();
 
   // Logo must use the same locale-aware routing as nav (home link), not a plain next/link href
@@ -71,7 +71,7 @@ test("localization - switch language to Hebrew and verify RTL", async ({ page })
   await page.goto("/he/organizers");
 
   // Click trigger, then click English
-  const switcherBtnHe = page.locator("button[aria-label='שנה שפה לאנגלית']");
+  const switcherBtnHe = page.locator("button[aria-haspopup='true']");
   await switcherBtnHe.click();
   const englishOption = page.locator("button[role='menuitem']:has-text('English')");
   await expect(englishOption).toBeVisible();

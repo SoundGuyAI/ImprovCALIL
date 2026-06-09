@@ -70,7 +70,7 @@ export default function LocaleSwitcher() {
         className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 text-zinc-300 hover:text-zinc-100 transition-all text-xs font-medium active:scale-95 shadow-sm"
         aria-haspopup="true"
         aria-expanded={isOpen}
-        aria-label={locale === "en" ? t("switchToHebrew") : t("switchToEnglish")}
+        aria-label={t("language")}
       >
         <span className="text-sm leading-none" aria-hidden="true">
           {activeLang.flag}

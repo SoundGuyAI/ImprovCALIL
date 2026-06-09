@@ -192,8 +192,7 @@ function getMockEvents(): FirestoreEvent[] {
       name: "Carmel Improv Festival 2026",
       organizerId: "org-haifa-theater",
       organizerName: "Haifa Improv Theater",
-      description:
-        "Three days of shows, jams, and international guest workshops on the bay.",
+      description: "Three days of shows, jams, and international guest workshops on the bay.",
       time: baseTime + 8 * 24 * 60 * 60 * 1000,
       endTime: baseTime + 11 * 24 * 60 * 60 * 1000,
       recurrence: "one-time",
@@ -653,14 +652,7 @@ export async function approveSubmission(id: string): Promise<void> {
       if (sData.links && sData.links.length > 0) {
         sData.links.forEach((lnk: EventLink, idx: number) => {
           const lnkRef = doc(collection(db, "links"));
-          batch.set(lnkRef, {
-            parentId: newEventId,
-            parentType: "event",
-            url: lnk.url,
-            type: lnk.type || "Other",
-            label: lnk.label || "",
-            sortOrder: idx,
-          });
+          batch.set(lnkRef, {\n            parentId: newEventId,\n            parentType: "event",\n            url: lnk.url,\n            type: lnk.type || "Other",\n            label: lnk.label || "",\n            sortOrder: idx,\n          });
         });
       }
     } else if (sData.type === "organizer") {
@@ -695,14 +687,7 @@ export async function approveSubmission(id: string): Promise<void> {
       if (sData.links && sData.links.length > 0) {
         sData.links.forEach((lnk: EventLink, idx: number) => {
           const lnkRef = doc(collection(db, "links"));
-          batch.set(lnkRef, {
-            parentId: newOrganizerId,
-            parentType: "organizer",
-            url: lnk.url,
-            type: lnk.type || "Other",
-            label: lnk.label || "",
-            sortOrder: idx,
-          });
+          batch.set(lnkRef, {\n            parentId: newOrganizerId,\n            parentType: "organizer",\n            url: lnk.url,\n            type: lnk.type || "Other",\n            label: lnk.label || "",\n            sortOrder: idx,\n          });
         });
       }
     }

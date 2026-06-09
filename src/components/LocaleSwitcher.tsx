@@ -40,8 +40,18 @@ export default function LocaleSwitcher() {
   }, []);
 
   const switchLocale = (nextLocale: "en" | "he") => {
+    if (nextLocale === locale) {
+      setIsOpen(false);
+      return;
+    }
     router.replace(pathname, { locale: nextLocale });
     setIsOpen(false);
+  };
+
+  const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    if (!containerRef.current?.contains(event.relatedTarget as Node)) {
+      setIsOpen(false);
+    }
   };
 
   const activeLang =
@@ -52,7 +62,11 @@ export default function LocaleSwitcher() {
   const targetAriaLabel = locale === "en" ? t("switchToHebrew") : t("switchToEnglish");
 
   return (
-    <div className="relative inline-block text-left rtl:text-right" ref={containerRef}>
+    <div
+      className="relative inline-block text-left rtl:text-right"
+      ref={containerRef}
+      onBlur={handleBlur}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 text-zinc-300 hover:text-zinc-100 transition-all text-xs font-medium active:scale-95 shadow-sm"

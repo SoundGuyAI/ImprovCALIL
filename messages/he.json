@@ -16,7 +16,14 @@
     "edit": "ערוך",
     "cancel": "ביטול",
     "unknown": "לא ידוע",
-    "featured": "מומלץ"
+    "featured": "מומלץ",
+    "english": "אנגלית",
+    "hebrew": "עברית",
+    "language": "בחר שפה",
+    "englishNative": "English",
+    "hebrewNative": "עברית",
+    "switchToEnglish": "שנה שפה לאנגלית",
+    "switchToHebrew": "שנה שפה לעברית"
   },
   "Navigation": {
     "calendar": "לוח אירועים",

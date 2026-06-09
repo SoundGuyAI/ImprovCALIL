@@ -16,7 +16,14 @@
     "edit": "Edit",
     "cancel": "Cancel",
     "unknown": "Unknown",
-    "featured": "Featured"
+    "featured": "Featured",
+    "english": "English",
+    "hebrew": "Hebrew",
+    "language": "Select Language",
+    "englishNative": "English",
+    "hebrewNative": "עברית",
+    "switchToEnglish": "Switch to English",
+    "switchToHebrew": "Switch to Hebrew"
   },
   "Navigation": {
     "calendar": "Calendar",

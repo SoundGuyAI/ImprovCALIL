@@ -11,4 +11,10 @@ describe("submission approval publishing", () => {
     expect(dbSource).toContain('const eventRef = doc(collection(db, "events"));');
     expect(dbSource).toContain('const organizerRef = doc(collection(db, "organizers"));');
   });
+
+  it("writes link documents with valid object literals in approveSubmission", () => {
+    expect(dbSource).not.toMatch(/batch\.set\(lnkRef, \{\\n/);
+    expect(dbSource).toContain("parentId: newEventId");
+    expect(dbSource).toContain("parentId: newOrganizerId");
+  });
 });

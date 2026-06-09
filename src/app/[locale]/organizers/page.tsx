@@ -51,10 +51,7 @@ export default function OrganizersDirectory() {
       return false;
     }
     // Region
-    if (
-      selectedRegion !== "all" &&
-      normalizeRegion(org.region) !== normalizeRegion(selectedRegion)
-    )
+    if (selectedRegion !== "all" && normalizeRegion(org.region) !== normalizeRegion(selectedRegion))
       return false;
     // Organizer Type
     if (selectedType !== "all" && org.type !== selectedType) return false;

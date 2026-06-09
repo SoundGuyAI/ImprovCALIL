@@ -99,10 +99,7 @@ export default function Home() {
       return false;
     }
     // Region
-    if (
-      selectedRegion !== "all" &&
-      normalizeRegion(e.region) !== normalizeRegion(selectedRegion)
-    )
+    if (selectedRegion !== "all" && normalizeRegion(e.region) !== normalizeRegion(selectedRegion))
       return false;
     // Event Type
     if (selectedType !== "all") {
@@ -1047,7 +1044,7 @@ export default function Home() {
                             ) ||
                             lnk.type}
                         </span>
-                        <ExternalLink className="w-3 h-3 text-zinc-500" />
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
                       </a>
                     ))}
                   </div>

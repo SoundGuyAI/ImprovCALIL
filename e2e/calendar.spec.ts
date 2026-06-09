@@ -15,7 +15,7 @@ test.describe("Calendar Views E2E Tests", () => {
     // Ensure page is loaded
     await expect(page.locator("text=ImprovIL")).toBeVisible();
     // Wait for the loading state to finish
-    await expect(page.locator("text=Loading...")).not.toBeVisible();
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible();
   });
 
   test("should render view switcher and toggle views", async ({ page }) => {

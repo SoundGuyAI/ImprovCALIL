@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import Ajv from "ajv";
+import addFormats from "ajv-formats";
 import { describe, expect, it } from "vitest";
 
 const schemaPath = join(process.cwd(), "docs", "organizer-schema.json");
@@ -30,6 +32,10 @@ interface ExpectedOrganizer {
 
 const organizers = JSON.parse(readFileSync(dataPath, "utf-8")) as ExpectedOrganizer[];
 
+const ajv = new Ajv({ allErrors: true, strict: false });
+addFormats(ajv);
+const validateOrganizers = ajv.compile(schema);
+
 describe("organizer schema and data integrity", () => {
   it("schema defines the correct structure and enums", () => {
     expect(schema.$schema).toBe("http://json-schema.org/draft-07/schema#");
@@ -58,101 +64,12 @@ describe("organizer schema and data integrity", () => {
     expect(Array.isArray(organizers)).toBe(true);
     expect(organizers.length).toBeGreaterThan(0);
 
-    const validTypes = schema.properties.type.enum;
-    const validRegions = schema.properties.region.enum;
-    const validLanguages = schema.properties.languages.items.enum;
-    const validLinkTypes = schema.properties.links.items.properties.type.enum;
-
     organizers.forEach((org: ExpectedOrganizer, idx: number) => {
-      // Validate localized name
-      expect(Array.isArray(org.name), `Organizer #${idx} name is array`).toBe(true);
-      expect(org.name.length, `Organizer #${idx} name is not empty`).toBeGreaterThan(0);
-      const nameLocales = org.name.map((n) => n.locale);
-      const uniqueNameLocales = new Set(nameLocales);
-      expect(nameLocales.length, `Organizer #${idx} name locales length matches unique set`).toBe(
-        uniqueNameLocales.size
-      );
-      org.name.forEach((nameObj, nIdx) => {
-        expect(["en", "he"], `Organizer #${idx} name locale #${nIdx}`).toContain(nameObj.locale);
-        expect(typeof nameObj.value, `Organizer #${idx} name value #${nIdx}`).toBe("string");
-        expect(
-          nameObj.value.length,
-          `Organizer #${idx} name value length #${nIdx}`
-        ).toBeGreaterThan(0);
-      });
-
-      // Validate category
-      expect(validTypes, `Organizer #${idx} type "${org.type}"`).toContain(org.type);
-
-      // Validate localized description
-      expect(Array.isArray(org.description), `Organizer #${idx} description is array`).toBe(true);
-      expect(org.description.length, `Organizer #${idx} description is not empty`).toBeGreaterThan(
-        0
-      );
-      const descLocales = org.description.map((d) => d.locale);
-      const uniqueDescLocales = new Set(descLocales);
+      const valid = validateOrganizers(org);
       expect(
-        descLocales.length,
-        `Organizer #${idx} description locales length matches unique set`
-      ).toBe(uniqueDescLocales.size);
-      org.description.forEach((descObj, dIdx) => {
-        expect(["en", "he"], `Organizer #${idx} description locale #${dIdx}`).toContain(
-          descObj.locale
-        );
-        expect(typeof descObj.value, `Organizer #${idx} description value #${dIdx}`).toBe("string");
-        expect(
-          descObj.value.length,
-          `Organizer #${idx} description value length #${dIdx}`
-        ).toBeGreaterThan(0);
-      });
-
-      // Validate region
-      expect(validRegions, `Organizer #${idx} region "${org.region}"`).toContain(org.region);
-
-      // Validate languages
-      expect(Array.isArray(org.languages), `Organizer #${idx} languages is array`).toBe(true);
-      expect(org.languages.length, `Organizer #${idx} languages is not empty`).toBeGreaterThan(0);
-      org.languages.forEach((lang: string) => {
-        expect(validLanguages, `Organizer #${idx} language "${lang}"`).toContain(lang);
-      });
-
-      if (org.logoUrl !== undefined) {
-        expect(typeof org.logoUrl, `Organizer #${idx} logoUrl type`).toBe("string");
-      }
-
-      if (org.links !== undefined) {
-        expect(Array.isArray(org.links), `Organizer #${idx} links is array`).toBe(true);
-        org.links.forEach((link: ExpectedLink, lIdx: number) => {
-          expect(link.url, `Organizer #${idx} link #${lIdx} url`).toBeDefined();
-          expect(typeof link.url, `Organizer #${idx} link #${lIdx} url type`).toBe("string");
-          expect(validLinkTypes, `Organizer #${idx} link #${lIdx} type "${link.type}"`).toContain(
-            link.type
-          );
-          if (link.label !== undefined) {
-            expect(typeof link.label, `Organizer #${idx} link #${lIdx} label type`).toBe("string");
-          }
-
-          // Check for unexpected properties in link object
-          const allowedLinkKeys = ["url", "type", "label"];
-          Object.keys(link).forEach((k) => {
-            expect(allowedLinkKeys, `Organizer #${idx} link #${lIdx} property "${k}"`).toContain(k);
-          });
-        });
-      }
-
-      // Check for unexpected properties in organizer object
-      const allowedOrgKeys = [
-        "name",
-        "type",
-        "description",
-        "region",
-        "languages",
-        "logoUrl",
-        "links",
-      ];
-      Object.keys(org).forEach((k) => {
-        expect(allowedOrgKeys, `Organizer #${idx} property "${k}"`).toContain(k);
-      });
+        valid,
+        `Organizer #${idx}: ${JSON.stringify(validateOrganizers.errors, null, 2)}`
+      ).toBe(true);
     });
   });
 

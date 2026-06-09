@@ -106,7 +106,7 @@
       }
     ],
     "region": "Tel-Aviv",
-    "languages": ["he"],
+    "languages": ["he", "en"],
     "links": [
       {
         "url": "https://www.improvise.co.il/",
@@ -453,7 +453,7 @@
         "value": "Crossroads — Theater Shed"
       }
     ],
-    "type": "Group",
+    "type": "School",
     "description": [
       {
         "locale": "en",

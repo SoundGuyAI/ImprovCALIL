@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 
 function normalizeRegion(region?: string | null): string {
-  if (!region || region === "Other") return "Other areas";
+  if (!region || region === "Other areas") return "Other";
   return region;
 }
 
@@ -409,8 +409,7 @@ export async function getEvents(filters?: {
         data.recurrence !== filters.type &&
         data.type !== filters.type
       ) {
-        // Handle "type" checks (could be one-time/weekly or Show/Jam categories)
-        // Check both recurrence and custom properties
+        continue;
       }
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
         continue;

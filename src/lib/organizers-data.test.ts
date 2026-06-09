@@ -45,7 +45,7 @@ describe("organizer schema and data integrity", () => {
       "Beer-Sheva",
       "Haifa",
       "Hasharon",
-      "Other areas",
+      "Other",
     ]);
     expect(orgSchema.properties.languages.items.enum).toEqual(["he", "en"]);
     expect(orgSchema.properties.links.items.properties.type.enum).toEqual([
@@ -88,6 +88,11 @@ describe("organizer schema and data integrity", () => {
     ];
 
     organizers.forEach((org: ExpectedOrganizer) => {
+      const nameLocales = org.name.map((n) => n.locale);
+      const descLocales = org.description.map((d) => d.locale);
+      expect(new Set(nameLocales).size).toBe(nameLocales.length);
+      expect(new Set(descLocales).size).toBe(descLocales.length);
+
       org.name.forEach((localizedName) => {
         const nameLower = localizedName.value.toLowerCase();
         forbiddenSubstrings.forEach((forbidden) => {

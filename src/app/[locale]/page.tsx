@@ -584,7 +584,7 @@ export default function Home() {
               <div className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-indigo-500 animate-spin"></div>
               <span>{t("loading")}</span>
             </div>
-          ) : viewMode === "list" && filteredEvents.length === 0 ? (
+          ) : filteredEvents.length === 0 ? (
             <div className="glass-card rounded-2xl py-16 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
               <span>{t("noEvents")}</span>
             </div>

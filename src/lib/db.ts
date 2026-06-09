@@ -229,8 +229,7 @@ interface OrganizerJsonItem {
   links?: { url: string; type: string; label?: string }[];
 }
 
-function getMockOrganizers(): FirestoreOrganizer[] {
-  const locale = getLocaleFromPath();
+function getMockOrganizers(locale: "en" | "he" = getLocaleFromPath()): FirestoreOrganizer[] {
 
   const parsedOrganizers: FirestoreOrganizer[] = (
     organizersData as unknown as OrganizerJsonItem[]
@@ -442,9 +441,10 @@ export async function getOrganizers(filters?: {
   region?: string;
   type?: string;
   includeHidden?: boolean;
+  locale?: "en" | "he";
 }): Promise<FirestoreOrganizer[]> {
   if (isMock) {
-    const allOrgs = getMockOrganizers();
+    const allOrgs = getMockOrganizers(filters?.locale ?? getLocaleFromPath());
     const filtered: FirestoreOrganizer[] = [];
     for (const data of allOrgs) {
       if (!filters?.includeHidden && data.hidden) continue;
@@ -495,12 +495,15 @@ export async function getOrganizers(filters?: {
 }
 
 // 4. Fetch Individual Organizer Reference Details & their Events
-export async function getOrganizerDetails(id: string): Promise<{
+export async function getOrganizerDetails(
+  id: string,
+  locale?: "en" | "he"
+): Promise<{
   organizer: FirestoreOrganizer | null;
   events: FirestoreEvent[];
 }> {
   if (isMock) {
-    const allOrgs = getMockOrganizers();
+    const allOrgs = getMockOrganizers(locale ?? getLocaleFromPath());
     const organizer = allOrgs.find((o) => o.id === id) || null;
     if (!organizer) return { organizer: null, events: [] };
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { getEvents, FirestoreEvent } from "@/lib/db";
+import { getEvents, FirestoreEvent, normalizeRegion } from "@/lib/db";
 import Header from "@/components/Header";
 import {
   MapPin,
@@ -99,7 +99,11 @@ export default function Home() {
       return false;
     }
     // Region
-    if (selectedRegion !== "all" && e.region !== selectedRegion) return false;
+    if (
+      selectedRegion !== "all" &&
+      normalizeRegion(e.region) !== normalizeRegion(selectedRegion)
+    )
+      return false;
     // Event Type
     if (selectedType !== "all") {
       const typeLower = selectedType.toLowerCase();

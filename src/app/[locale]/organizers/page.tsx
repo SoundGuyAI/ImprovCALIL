@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { getOrganizers, FirestoreOrganizer } from "@/lib/db";
+import { getOrganizers, FirestoreOrganizer, normalizeRegion } from "@/lib/db";
 import Header from "@/components/Header";
 import { Link } from "@/i18n/routing";
 import { Building, ChevronRight, Info, GraduationCap, Users, Theater } from "lucide-react";
@@ -51,7 +51,11 @@ export default function OrganizersDirectory() {
       return false;
     }
     // Region
-    if (selectedRegion !== "all" && org.region !== selectedRegion) return false;
+    if (
+      selectedRegion !== "all" &&
+      normalizeRegion(org.region) !== normalizeRegion(selectedRegion)
+    )
+      return false;
     // Organizer Type
     if (selectedType !== "all" && org.type !== selectedType) return false;
 

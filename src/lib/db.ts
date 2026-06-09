@@ -14,7 +14,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 
-function normalizeRegion(region?: string | null): string {
+export function normalizeRegion(region?: string | null): string {
   if (!region || region === "Other areas") return "Other";
   return region;
 }

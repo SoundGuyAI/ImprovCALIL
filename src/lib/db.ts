@@ -365,7 +365,7 @@ export async function getEvents(filters?: {
         data.recurrence !== filters.type &&
         (data as { type?: string }).type !== filters.type
       ) {
-        // Match original empty block
+        continue;
       }
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
         continue;

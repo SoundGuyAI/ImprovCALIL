@@ -57,7 +57,7 @@ export default function Home() {
   // View & Date Navigation State
   const [viewMode, setViewMode] = useState<"list" | "week" | "month">("list");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(() => new Date());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -836,7 +836,7 @@ export default function Home() {
 
               {/* Month View Selected Day Events Panel */}
               {selectedCalendarDay && (
-                <div className="border border-zinc-800 bg-zinc-900/10 rounded-2xl p-5 flex flex-col gap-4">
+                <div className="md:hidden border border-zinc-800 bg-zinc-900/10 rounded-2xl p-5 flex flex-col gap-4">
                   <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
                     <h4 className="text-sm sm:text-md font-bold text-white flex items-center gap-2">
                       <CalendarIcon className="w-4 h-4 text-indigo-400" />

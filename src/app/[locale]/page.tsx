@@ -240,8 +240,11 @@ export default function Home() {
         return nextD;
       });
     } else if (viewMode === "month") {
-      setCurrentDate((prev) => addMonths(prev, -1));
-      setSelectedCalendarDay((prev) => (prev ? addMonths(prev, -1) : null));
+      setCurrentDate((prev) => {
+        const temp = new Date(prev.getFullYear(), prev.getMonth(), 1);
+        return addMonths(temp, -1);
+      });
+      setSelectedCalendarDay(null);
     }
   };
 
@@ -253,8 +256,11 @@ export default function Home() {
         return nextD;
       });
     } else if (viewMode === "month") {
-      setCurrentDate((prev) => addMonths(prev, 1));
-      setSelectedCalendarDay((prev) => (prev ? addMonths(prev, 1) : null));
+      setCurrentDate((prev) => {
+        const temp = new Date(prev.getFullYear(), prev.getMonth(), 1);
+        return addMonths(temp, 1);
+      });
+      setSelectedCalendarDay(null);
     }
   };
 

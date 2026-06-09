@@ -8,6 +8,8 @@ test.describe("Calendar Views E2E Tests", () => {
   });
 
   test.beforeEach(async ({ page }) => {
+    // Freeze clock to a fixed date matching seed database relative times
+    await page.clock.install({ time: new Date("2026-06-09T10:00:00Z") });
     // Navigate to localized home page
     await page.goto("/en");
     // Ensure page is loaded

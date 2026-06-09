@@ -1,5 +1,6 @@
 "use client";
 
+// Bilingual language switcher ported from Improv Dashboard
 import React, { useState, useRef, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/routing";

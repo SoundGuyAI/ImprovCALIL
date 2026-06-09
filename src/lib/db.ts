@@ -106,8 +106,13 @@ function getLocaleFromPath(): "en" | "he" {
   return "en";
 }
 
+let mockEventsBaseTime: number | undefined;
+
 function getMockEvents(): FirestoreEvent[] {
-  const baseTime = Date.now();
+  if (mockEventsBaseTime === undefined) {
+    mockEventsBaseTime = Date.now();
+  }
+  const baseTime = mockEventsBaseTime;
   return [
     {
       id: "evt-grand-show",

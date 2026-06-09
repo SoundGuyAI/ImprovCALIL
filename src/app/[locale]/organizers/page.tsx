@@ -37,7 +37,7 @@ export default function OrganizersDirectory() {
       }
     }
     load();
-  }, []);
+  }, [locale]);
 
   const filteredOrganizers = organizers.filter((org) => {
     if (org.hidden) return false;

@@ -49,7 +49,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
       }
     }
     load();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, locale]);
 
   const getOrgTypeIcon = (type: string) => {
     switch (type) {

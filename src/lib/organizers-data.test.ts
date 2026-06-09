@@ -38,10 +38,12 @@ const validateOrganizers = ajv.compile(schema);
 
 describe("organizer schema and data integrity", () => {
   it("schema defines the correct structure and enums", () => {
+    const organizerRecord = schema.definitions.organizerRecord;
+
     expect(schema.$schema).toBe("http://json-schema.org/draft-07/schema#");
-    expect(schema.type).toBe("object");
-    expect(schema.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
-    expect(schema.properties.region.enum).toEqual([
+    expect(schema.type).toBe("array");
+    expect(organizerRecord.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
+    expect(organizerRecord.properties.region.enum).toEqual([
       "Tel-Aviv",
       "Jerusalem",
       "Beer-Sheva",
@@ -49,8 +51,8 @@ describe("organizer schema and data integrity", () => {
       "Hasharon",
       "Other areas",
     ]);
-    expect(schema.properties.languages.items.enum).toEqual(["he", "en"]);
-    expect(schema.properties.links.items.properties.type.enum).toEqual([
+    expect(organizerRecord.properties.languages.items.enum).toEqual(["he", "en"]);
+    expect(organizerRecord.properties.links.items.properties.type.enum).toEqual([
       "Website",
       "Facebook",
       "Facebook event",
@@ -61,16 +63,11 @@ describe("organizer schema and data integrity", () => {
   });
 
   it("israeli_improv_organizers.json contains valid data conforming to the schema", () => {
-    expect(Array.isArray(organizers)).toBe(true);
-    expect(organizers.length).toBeGreaterThan(0);
-
-    organizers.forEach((org: ExpectedOrganizer, idx: number) => {
-      const valid = validateOrganizers(org);
-      expect(
-        valid,
-        `Organizer #${idx}: ${JSON.stringify(validateOrganizers.errors, null, 2)}`
-      ).toBe(true);
-    });
+    const valid = validateOrganizers(organizers);
+    expect(
+      valid,
+      `Data file validation failed: ${JSON.stringify(validateOrganizers.errors, null, 2)}`
+    ).toBe(true);
   });
 
   it("does not include general venues or unverified entries", () => {

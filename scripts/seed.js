@@ -13,18 +13,78 @@ if (!fs.existsSync(envPath)) {
 const envContent = fs.readFileSync(envPath, "utf-8");
 const config = {};
 envContent.split("\n").forEach((line) => {
-  const match = line.match(/^NEXT_PUBLIC_FIREBASE_([A-Z_]+)=(.*)$/);
-  if (match) {
-    const key = match[1].toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-    config[key] = match[2].trim();
+  const eqIdx = line.indexOf("=");
+  if (eqIdx !== -1) {
+    const rawKey = line.slice(0, eqIdx).trim();
+    let rawVal = line.slice(eqIdx + 1).trim();
+    if (
+      (rawVal.startsWith("'") && rawVal.endsWith("'")) ||
+      (rawVal.startsWith('"') && rawVal.endsWith('"'))
+    ) {
+      rawVal = rawVal.slice(1, -1);
+    }
+    config[rawKey] = rawVal;
   }
 });
 
-console.log("Loaded Firebase configuration for Project:", config.projectId);
+// camelCase client config fallback
+const clientConfig = {};
+envContent.split("\n").forEach((line) => {
+  const match = line.match(/^NEXT_PUBLIC_FIREBASE_([A-Z_]+)=(.*)$/);
+  if (match) {
+    const key = match[1].toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+    clientConfig[key] = match[2].trim();
+  }
+});
 
-// 2. Initialize Firebase
-const app = initializeApp(config);
-const db = getFirestore(app);
+console.log(
+  "Loaded Firebase configuration for Project:",
+  clientConfig.projectId || config.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+);
+
+let db;
+let useAdmin = false;
+
+if (config.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  try {
+    const admin = require("firebase-admin");
+    const serviceAccount = JSON.parse(config.FIREBASE_SERVICE_ACCOUNT_KEY);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    db = admin.firestore();
+    useAdmin = true;
+    console.log("Initialized Firebase Admin SDK using Service Account Key.");
+  } catch (err) {
+    console.error("Failed to initialize Firebase Admin SDK:", err);
+  }
+}
+
+if (!useAdmin) {
+  const { initializeApp } = require("firebase/app");
+  const { getFirestore } = require("firebase/firestore");
+  const app = initializeApp(clientConfig);
+  db = getFirestore(app);
+  console.log("Fallback: Initialized Firebase Client SDK.");
+}
+
+function getDocRef(collectionName, docId) {
+  if (useAdmin) {
+    return db.collection(collectionName).doc(docId);
+  } else {
+    const { doc } = require("firebase/firestore");
+    return doc(db, collectionName, docId);
+  }
+}
+
+function createBatch() {
+  if (useAdmin) {
+    return db.batch();
+  } else {
+    const { writeBatch } = require("firebase/firestore");
+    return writeBatch(db);
+  }
+}
 
 // Mock Data Definitions
 const ORGANIZERS = [
@@ -272,32 +332,32 @@ const SUBMISSIONS = [
 
 async function seed() {
   console.log("Seeding started...");
-  const batch = writeBatch(db);
+  const batch = createBatch();
 
   // 1. Seed Organizers
   for (const org of ORGANIZERS) {
-    const ref = doc(db, "organizers", org.id);
+    const ref = getDocRef("organizers", org.id);
     batch.set(ref, org);
   }
   console.log(`Added ${ORGANIZERS.length} mock organizers to batch.`);
 
   // 2. Seed Events
   for (const evt of EVENTS) {
-    const ref = doc(db, "events", evt.id);
+    const ref = getDocRef("events", evt.id);
     batch.set(ref, evt);
   }
   console.log(`Added ${EVENTS.length} mock events to batch.`);
 
   // 3. Seed Links
   for (const lnk of LINKS) {
-    const ref = doc(db, "links", lnk.id);
+    const ref = getDocRef("links", lnk.id);
     batch.set(ref, lnk);
   }
   console.log(`Added ${LINKS.length} mock links to batch.`);
 
   // 4. Seed Submissions
   for (const sub of SUBMISSIONS) {
-    const ref = doc(db, "submissions", sub.id);
+    const ref = getDocRef("submissions", sub.id);
     batch.set(ref, sub);
   }
   console.log(`Added ${SUBMISSIONS.length} mock submissions to batch.`);

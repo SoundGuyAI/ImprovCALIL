@@ -652,7 +652,14 @@ export async function approveSubmission(id: string): Promise<void> {
       if (sData.links && sData.links.length > 0) {
         sData.links.forEach((lnk: EventLink, idx: number) => {
           const lnkRef = doc(collection(db, "links"));
-          batch.set(lnkRef, {\n            parentId: newEventId,\n            parentType: "event",\n            url: lnk.url,\n            type: lnk.type || "Other",\n            label: lnk.label || "",\n            sortOrder: idx,\n          });
+          batch.set(lnkRef, {
+            parentId: newEventId,
+            parentType: "event",
+            url: lnk.url,
+            type: lnk.type || "Other",
+            label: lnk.label || "",
+            sortOrder: idx,
+          });
         });
       }
     } else if (sData.type === "organizer") {
@@ -687,7 +694,14 @@ export async function approveSubmission(id: string): Promise<void> {
       if (sData.links && sData.links.length > 0) {
         sData.links.forEach((lnk: EventLink, idx: number) => {
           const lnkRef = doc(collection(db, "links"));
-          batch.set(lnkRef, {\n            parentId: newOrganizerId,\n            parentType: "organizer",\n            url: lnk.url,\n            type: lnk.type || "Other",\n            label: lnk.label || "",\n            sortOrder: idx,\n          });
+          batch.set(lnkRef, {
+            parentId: newOrganizerId,
+            parentType: "organizer",
+            url: lnk.url,
+            type: lnk.type || "Other",
+            label: lnk.label || "",
+            sortOrder: idx,
+          });
         });
       }
     }

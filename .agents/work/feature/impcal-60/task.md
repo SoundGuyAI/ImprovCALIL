@@ -1,9 +1,8 @@
 # Tasks for IMPCAL-60
 
-- [x] Define JSON Schema at `docs/organizer-schema.json`
-- [x] Parse `docs/ISRAELI_IMPROV_RESOURCES.md` and extract the 17 unique valid organizers
-- [x] Save the extracted organizers to `docs/israeli_improv_organizers.json`
-- [x] Write a unit test `src/lib/organizers-data.test.ts` to validate data against `docs/organizer-schema.json`
-- [x] Clean up temporary validation scripts
-- [x] Run verification suite `node scripts/verify-harness.js`
-- [ ] Submit changes using the submit script
+- [x] Update `docs/organizer-schema.json` to have root representing an array of organizer records
+- [x] Correct data records in `docs/israeli_improv_organizers.json`
+- [x] Install `ajv` and `ajv-formats` if needed, and update package.json
+- [x] Refactor `src/lib/organizers-data.test.ts` to use Ajv array validation and assert catalog count of 17
+- [x] Run `npm test` and `node scripts/verify-harness.js`
+- [x] Commit and push changes to `feature/impcal-60`

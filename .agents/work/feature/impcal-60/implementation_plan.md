@@ -1,44 +1,27 @@
-# Implementation Plan - IMPCAL-60: Revise organizer data structure and input field
+# Implementation Plan - IMPCAL-60
 
-Review the organizers listed in the Improv Calendar Israel resource file, define a JSON schema for importing organizer data, and extract the organizers from the resources file into a compliant JSON data file.
+We need to address three Bugbot review comments on PR #75 regarding schema validation and data corrections.
 
-## Schema Definition (`docs/organizer-schema.json`)
+## Steps
 
-The JSON schema will represent an array of organizer records. Each organizer record will conform to:
-- **name**: string (required)
-- **type**: enum `"Group" | "School" | "Theater" | "Other"` (required)
-- **description**: string (required)
-- **region**: enum `"Tel-Aviv" | "Jerusalem" | "Beer-Sheva" | "Haifa" | "Hasharon" | "Other areas"` (required)
-- **languages**: array of strings (required)
-- **logoUrl**: string / URI (optional)
-- **links**: array of Link objects, where each Link contains:
-  - **url**: string / URI (required)
-  - **type**: enum `"Website" | "Facebook" | "Facebook event" | "WhatsApp group" | "Instagram" | "Other"` (required)
-  - **label**: string (optional)
+1. **Schema Root Validation**:
+   - Update `docs/organizer-schema.json` so the root represents an array of organizer records.
+   - We will define the root as an array of items referencing `#/definitions/organizer`.
+   - We will move the object definition to `definitions.organizer`.
+   - Ensure `"uniqueItems": true` is set on the `languages` array of the organizer (it is already present, but we will preserve it).
 
-## Data Extraction (`docs/israeli_improv_organizers.json`)
+2. **Data Record Corrections**:
+   - Update `docs/israeli_improv_organizers.json`:
+     - `"Improv Theater Israel"`: set `type` to `"School"` (instead of `"Theater"`).
+     - `"Improv NOW!"`: set `type` to `"Other"` (instead of `"Group"`).
+     - `"Shlofta"`: set `region` to `"Other areas"` (instead of `"Tel-Aviv"`).
 
-We will parse `docs/ISRAELI_IMPROV_RESOURCES.md` and extract the 17 unique, valid, published organizers:
-1. **תיאטרון האימפרוב / Improv Theater Israel** (School, Tel-Aviv, ["he", "en"])
-2. **ImPro's (אימפרo's)** (School, Tel-Aviv, ["he"])
-3. **Improvise.co.il** (School, Tel-Aviv, ["he", "en"])
-4. **פרוביזורי / Provizori** (Group, Tel-Aviv, ["he"])
-5. **פורפליי / 4play** (Group, Tel-Aviv, ["he"])
-6. **שלופתא / Shlofta** (Group, Other areas, ["he", "en"])
-7. **הייפרוב / HighProv** (Group, Tel-Aviv, ["he"])
-8. **Tel Aviv Improv Workshop** (Group, Tel-Aviv, ["en", "he"])
-9. **Bi-Lingual Improv in Tel-Aviv** (Group, Tel-Aviv, ["he", "en"])
-10. **Improv NOW!** (Other, Tel-Aviv, ["he", "en"])
-11. **Mind Flow** (School, Tel-Aviv, ["he"])
-12. **Center Stage Israel** (School, Tel-Aviv, ["en"])
-13. **English On Stage — Maniact** (Group, Tel-Aviv, ["en"])
-14. **Crossroads — Theater Shed** (School, Jerusalem, ["en"])
-15. **J-Town Playhouse (JET Community)** (Theater, Jerusalem, ["en"])
-16. **Debbie Hirsch — Laughter Games** (Other, Jerusalem, ["en"])
-17. **חי-פה / Hai-Pa (Beit HaGefen)** (Group, Haifa, ["he"])
+3. **AJV Validation in Unit Tests**:
+   - Add/ensure `ajv` and `ajv-formats` are installed as devDependencies.
+   - Refactor `src/lib/organizers-data.test.ts` to use Ajv and validate the entire `docs/israeli_improv_organizers.json` file in one assertion.
+   - Add explicit assertion that `organizers.length === 17`.
 
-We will exclude adjacent acting schools (Nissan Nativ, Impro), stand-up heavy clubs, general venues, and unverified/TODO entries (Monty, Line Up).
-
-## Verification Plan
-1. Validate `docs/israeli_improv_organizers.json` against `docs/organizer-schema.json` using a schema validation script.
-2. Run the repository-wide verification harness script: `node scripts/verify-harness.js`.
+4. **Verification**:
+   - Run `npm test` to verify unit tests pass.
+   - Run `node scripts/verify-harness.js` to ensure the entire verification suite passes.
+   - Commit and push to `feature/impcal-60`.

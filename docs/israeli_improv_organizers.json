@@ -10,7 +10,7 @@
         "value": "תיאטרון האימפרוב"
       }
     ],
-    "type": "Theater",
+    "type": "School",
     "description": [
       {
         "locale": "en",
@@ -106,7 +106,7 @@
       }
     ],
     "region": "Tel-Aviv",
-    "languages": ["he", "en"],
+    "languages": ["he"],
     "links": [
       {
         "url": "https://www.improvise.co.il/",
@@ -221,7 +221,7 @@
         "value": "קבוצת אימפרוב ותיקה (~12+ שנים): סדנאות עסקיות + מופע אימפרוב במפגש אחד. עברית ואנגלית."
       }
     ],
-    "region": "Tel-Aviv",
+    "region": "Other areas",
     "languages": ["he", "en"],
     "links": [
       {
@@ -335,7 +335,7 @@
         "value": "אימפרוב עכשיו!"
       }
     ],
-    "type": "Group",
+    "type": "Other",
     "description": [
       {
         "locale": "en",
@@ -453,7 +453,7 @@
         "value": "Crossroads — Theater Shed"
       }
     ],
-    "type": "School",
+    "type": "Group",
     "description": [
       {
         "locale": "en",

@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
-import { describe, expect, it } from "vitest";
 
 const schemaPath = join(process.cwd(), "docs", "organizer-schema.json");
 const dataPath = join(process.cwd(), "docs", "israeli_improv_organizers.json");
@@ -32,18 +32,14 @@ interface ExpectedOrganizer {
 
 const organizers = JSON.parse(readFileSync(dataPath, "utf-8")) as ExpectedOrganizer[];
 
-const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
-const validateOrganizers = ajv.compile(schema);
-
 describe("organizer schema and data integrity", () => {
   it("schema defines the correct structure and enums", () => {
-    const organizerRecord = schema.definitions.organizerRecord;
-
     expect(schema.$schema).toBe("http://json-schema.org/draft-07/schema#");
     expect(schema.type).toBe("array");
-    expect(organizerRecord.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
-    expect(organizerRecord.properties.region.enum).toEqual([
+
+    const orgSchema = schema.definitions.organizer;
+    expect(orgSchema.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
+    expect(orgSchema.properties.region.enum).toEqual([
       "Tel-Aviv",
       "Jerusalem",
       "Beer-Sheva",
@@ -51,8 +47,8 @@ describe("organizer schema and data integrity", () => {
       "Hasharon",
       "Other areas",
     ]);
-    expect(organizerRecord.properties.languages.items.enum).toEqual(["he", "en"]);
-    expect(organizerRecord.properties.links.items.properties.type.enum).toEqual([
+    expect(orgSchema.properties.languages.items.enum).toEqual(["he", "en"]);
+    expect(orgSchema.properties.links.items.properties.type.enum).toEqual([
       "Website",
       "Facebook",
       "Facebook event",
@@ -62,12 +58,16 @@ describe("organizer schema and data integrity", () => {
     ]);
   });
 
-  it("israeli_improv_organizers.json contains valid data conforming to the schema", () => {
-    const valid = validateOrganizers(organizers);
-    expect(
-      valid,
-      `Data file validation failed: ${JSON.stringify(validateOrganizers.errors, null, 2)}`
-    ).toBe(true);
+  it("israeli_improv_organizers.json contains valid data conforming to the schema and has exactly 17 organizers", () => {
+    const ajv = new Ajv({ allErrors: true });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const valid = validate(organizers);
+    if (!valid) {
+      console.error("Schema validation errors:", validate.errors);
+    }
+    expect(valid).toBe(true);
+    expect(organizers.length).toBe(17);
   });
 
   it("does not include general venues or unverified entries", () => {

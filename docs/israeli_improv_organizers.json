@@ -1,8 +1,26 @@
 [
   {
-    "name": "Improv Theater Israel / תיאטרון האימפרוב",
-    "type": "School",
-    "description": "Main improv school & performance home in Israel (since 2007). Courses, jams, festival, long-form shows (e.g. שלושה מאלתרים). Tel Aviv · Haifa · Jerusalem.",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Improv Theater Israel"
+      },
+      {
+        "locale": "he",
+        "value": "תיאטרון האימפרוב"
+      }
+    ],
+    "type": "Theater",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Main improv school & performance home in Israel (since 2007). Courses, jams, festival, long-form shows (e.g. שלושה מאלתרים). Tel Aviv · Haifa · Jerusalem."
+      },
+      {
+        "locale": "he",
+        "value": "בית הספר ובית ההופעות המרכזי לאימפרוב בישראל (מאז 2007). קורסים, ג'אמים, פסטיבל, מופעי לונג-פורם (למשל, שלושה מאלתרים). תל אביב · חיפה · ירושלים."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he", "en"],
     "links": [
@@ -34,9 +52,27 @@
     ]
   },
   {
-    "name": "ImPro's (אימפרוס)",
+    "name": [
+      {
+        "locale": "en",
+        "value": "ImPro's"
+      },
+      {
+        "locale": "he",
+        "value": "אימפרוס"
+      }
+    ],
     "type": "School",
-    "description": "Professional improv school / cultural movement (Gal Viner). Courses and community for experienced improvisers.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Professional improv school / cultural movement (Gal Viner). Courses and community for experienced improvisers."
+      },
+      {
+        "locale": "he",
+        "value": "בית ספר מקצועי לאימפרוביזציה / תנועה תרבותית (גל וינר). קורסים וקהילה למאלתרים מנוסים."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he"],
     "links": [
@@ -48,9 +84,27 @@
     ]
   },
   {
-    "name": "Improvise.co.il",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Improvise.co.il"
+      },
+      {
+        "locale": "he",
+        "value": "אימפרוביז"
+      }
+    ],
     "type": "School",
-    "description": "Workshops (beginners → advanced), weekly improv group, corporate training. Short-form focus; Rod Ben Zeev–associated content on corporate workshops.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Workshops (beginners → advanced), weekly improv group, corporate training. Short-form focus; Rod Ben Zeev–associated content on corporate workshops."
+      },
+      {
+        "locale": "he",
+        "value": "סדנאות (מתחילים ← מתקדמים), קבוצת אימפרוב שבועית, הדרכות עסקיות. התמקדות בשורט-פורם; תוכן בשיתוף רוד בן זאב לסדנאות ארגוניות."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he"],
     "links": [
@@ -72,9 +126,27 @@
     ]
   },
   {
-    "name": "Provizori / פרוביזורי",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Provizori"
+      },
+      {
+        "locale": "he",
+        "value": "פרוביזורי"
+      }
+    ],
     "type": "Group",
-    "description": "Rotating cast of well-known comedians; audience-driven improv comedy (skits, stand-up bits, songs). Shows & corporate workshops.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Rotating cast of well-known comedians; audience-driven improv comedy (skits, stand-up bits, songs). Shows & corporate workshops."
+      },
+      {
+        "locale": "he",
+        "value": "צוות מתחלף של קומיקאים מוכרים; קומדיית אימפרוביזציה מונחית קהל (מערכונים, קטעי סטנדאפ, שירים). מופעים וסדנאות עסקיות."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he"],
     "links": [
@@ -86,9 +158,27 @@
     ]
   },
   {
-    "name": "4play / פורפליי",
+    "name": [
+      {
+        "locale": "en",
+        "value": "4play"
+      },
+      {
+        "locale": "he",
+        "value": "פורפליי"
+      }
+    ],
     "type": "Group",
-    "description": "Long-form improv comedy troupe (Impro LIVE): Armando + full improvised play, live music & lighting. Private events, Cameri Academy courses.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Long-form improv comedy troupe (Impro LIVE): Armando + full improvised play, live music & lighting. Private events, Cameri Academy courses."
+      },
+      {
+        "locale": "he",
+        "value": "אנסמבל קומדיית אימפרוביזציה לונג-פורם (אימפרו לייב): ארמנדו + מחזה מאולתר מלא, מוזיקה ותאורה חיה. אירועים פרטיים, קורסים באקדמיית הקאמרי."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he"],
     "links": [
@@ -110,10 +200,28 @@
     ]
   },
   {
-    "name": "Shlofta / שלופתא",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Shlofta"
+      },
+      {
+        "locale": "he",
+        "value": "שלופתא"
+      }
+    ],
     "type": "Group",
-    "description": "Established improv group (~12+ years): corporate workshops + improv show in one session. Hebrew & English.",
-    "region": "Other areas",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Established improv group (~12+ years): corporate workshops + improv show in one session. Hebrew & English."
+      },
+      {
+        "locale": "he",
+        "value": "קבוצת אימפרוב ותיקה (~12+ שנים): סדנאות עסקיות + מופע אימפרוב במפגש אחד. עברית ואנגלית."
+      }
+    ],
+    "region": "Tel-Aviv",
     "languages": ["he", "en"],
     "links": [
       {
@@ -124,9 +232,27 @@
     ]
   },
   {
-    "name": "HighProv / הייפרוב",
+    "name": [
+      {
+        "locale": "en",
+        "value": "HighProv"
+      },
+      {
+        "locale": "he",
+        "value": "הייפרוב"
+      }
+    ],
     "type": "Group",
-    "description": "Corporate team-building workshops & short-form improv shows (Tel Aviv–based).",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Corporate team-building workshops & short-form improv shows (Tel Aviv–based)."
+      },
+      {
+        "locale": "he",
+        "value": "סדנאות גיבוש עסקיות ומופעי אימפרוב שורט-פורם (מבוסס בתל אביב)."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he"],
     "links": [
@@ -138,9 +264,19 @@
     ]
   },
   {
-    "name": "Tel Aviv Improv Workshop",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Tel Aviv Improv Workshop"
+      }
+    ],
     "type": "Group",
-    "description": "Open drop-in English-friendly community jam. Tuesdays ~19:45–21:45, Dubnov Garden (check group for changes).",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Open drop-in English-friendly community jam. Tuesdays ~19:45–21:45, Dubnov Garden (check group for changes)."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["en"],
     "links": [
@@ -157,9 +293,27 @@
     ]
   },
   {
-    "name": "Bi-Lingual Improv in Tel-Aviv",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Bi-Lingual Improv in Tel-Aviv"
+      },
+      {
+        "locale": "he",
+        "value": "אימפרוב דו-לשוני בתל אביב"
+      }
+    ],
     "type": "Group",
-    "description": "Bilingual improv sessions/workshops in Tel Aviv.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Bilingual improv sessions/workshops in Tel Aviv."
+      },
+      {
+        "locale": "he",
+        "value": "סדנאות ומפגשי אימפרוב דו-לשוניים בתל אביב."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he", "en"],
     "links": [
@@ -171,9 +325,27 @@
     ]
   },
   {
-    "name": "Improv NOW!",
-    "type": "Other",
-    "description": "WhatsApp group for instant/current updates on improv jams, workshops, and community events.",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Improv NOW!"
+      },
+      {
+        "locale": "he",
+        "value": "אימפרוב עכשיו!"
+      }
+    ],
+    "type": "Group",
+    "description": [
+      {
+        "locale": "en",
+        "value": "WhatsApp group for instant/current updates on improv jams, workshops, and community events."
+      },
+      {
+        "locale": "he",
+        "value": "קבוצת וואטסאפ לעדכונים מיידיים ושוטפים על ג'אמים, סדנאות ואירועי קהילה של אימפרוב."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he", "en"],
     "links": [
@@ -185,9 +357,27 @@
     ]
   },
   {
-    "name": "Mind Flow",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Mind Flow"
+      },
+      {
+        "locale": "he",
+        "value": "מיינד פלו"
+      }
+    ],
     "type": "School",
-    "description": "Improv courses (101→401), jams, final performances; also corporate applied-improv training. Often at Clipa / Fermata Studio.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Improv courses (101→401), jams, final performances; also corporate applied-improv training. Often at Clipa / Fermata Studio."
+      },
+      {
+        "locale": "he",
+        "value": "קורסי אימפרוב (101←401), ג'אמים, הופעות סיום; וכן סדנאות אימפרוב יישומי לעסקים. לרוב בסטודיו קליפה / פרמטה."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["he"],
     "links": [
@@ -209,9 +399,19 @@
     ]
   },
   {
-    "name": "Center Stage Israel",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Center Stage Israel"
+      }
+    ],
     "type": "School",
-    "description": "English-language improv course (beginners welcome).",
+    "description": [
+      {
+        "locale": "en",
+        "value": "English-language improv course (beginners welcome)."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["en"],
     "links": [
@@ -223,9 +423,19 @@
     ]
   },
   {
-    "name": "English On Stage — Maniact",
+    "name": [
+      {
+        "locale": "en",
+        "value": "English On Stage — Maniact"
+      }
+    ],
     "type": "Group",
-    "description": "English-language improv performance troupe (adult / family-friendly variants).",
+    "description": [
+      {
+        "locale": "en",
+        "value": "English-language improv performance troupe (adult / family-friendly variants)."
+      }
+    ],
     "region": "Tel-Aviv",
     "languages": ["en"],
     "links": [
@@ -237,9 +447,19 @@
     ]
   },
   {
-    "name": "Crossroads — Theater Shed",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Crossroads — Theater Shed"
+      }
+    ],
     "type": "Group",
-    "description": "Youth/young-adult program: improv, playwriting, production. Wed rehearsals.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Youth/young-adult program: improv, playwriting, production. Wed rehearsals."
+      }
+    ],
     "region": "Jerusalem",
     "languages": ["en"],
     "links": [
@@ -251,9 +471,19 @@
     ]
   },
   {
-    "name": "J-Town Playhouse (JET Community)",
+    "name": [
+      {
+        "locale": "en",
+        "value": "J-Town Playhouse (JET Community)"
+      }
+    ],
     "type": "Theater",
-    "description": "English-language theater in Jerusalem; improv shows & workshops among programming.",
+    "description": [
+      {
+        "locale": "en",
+        "value": "English-language theater in Jerusalem; improv shows & workshops among programming."
+      }
+    ],
     "region": "Jerusalem",
     "languages": ["en"],
     "links": [
@@ -265,9 +495,19 @@
     ]
   },
   {
-    "name": "Debbie Hirsch — Laughter Games",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Debbie Hirsch — Laughter Games"
+      }
+    ],
     "type": "Other",
-    "description": "Facilitated improv / laughter workshops (groups, families, virtual).",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Facilitated improv / laughter workshops (groups, families, virtual)."
+      }
+    ],
     "region": "Jerusalem",
     "languages": ["en"],
     "links": [
@@ -279,9 +519,27 @@
     ]
   },
   {
-    "name": "Hai-Pa (Beit HaGefen) / חי-פה",
+    "name": [
+      {
+        "locale": "en",
+        "value": "Hai-Pa (Beit HaGefen)"
+      },
+      {
+        "locale": "he",
+        "value": "חי-פה (בית הגפן)"
+      }
+    ],
     "type": "Group",
-    "description": "Community theater workshops in Haifa (includes improv techniques in acting workshops).",
+    "description": [
+      {
+        "locale": "en",
+        "value": "Community theater workshops in Haifa (includes improv techniques in acting workshops)."
+      },
+      {
+        "locale": "he",
+        "value": "סדנאות תיאטרון קהילתיות בחיפה (כולל טכניקות אימפרוב בסדנאות משחק)."
+      }
+    ],
     "region": "Haifa",
     "languages": ["he"],
     "links": [

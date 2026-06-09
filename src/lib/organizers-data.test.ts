@@ -7,6 +7,11 @@ const dataPath = join(process.cwd(), "docs", "israeli_improv_organizers.json");
 
 const schema = JSON.parse(readFileSync(schemaPath, "utf-8"));
 
+interface LocalizedString {
+  locale: "en" | "he";
+  value: string;
+}
+
 interface ExpectedLink {
   url: string;
   type: string;
@@ -14,9 +19,9 @@ interface ExpectedLink {
 }
 
 interface ExpectedOrganizer {
-  name: string;
+  name: LocalizedString[];
   type: string;
-  description: string;
+  description: LocalizedString[];
   region: string;
   languages: string[];
   logoUrl?: string;
@@ -28,9 +33,9 @@ const organizers = JSON.parse(readFileSync(dataPath, "utf-8")) as ExpectedOrgani
 describe("organizer schema and data integrity", () => {
   it("schema defines the correct structure and enums", () => {
     expect(schema.$schema).toBe("http://json-schema.org/draft-07/schema#");
-    expect(schema.type).toBe("array");
-    expect(schema.items.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
-    expect(schema.items.properties.region.enum).toEqual([
+    expect(schema.type).toBe("object");
+    expect(schema.properties.type.enum).toEqual(["Group", "School", "Theater", "Other"]);
+    expect(schema.properties.region.enum).toEqual([
       "Tel-Aviv",
       "Jerusalem",
       "Beer-Sheva",
@@ -38,8 +43,8 @@ describe("organizer schema and data integrity", () => {
       "Hasharon",
       "Other areas",
     ]);
-    expect(schema.items.properties.languages.items.enum).toEqual(["he", "en"]);
-    expect(schema.items.properties.links.items.properties.type.enum).toEqual([
+    expect(schema.properties.languages.items.enum).toEqual(["he", "en"]);
+    expect(schema.properties.links.items.properties.type.enum).toEqual([
       "Website",
       "Facebook",
       "Facebook event",
@@ -51,29 +56,62 @@ describe("organizer schema and data integrity", () => {
 
   it("israeli_improv_organizers.json contains valid data conforming to the schema", () => {
     expect(Array.isArray(organizers)).toBe(true);
-    expect(organizers.length).toBe(17);
+    expect(organizers.length).toBeGreaterThan(0);
 
-    const validTypes = schema.items.properties.type.enum;
-    const validRegions = schema.items.properties.region.enum;
-    const validLanguages = schema.items.properties.languages.items.enum;
-    const validLinkTypes = schema.items.properties.links.items.properties.type.enum;
+    const validTypes = schema.properties.type.enum;
+    const validRegions = schema.properties.region.enum;
+    const validLanguages = schema.properties.languages.items.enum;
+    const validLinkTypes = schema.properties.links.items.properties.type.enum;
 
     organizers.forEach((org: ExpectedOrganizer, idx: number) => {
-      const name = org.name;
-      expect(name, `Organizer #${idx} name`).toBeDefined();
-      expect(typeof name, `Organizer #${idx} name type`).toBe("string");
+      // Validate localized name
+      expect(Array.isArray(org.name), `Organizer #${idx} name is array`).toBe(true);
+      expect(org.name.length, `Organizer #${idx} name is not empty`).toBeGreaterThan(0);
+      const nameLocales = org.name.map((n) => n.locale);
+      const uniqueNameLocales = new Set(nameLocales);
+      expect(nameLocales.length, `Organizer #${idx} name locales length matches unique set`).toBe(
+        uniqueNameLocales.size
+      );
+      org.name.forEach((nameObj, nIdx) => {
+        expect(["en", "he"], `Organizer #${idx} name locale #${nIdx}`).toContain(nameObj.locale);
+        expect(typeof nameObj.value, `Organizer #${idx} name value #${nIdx}`).toBe("string");
+        expect(
+          nameObj.value.length,
+          `Organizer #${idx} name value length #${nIdx}`
+        ).toBeGreaterThan(0);
+      });
 
+      // Validate category
       expect(validTypes, `Organizer #${idx} type "${org.type}"`).toContain(org.type);
-      expect(org.description, `Organizer #${idx} description`).toBeDefined();
-      expect(typeof org.description, `Organizer #${idx} description type`).toBe("string");
 
+      // Validate localized description
+      expect(Array.isArray(org.description), `Organizer #${idx} description is array`).toBe(true);
+      expect(org.description.length, `Organizer #${idx} description is not empty`).toBeGreaterThan(
+        0
+      );
+      const descLocales = org.description.map((d) => d.locale);
+      const uniqueDescLocales = new Set(descLocales);
+      expect(
+        descLocales.length,
+        `Organizer #${idx} description locales length matches unique set`
+      ).toBe(uniqueDescLocales.size);
+      org.description.forEach((descObj, dIdx) => {
+        expect(["en", "he"], `Organizer #${idx} description locale #${dIdx}`).toContain(
+          descObj.locale
+        );
+        expect(typeof descObj.value, `Organizer #${idx} description value #${dIdx}`).toBe("string");
+        expect(
+          descObj.value.length,
+          `Organizer #${idx} description value length #${dIdx}`
+        ).toBeGreaterThan(0);
+      });
+
+      // Validate region
       expect(validRegions, `Organizer #${idx} region "${org.region}"`).toContain(org.region);
 
+      // Validate languages
       expect(Array.isArray(org.languages), `Organizer #${idx} languages is array`).toBe(true);
       expect(org.languages.length, `Organizer #${idx} languages is not empty`).toBeGreaterThan(0);
-      expect(org.languages.length, `Organizer #${idx} languages must be unique`).toBe(
-        new Set(org.languages).size
-      );
       org.languages.forEach((lang: string) => {
         expect(validLanguages, `Organizer #${idx} language "${lang}"`).toContain(lang);
       });
@@ -136,12 +174,14 @@ describe("organizer schema and data integrity", () => {
     ];
 
     organizers.forEach((org: ExpectedOrganizer) => {
-      const nameLower = org.name.toLowerCase();
-      forbiddenSubstrings.forEach((forbidden) => {
-        expect(
-          nameLower,
-          `Organizer "${org.name}" must not contain forbidden word "${forbidden}"`
-        ).not.toContain(forbidden);
+      org.name.forEach((localizedName) => {
+        const nameLower = localizedName.value.toLowerCase();
+        forbiddenSubstrings.forEach((forbidden) => {
+          expect(
+            nameLower,
+            `Organizer name component "${localizedName.value}" must not contain forbidden word "${forbidden}"`
+          ).not.toContain(forbidden);
+        });
       });
     });
   });

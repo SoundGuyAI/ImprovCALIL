@@ -16,7 +16,13 @@
     "edit": "Edit",
     "cancel": "Cancel",
     "unknown": "Unknown",
-    "featured": "Featured"
+    "featured": "Featured",
+    "listView": "List View",
+    "weekView": "Week View",
+    "monthView": "Month View",
+    "today": "Today",
+    "next": "Next",
+    "prev": "Previous"
   },
   "Navigation": {
     "calendar": "Calendar",
@@ -45,7 +51,8 @@
     "Beer-Sheva": "Beer Sheva",
     "Haifa": "Haifa",
     "Hasharon": "Hasharon",
-    "Other": "Other Areas"
+    "Other": "Other Areas",
+    "Other areas": "Other Areas"
   },
   "EventTypes": {
     "Show": "Show",

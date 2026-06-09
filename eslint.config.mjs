@@ -20,6 +20,7 @@ const eslintConfig = [
       ".claude/**",
       ".kiro/**",
       "scripts/**",
+      "scratch/**",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),

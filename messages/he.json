@@ -16,7 +16,13 @@
     "edit": "ערוך",
     "cancel": "ביטול",
     "unknown": "לא ידוע",
-    "featured": "מומלץ"
+    "featured": "מומלץ",
+    "listView": "תצוגת רשימה",
+    "weekView": "תצוגת שבוע",
+    "monthView": "תצוגת חודש",
+    "today": "היום",
+    "next": "הבא",
+    "prev": "הקודם"
   },
   "Navigation": {
     "calendar": "לוח אירועים",
@@ -45,7 +51,8 @@
     "Beer-Sheva": "באר שבע והדרום",
     "Haifa": "חיפה והצפון",
     "Hasharon": "אזור השרון",
-    "Other": "אזורים אחרים"
+    "Other": "אזורים אחרים",
+    "Other areas": "אזורים אחרים"
   },
   "EventTypes": {
     "Show": "הופעה",

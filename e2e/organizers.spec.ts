@@ -8,6 +8,9 @@ test.describe("Organizers Directory and Details E2E Tests", () => {
     // Check directory title
     await expect(page.locator("h1")).toContainText("Improv Organizers Directory");
 
+    // Wait for the loading state to finish
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible();
+
     // Verify all mock organizers from seed data are visible
     await expect(page.locator("text=Improv Israel School")).toBeVisible();
     await expect(page.locator("text=Jerusalem Improv Troupe")).toBeVisible();

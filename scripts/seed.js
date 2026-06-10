@@ -130,6 +130,7 @@ const EVENTS = [
   {
     id: "evt-grand-show",
     name: "Grand Improv Night - Summer Edition",
+    type: "Show",
     organizerId: "org-improv-school",
     organizerName: "Improv Israel School",
     description:
@@ -150,6 +151,7 @@ const EVENTS = [
   {
     id: "evt-weekly-jam",
     name: "Open Community Stage & Jam",
+    type: "Jam",
     organizerId: "org-improv-school",
     organizerName: "Improv Israel School",
     description:
@@ -170,6 +172,7 @@ const EVENTS = [
   {
     id: "evt-jlm-workshop",
     name: "Long-form Formats Masterclass",
+    type: "Workshop",
     organizerId: "org-jlm-troupe",
     organizerName: "Jerusalem Improv Troupe",
     description:
@@ -190,6 +193,7 @@ const EVENTS = [
   {
     id: "evt-haifa-festival",
     name: "Carmel Improv Festival 2026",
+    type: "Festival",
     organizerId: "org-haifa-theater",
     organizerName: "Haifa Improv Theater",
     description: "Three days of shows, jams, and international guest workshops on the bay.",
@@ -209,6 +213,7 @@ const EVENTS = [
   {
     id: "evt-hidden-show",
     name: "Draft Secret Performance",
+    type: "Show",
     organizerName: "Living Room Troupe",
     description: "Private invite-only test. Should not appear on public calendar.",
     time: Date.now() + 1 * 24 * 60 * 60 * 1000,

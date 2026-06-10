@@ -192,8 +192,7 @@ const EVENTS = [
     name: "Carmel Improv Festival 2026",
     organizerId: "org-haifa-theater",
     organizerName: "Haifa Improv Theater",
-    description:
-      "Three days of shows, jams, and international guest workshops on the bay. Re-rendered static index test.",
+    description: "Three days of shows, jams, and international guest workshops on the bay.",
     time: Date.now() + 8 * 24 * 60 * 60 * 1000, // 8 days in future
     endTime: Date.now() + 11 * 24 * 60 * 60 * 1000, // 3 day festival
     recurrence: "one-time",

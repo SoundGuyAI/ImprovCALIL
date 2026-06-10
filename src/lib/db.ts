@@ -426,6 +426,7 @@ export async function getEvents(filters?: {
       events.push({
         id: docOfSnap.id,
         name: data.name || "",
+        type: data.type,
         organizerId: data.organizerId,
         organizerName: data.organizerName || "Unknown",
         description: data.description || "",
@@ -571,6 +572,7 @@ export async function getOrganizerDetails(id: string): Promise<{
       events.push({
         id: evtDoc.id,
         name: evtData.name || "",
+        type: evtData.type,
         organizerId: id,
         organizerName: organizer.name,
         description: evtData.description || "",

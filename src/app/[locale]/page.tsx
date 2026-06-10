@@ -57,7 +57,7 @@ export default function Home() {
   // View & Date Navigation State
   const [viewMode, setViewMode] = useState<"list" | "week" | "month">("list");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(() => new Date());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -104,35 +104,41 @@ export default function Home() {
     // Event Type
     if (selectedType !== "all") {
       const typeLower = selectedType.toLowerCase();
-      // Jam, Show, Workshop, Festival
-      if (
-        typeLower === "show" &&
-        !e.name.toLowerCase().includes("show") &&
-        !e.name.toLowerCase().includes("מופע") &&
-        !e.description.toLowerCase().includes("show")
-      )
-        return false;
-      if (
-        typeLower === "jam" &&
-        !e.name.toLowerCase().includes("jam") &&
-        !e.name.toLowerCase().includes("ג'אם") &&
-        !e.description.toLowerCase().includes("jam")
-      )
-        return false;
-      if (
-        typeLower === "workshop" &&
-        !e.name.toLowerCase().includes("workshop") &&
-        !e.name.toLowerCase().includes("סדנ") &&
-        !e.description.toLowerCase().includes("workshop")
-      )
-        return false;
-      if (
-        typeLower === "festival" &&
-        !e.name.toLowerCase().includes("festival") &&
-        !e.name.toLowerCase().includes("פסטיבל") &&
-        !e.description.toLowerCase().includes("festival")
-      )
-        return false;
+      if (e.type !== undefined && e.type !== null) {
+        if (e.type.toLowerCase() !== typeLower) {
+          return false;
+        }
+      } else {
+        // Jam, Show, Workshop, Festival
+        if (
+          typeLower === "show" &&
+          !e.name.toLowerCase().includes("show") &&
+          !e.name.toLowerCase().includes("מופע") &&
+          !e.description.toLowerCase().includes("show")
+        )
+          return false;
+        if (
+          typeLower === "jam" &&
+          !e.name.toLowerCase().includes("jam") &&
+          !e.name.toLowerCase().includes("ג'אם") &&
+          !e.description.toLowerCase().includes("jam")
+        )
+          return false;
+        if (
+          typeLower === "workshop" &&
+          !e.name.toLowerCase().includes("workshop") &&
+          !e.name.toLowerCase().includes("סדנ") &&
+          !e.description.toLowerCase().includes("workshop")
+        )
+          return false;
+        if (
+          typeLower === "festival" &&
+          !e.name.toLowerCase().includes("festival") &&
+          !e.name.toLowerCase().includes("פסטיבל") &&
+          !e.description.toLowerCase().includes("festival")
+        )
+          return false;
+      }
     }
     // Language
     if (selectedLanguage !== "all" && e.language !== selectedLanguage) return false;
@@ -837,7 +843,7 @@ export default function Home() {
 
               {/* Month View Selected Day Events Panel */}
               {selectedCalendarDay && (
-                <div className="border border-zinc-800 bg-zinc-900/10 rounded-2xl p-5 flex flex-col gap-4">
+                <div className="md:hidden border border-zinc-800 bg-zinc-900/10 rounded-2xl p-5 flex flex-col gap-4">
                   <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
                     <h4 className="text-sm sm:text-md font-bold text-white flex items-center gap-2">
                       <CalendarIcon className="w-4 h-4 text-indigo-400" />

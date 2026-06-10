@@ -1,48 +1,38 @@
-# Implementation Plan - IMPCAL-13: Add Calendar View to Main Page
+# Plan - Address PR Comments and Fix Bugs
 
-This plan outlines the design and implementation steps for introducing week and month calendar views on the localized home page (`/en` and `/he`).
+This plan details the fixes for bugs identified in PR 76 review #4462967694, including the month drawer desync, event type mapping, and seed data cleanup, followed by creating a Linear card for multi-day events.
 
-## User Experience Goals
-1. **View Modes**: Introduce a switchable control (tabs) for `List`, `Week`, and `Month` views.
-2. **Consistent Filters**: Ensure all filters (search, region, type, language, cost, access) continue to filter the events shown in all views.
-3. **Week View Layout**: 
-   - Displays a 7-day view starting on Sunday (the start of the workweek in Israel).
-   - Allows navigation to the previous/next week and a "Today" button to return.
-   - Shows event cards on each day with event name, time, region, and details trigger.
-4. **Month View Layout**:
-   - A grid layout of the current month.
-   - Supports RTL layout natively for `/he` (columns reversed or localized).
-   - Responsive design: on desktop, shows compact event links inside cells; on mobile, days with events show indicators (dots), and clicking a day displays the selected day's events below the grid.
-   - Allows navigation to previous/next month and a "Today" button.
-5. **Affordances**: Clicking an event inside any view triggers the existing event detail modal.
+## User Review Required
 
-## Technical Design
+> [!NOTE]
+> We will create a Linear issue for the multi-day event calendar rendering constraint, as it is a pre-existing architectural limitation of `getEventsForDay` and is outside the immediate scope of PR 76.
 
-### State management in `page.tsx`
-- `viewMode`: `'list' | 'week' | 'month'` (defaults to `'list'`)
-- `currentDate`: `Date` (reference date for week/month navigation, defaults to today)
-- `selectedCalendarDay`: `Date | null` (currently selected day for mobile month detail drawer/section, defaults to today)
+## Proposed Changes
 
-### Helper Utilities
-We will add standard JS Date helpers directly inside `page.tsx` or as inline functions:
-- `getStartOfWeek(date: Date)`: returns Sunday of that week.
-- `getDaysInMonth(year: number, month: number)`: returns number of days.
-- `getFirstDayOfMonth(year: number, month: number)`: returns index (0-6) of the first day.
-- `isSameDay(date1: Date, date2: Date)`: checks if two dates are the same calendar day.
+### Next.js Client & Components
 
-### Translations
-We will add new keys in `messages/en.json` and `messages/he.json`:
-- `Common.listView`: "List View" / "תצוגת רשימה"
-- `Common.weekView`: "Week View" / "תצוגת שבוע"
-- `Common.monthView`: "Month View" / "תצוגת חודש"
-- `Common.today`: "Today" / "היום"
-- `Common.next`: "Next" / "הבא"
-- `Common.prev`: "Previous" / "הקודם"
+#### [MODIFY] [page.tsx](file:///C:/Users/Oded/.gemini/antigravity/worktrees/IMPCAL-13/src/app/[locale]/page.tsx)
+- Revert initial `selectedCalendarDay` state to `null` to prevent the mobile events panel from opening automatically on load.
+- Add `md:hidden` class to the Month View selected-day events panel container to prevent it from rendering on desktop viewports (where events are already listed inline within the calendar cells).
+- Update the event type filter logic to inspect `e.type` directly (case-insensitive) if it is set. If `e.type` is not present, fall back to title and description keyword checks to support legacy events.
 
-## Verification Steps
-1. **Manual Check**: Verify UI toggles, Hebrew translation, and RTL rendering.
-2. **E2E Tests**: Write automated E2E tests in `e2e/calendar.spec.ts` using Playwright:
-   - Verifies the view mode switcher is visible.
-   - Switches to Week View, verifies navigation and event presence.
-   - Switches to Month View, clicks a day/event, verifies detail modal opens.
-3. **Verify Harness**: Run `node scripts/verify-harness.js`.
+### Data Layer
+
+#### [MODIFY] [db.ts](file:///C:/Users/Oded/.gemini/antigravity/worktrees/IMPCAL-13/src/lib/db.ts)
+- Update `getEvents` document mapping to copy `type: data.type` into the returned `FirestoreEvent` object.
+- Update `getOrganizerDetails` document mapping to copy `type: evtData.type` into the returned events list.
+
+### Scripts & Tooling
+
+#### [MODIFY] [seed.js](file:///C:/Users/Oded/.gemini/antigravity/worktrees/IMPCAL-13/scripts/seed.js)
+- Remove the leftover debug string `" Re-rendered static index test."` from the description of `evt-haifa-festival`.
+
+## Linear Integration
+- Create a Linear card for tracking multi-day event calendar rendering support (making events span multiple days instead of just the start day).
+
+## Babysitting & Verification Plan
+- Use `dev_agent` and `reviewer_agent` subagents to apply the changes and execute `node scripts/verify-harness.js`.
+- Push to `feature/impcal-13`.
+- Run a babysitting loop that waits for 5 minutes after pushing to ensure GitHub Actions CI completes fully and Bugbot submits its final review.
+- Double-check comments and review status to ensure there are no new issues.
+- Dispatch a Telegram notification on completion.

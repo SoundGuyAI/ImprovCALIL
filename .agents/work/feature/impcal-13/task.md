@@ -1,0 +1,21 @@
+# Task Checklist
+
+- [x] Merge PR 75 (impcal-60) into master
+- [x] Pull master in the main repository `C:/UnityProj/ImprovCALIL`
+- [x] Remove the local git worktree `C:/Users/Oded/.gemini/antigravity/worktrees/IMPCAL-60`
+- [x] Merge master into feature/impcal-13 in the worktree `C:/Users/Oded/.gemini/antigravity/worktrees/IMPCAL-13`
+- [x] Resolve merge conflicts (using dev-agent and reviewer-agent)
+- [x] Run verification checks (`node scripts/verify-harness.js`)
+- [x] Commit and push resolutions to `feature/impcal-13`
+- [x] Babysit PR 76 (impcal-13) and apply review fixes:
+  - [x] Implement bug fixes in worktree (using dev-agent and reviewer-agent):
+    - [x] Set `selectedCalendarDay` initial state to `null` in `page.tsx`
+    - [x] Add `md:hidden` to Month View selected-day events panel container in `page.tsx`
+    - [x] Update event type filter logic to use `e.type` in `page.tsx`
+    - [x] Map `type` field in `getEvents` and `getOrganizerDetails` in `db.ts`
+    - [x] Remove leftover debug string in `seed.js`
+  - [x] Run verification checks (`node scripts/verify-harness.js`)
+  - [x] Commit and push changes to `feature/impcal-13`
+  - [x] Create a Linear card for multi-day events rendering support
+  - [x] Wait for 5 minutes and check GitHub Action checks & reviews
+- [x] Send Telegram completion notification

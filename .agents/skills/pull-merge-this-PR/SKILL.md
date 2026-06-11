@@ -17,10 +17,9 @@ To comply with permissions and sandboxing, **you must use MCP tools and the `sch
 ## 📋 Pre-requisites & Inputs
 Before starting, identify the context:
 - **Feature Branch**: e.g., `feature/impcal-51` (defaults to current branch if unspecified)
-- **Target/Base Branch**: e.g., `master` or `main` (defaults to the PR's target branch or `master`)
+- **Target/Base Branch**: e.g., `master` or `main` (defaults to the PR's target branch or `master`/`main`)
 - **PR Number**: The GitHub Pull Request number (must be retrieved/detected)
-- **Repository**: `SoundGuyAI/ImprovCALIL` (owner: `SoundGuyAI`, repo: `ImprovCALIL`)
-
+- **Repository**: `SoundGuyAI/ImprovCALIL` or `SoundGuyAI/ImprovDashboard` (owner: `SoundGuyAI`, repo: `<repo>`)
 
 ---
 
@@ -28,7 +27,6 @@ Before starting, identify the context:
 Whenever any developer subagent is run (to resolve unstaged files, resolve merge conflicts, fix verification failures, or resolve PR comments/reviews) and files are modified, you **MUST** run the two reviewer subagents (Code Reviewer and Bug Hunter) and the verification harness to ensure the new changes are fully correct, secure, and compliant. If the reviewers identify any new bugs or code quality issues, invoke a developer subagent to fix them, run the verification harness, and run both reviewers again. This iterative cycle must continue until both reviewers approve the changes before proceeding to any subsequent steps.
 
 ---
-
 
 ## 🚀 Step 1: Pre-flight Check & Workspace Verification
 1. Run `git status` via terminal command to check for any unstaged, modified, or untracked changes in the current workspace directory.
@@ -39,7 +37,7 @@ Whenever any developer subagent is run (to resolve unstaged files, resolve merge
 ---
 
 ## 🔄 Step 2: Merge the Base Branch
-1. Determine the target/base branch (e.g. `master`).
+1. Determine the target/base branch (e.g. `master` or `main`).
 2. Fetch and merge the target/base branch into the current feature branch:
    ```bash
    git fetch origin <target-branch>
@@ -137,7 +135,7 @@ To avoid terminal command execution prompts, **do not run local shell scripts to
      ```json
      {
        "owner": "SoundGuyAI",
-       "repo": "ImprovCALIL",
+       "repo": "<repo>",
        "pull_number": <pr_number>
      }
      ```
@@ -160,4 +158,3 @@ To avoid terminal command execution prompts, **do not run local shell scripts to
      - Define and call a developer subagent to resolve each feedback/issue.
      - Verify locally, commit, push, and restart the Babysitting process from Step 8.1.
    - If there are no new comments, all previous feedback has been addressed, and all checks are green, then the integration is complete.
-

@@ -64,7 +64,7 @@ Please analyze the codebase, implement a complete solution resolving the issue, 
 - **Screenshot Evidence & Delivery**: When capturing visual verification (browser or Playwright E2E), save screenshots under `.screenshots/{{ issue.identifier }}/attempt-{{ attempt }}/` (or use `SYMPHONY_SCREENSHOT_DIR` when Symphony sets it).
   - Use the shared helper at `e2e/helpers/screenshots.ts` — call `captureScreenshot(page, filename, label?)` instead of raw `page.screenshot({ path })`.
   - Each attempt folder gets a `manifest.json`; the issue index lives at `.screenshots/{{ issue.identifier }}/manifest.json` (flat list — no directory traversal needed).
-  - **Do not commit screenshot files yourself** — save only; the Symphony orchestrator uploads to Linear and commits screenshots (including manifests) to the PR branch after session success.
+  - **You must commit screenshot files yourself** — add and commit the screenshots (including manifests) to your PR branch alongside your code changes.
   - Reference screenshot paths from the issue manifest in task summaries and Linear comments.
   - Create a **new** issue-specific E2E spec per task.
 

@@ -14,6 +14,11 @@ import {
   writeBatch,
 } from "firebase/firestore";
 
+export function normalizeRegion(region?: string | null): string {
+  if (!region || region === "Other areas") return "Other";
+  return region;
+}
+
 export interface EventLink {
   url: string;
   type: string;
@@ -23,6 +28,7 @@ export interface EventLink {
 export interface FirestoreEvent {
   id: string;
   name: string;
+  type?: string;
   organizerId?: string;
   organizerName: string;
   description: string;
@@ -117,6 +123,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-grand-show",
       name: "Grand Improv Night - Summer Edition",
+      type: "Show",
       organizerId: "org-improv-school",
       organizerName: "Improv Israel School",
       description:
@@ -148,6 +155,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-weekly-jam",
       name: "Open Community Stage & Jam",
+      type: "Jam",
       organizerId: "org-improv-school",
       organizerName: "Improv Israel School",
       description:
@@ -174,6 +182,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-jlm-workshop",
       name: "Long-form Formats Masterclass",
+      type: "Workshop",
       organizerId: "org-jlm-troupe",
       organizerName: "Jerusalem Improv Troupe",
       description:
@@ -195,6 +204,7 @@ function getMockEvents(): FirestoreEvent[] {
     {
       id: "evt-haifa-festival",
       name: "Carmel Improv Festival 2026",
+      type: "Festival",
       organizerId: "org-haifa-theater",
       organizerName: "Haifa Improv Theater",
       description: "Three days of shows, jams, and international guest workshops on the bay.",
@@ -259,7 +269,7 @@ function getMockOrganizers(locale: "en" | "he" = getLocaleFromPath()): Firestore
       name,
       type: org.type || "Other",
       description,
-      region: org.region || "Other",
+      region: normalizeRegion(org.region),
       languages: org.languages || ["he"],
       publishStatus: "published",
       hidden: false,
@@ -361,12 +371,17 @@ export async function getEvents(filters?: {
     const filtered: FirestoreEvent[] = [];
     for (const data of allEvents) {
       if (!filters?.includeHidden && data.hidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (
         filters?.type &&
         filters.type !== "all" &&
         data.recurrence !== filters.type &&
-        (data as { type?: string }).type !== filters.type
+        data.type !== filters.type
       ) {
         continue;
       }
@@ -390,7 +405,12 @@ export async function getEvents(filters?: {
 
       // Client-side filtering to bypass Firestore index dependencies on first load
       if (!filters?.includeHidden && data.hidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (
         filters?.type &&
         filters.type !== "all" &&
@@ -410,6 +430,7 @@ export async function getEvents(filters?: {
       events.push({
         id: docOfSnap.id,
         name: data.name || "",
+        type: data.type,
         organizerId: data.organizerId,
         organizerName: data.organizerName || "Unknown",
         description: data.description || "",
@@ -418,7 +439,7 @@ export async function getEvents(filters?: {
         recurrence: data.recurrence || "one-time",
         location: data.location || "",
         mapLink: data.mapLink,
-        region: data.region || "Other",
+        region: normalizeRegion(data.region),
         language: data.language || "he",
         cost: data.cost || "Free",
         access: data.access || "Open",
@@ -448,7 +469,12 @@ export async function getOrganizers(filters?: {
     for (const data of allOrgs) {
       if (!filters?.includeHidden && data.hidden) continue;
       if (data.publishStatus !== "published" && !filters?.includeHidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (filters?.type && filters.type !== "all" && data.type !== filters.type) continue;
       filtered.push(data);
     }
@@ -465,7 +491,12 @@ export async function getOrganizers(filters?: {
 
       if (!filters?.includeHidden && data.hidden) continue;
       if (data.publishStatus !== "published" && !filters?.includeHidden) continue;
-      if (filters?.region && filters.region !== "all" && data.region !== filters.region) continue;
+      if (
+        filters?.region &&
+        filters.region !== "all" &&
+        normalizeRegion(data.region) !== normalizeRegion(filters.region)
+      )
+        continue;
       if (filters?.type && filters.type !== "all" && data.type !== filters.type) continue;
 
       const links = await fetchLinksForParent(d.id);
@@ -475,7 +506,7 @@ export async function getOrganizers(filters?: {
         name: data.name || "",
         type: data.type || "Other",
         description: data.description || "",
-        region: data.region || "Other",
+        region: normalizeRegion(data.region),
         languages: data.languages || ["he"],
         logoUrl: data.logoUrl,
         publishStatus: data.publishStatus || "draft",
@@ -523,7 +554,7 @@ export async function getOrganizerDetails(
       name: data.name || "",
       type: data.type || "Other",
       description: data.description || "",
-      region: data.region || "Other",
+      region: normalizeRegion(data.region),
       languages: data.languages || ["he"],
       logoUrl: data.logoUrl,
       publishStatus: data.publishStatus || "draft",
@@ -549,6 +580,7 @@ export async function getOrganizerDetails(
       events.push({
         id: evtDoc.id,
         name: evtData.name || "",
+        type: evtData.type,
         organizerId: id,
         organizerName: organizer.name,
         description: evtData.description || "",
@@ -557,7 +589,7 @@ export async function getOrganizerDetails(
         recurrence: evtData.recurrence || "one-time",
         location: evtData.location || "",
         mapLink: evtData.mapLink,
-        region: evtData.region || "Other",
+        region: normalizeRegion(evtData.region),
         language: evtData.language || "he",
         cost: evtData.cost || "Free",
         access: evtData.access || "Open",

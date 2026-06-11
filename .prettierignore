@@ -13,3 +13,5 @@ public/
 SYMPHONY_TASK.md
 symphony_task.md
 .symphony-screenshots/
+.symphony.json
+.symphony.json.*

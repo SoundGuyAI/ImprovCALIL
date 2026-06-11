@@ -58,7 +58,8 @@
     "Beer-Sheva": "Beer Sheva",
     "Haifa": "Haifa",
     "Hasharon": "Hasharon",
-    "Other": "Other Areas"
+    "Other": "Other Areas",
+    "Other areas": "Other Areas"
   },
   "EventTypes": {
     "Show": "Show",

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { getEvents, FirestoreEvent } from "@/lib/db";
+import { getEvents, FirestoreEvent, normalizeRegion } from "@/lib/db";
 import Header from "@/components/Header";
 import {
   MapPin,
@@ -26,7 +26,7 @@ import {
   CalendarRange,
 } from "lucide-react";
 
-const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other"];
+const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
 const EVENT_TYPES = ["Show", "Jam", "Workshop", "Festival", "Other"];
 
 export default function Home() {
@@ -57,7 +57,7 @@ export default function Home() {
   // View & Date Navigation State
   const [viewMode, setViewMode] = useState<"list" | "week" | "month">("list");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(() => new Date());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -99,39 +99,46 @@ export default function Home() {
       return false;
     }
     // Region
-    if (selectedRegion !== "all" && e.region !== selectedRegion) return false;
+    if (selectedRegion !== "all" && normalizeRegion(e.region) !== normalizeRegion(selectedRegion))
+      return false;
     // Event Type
     if (selectedType !== "all") {
       const typeLower = selectedType.toLowerCase();
-      // Jam, Show, Workshop, Festival
-      if (
-        typeLower === "show" &&
-        !e.name.toLowerCase().includes("show") &&
-        !e.name.toLowerCase().includes("מופע") &&
-        !e.description.toLowerCase().includes("show")
-      )
-        return false;
-      if (
-        typeLower === "jam" &&
-        !e.name.toLowerCase().includes("jam") &&
-        !e.name.toLowerCase().includes("ג'אם") &&
-        !e.description.toLowerCase().includes("jam")
-      )
-        return false;
-      if (
-        typeLower === "workshop" &&
-        !e.name.toLowerCase().includes("workshop") &&
-        !e.name.toLowerCase().includes("סדנ") &&
-        !e.description.toLowerCase().includes("workshop")
-      )
-        return false;
-      if (
-        typeLower === "festival" &&
-        !e.name.toLowerCase().includes("festival") &&
-        !e.name.toLowerCase().includes("פסטיבל") &&
-        !e.description.toLowerCase().includes("festival")
-      )
-        return false;
+      if (e.type !== undefined && e.type !== null) {
+        if (e.type.toLowerCase() !== typeLower) {
+          return false;
+        }
+      } else {
+        // Jam, Show, Workshop, Festival
+        if (
+          typeLower === "show" &&
+          !e.name.toLowerCase().includes("show") &&
+          !e.name.toLowerCase().includes("מופע") &&
+          !e.description.toLowerCase().includes("show")
+        )
+          return false;
+        if (
+          typeLower === "jam" &&
+          !e.name.toLowerCase().includes("jam") &&
+          !e.name.toLowerCase().includes("ג'אם") &&
+          !e.description.toLowerCase().includes("jam")
+        )
+          return false;
+        if (
+          typeLower === "workshop" &&
+          !e.name.toLowerCase().includes("workshop") &&
+          !e.name.toLowerCase().includes("סדנ") &&
+          !e.description.toLowerCase().includes("workshop")
+        )
+          return false;
+        if (
+          typeLower === "festival" &&
+          !e.name.toLowerCase().includes("festival") &&
+          !e.name.toLowerCase().includes("פסטיבל") &&
+          !e.description.toLowerCase().includes("festival")
+        )
+          return false;
+      }
     }
     // Language
     if (selectedLanguage !== "all" && e.language !== selectedLanguage) return false;
@@ -1043,7 +1050,7 @@ export default function Home() {
                             ) ||
                             lnk.type}
                         </span>
-                        <ExternalLink className="w-3 h-3 text-zinc-500" />
+                        <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
                       </a>
                     ))}
                   </div>

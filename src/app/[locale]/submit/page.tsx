@@ -6,7 +6,7 @@ import { createSubmission, getOrganizers, FirestoreOrganizer } from "@/lib/db";
 import Header from "@/components/Header";
 import { Sparkles, Clock, Mail, Phone, CheckCircle, Building, Trash2, Plus } from "lucide-react";
 
-const REGION_KEYS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other"];
+const REGION_KEYS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
 const ORGANIZER_TYPE_KEYS = ["Group", "School", "Theater", "Other"];
 
 export default function SubmitContent() {

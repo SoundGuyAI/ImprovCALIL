@@ -37,7 +37,7 @@ try {
       organizerName: "Unknown",
       description: "",
       location: "Unknown Location",
-      region: "Other",
+      region: "Other areas",
       language: "he",
       cost: "Free",
       access: "Open",

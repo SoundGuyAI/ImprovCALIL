@@ -10,7 +10,7 @@
         "value": "תיאטרון האימפרוב"
       }
     ],
-    "type": "Theater",
+    "type": "School",
     "description": [
       {
         "locale": "en",
@@ -221,7 +221,7 @@
         "value": "קבוצת אימפרוב ותיקה (~12+ שנים): סדנאות עסקיות + מופע אימפרוב במפגש אחד. עברית ואנגלית."
       }
     ],
-    "region": "Tel-Aviv",
+    "region": "Other",
     "languages": ["he", "en"],
     "links": [
       {
@@ -335,7 +335,7 @@
         "value": "אימפרוב עכשיו!"
       }
     ],
-    "type": "Group",
+    "type": "Other",
     "description": [
       {
         "locale": "en",

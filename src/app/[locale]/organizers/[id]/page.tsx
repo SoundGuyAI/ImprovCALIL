@@ -28,7 +28,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
   const tRegions = useTranslations("Regions");
   const tOrgTypes = useTranslations("OrganizerTypes");
   const tLinks = useTranslations("LinkTypes");
-  const locale = useLocale();
+  const locale = useLocale() as "en" | "he";
 
   const [organizer, setOrganizer] = useState<FirestoreOrganizer | null>(null);
   const [events, setEvents] = useState<FirestoreEvent[]>([]);

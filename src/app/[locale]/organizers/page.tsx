@@ -15,7 +15,7 @@ export default function OrganizersDirectory() {
   const tFilters = useTranslations("Filters");
   const tRegions = useTranslations("Regions");
   const tOrgTypes = useTranslations("OrganizerTypes");
-  const locale = useLocale();
+  const locale = useLocale() as "en" | "he";
 
   const [organizers, setOrganizers] = useState<FirestoreOrganizer[]>([]);
   const [loading, setLoading] = useState(true);

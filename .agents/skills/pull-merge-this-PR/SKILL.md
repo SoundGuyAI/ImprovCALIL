@@ -21,7 +21,14 @@ Before starting, identify the context:
 - **PR Number**: The GitHub Pull Request number (must be retrieved/detected)
 - **Repository**: `SoundGuyAI/ImprovCALIL` (owner: `SoundGuyAI`, repo: `ImprovCALIL`)
 
+
 ---
+
+## ⚠️ CRITICAL COMPLIANCE: Post-Dev Review Cycle
+Whenever any developer subagent is run (to resolve unstaged files, resolve merge conflicts, fix verification failures, or resolve PR comments/reviews) and files are modified, you **MUST** run the two reviewer subagents (Code Reviewer and Bug Hunter) and the verification harness to ensure the new changes are fully correct, secure, and compliant. If the reviewers identify any new bugs or code quality issues, invoke a developer subagent to fix them, run the verification harness, and run both reviewers again. This iterative cycle must continue until both reviewers approve the changes before proceeding to any subsequent steps.
+
+---
+
 
 ## 🚀 Step 1: Pre-flight Check & Workspace Verification
 1. Run `git status` via terminal command to check for any unstaged, modified, or untracked changes in the current workspace directory.
@@ -120,7 +127,7 @@ A successful PR requires addressing all developer/reviewer feedback. You must re
 
 ---
 
-## 🕒 Step 8: Babysit CI/CD Status Checks (Pure MCP & Scheduler)
+## 🕒 Step 8: Babysit CI/CD Status Checks & Review PR Comments (Pure MCP & Scheduler)
 To avoid terminal command execution prompts, **do not run local shell scripts to poll checks**. Instead, use the GitHub MCP server and the system's one-shot timer (`schedule` tool).
 
 1. **Retrieve the PR Status** using the GitHub MCP tool `get_pull_request_status`:
@@ -135,8 +142,8 @@ To avoid terminal command execution prompts, **do not run local shell scripts to
      }
      ```
 
-2. **Parse the Status Check Rollup**:
-   - **Pending/In Progress**: If checks are not yet complete, schedule a reminder to check again in **60 seconds** using the `schedule` tool:
+2. **Parse the Status Check Rollup & Run Status**:
+   - **Pending/In Progress**: If any status checks or runners are not yet complete, schedule a reminder to check again in **60 seconds** using the `schedule` tool:
      - **DurationSeconds**: `60`
      - **Prompt**: `Status checks for PR #<pr_number> are still running. Call get_pull_request_status to check again.`
      - Go idle and wait for the notification.
@@ -144,4 +151,13 @@ To avoid terminal command execution prompts, **do not run local shell scripts to
      - Investigate the failures.
      - Call a developer subagent to fix the root cause.
      - Verify locally, commit, push, and restart the Babysitting process (Step 8.1).
-   - **Success**: If all checks are `COMPLETED` and have a `SUCCESS` conclusion, exit successfully.
+   - **Success (Checks Green)**: If all status checks and runners have completed with a success conclusion, proceed to Step 8.3.
+
+3. **Check for New Comments and Reviews**:
+   - Fetch the latest PR comments and reviews using GitHub MCP tools `get_pull_request_comments` and `get_pull_request_reviews`.
+   - Carefully review them to ensure no new issues, bugs, or requests have been raised by reviewers since your last push.
+   - If there are new comments or issues:
+     - Define and call a developer subagent to resolve each feedback/issue.
+     - Verify locally, commit, push, and restart the Babysitting process from Step 8.1.
+   - If there are no new comments, all previous feedback has been addressed, and all checks are green, then the integration is complete.
+

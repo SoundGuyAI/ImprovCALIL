@@ -38,7 +38,8 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
     async function load() {
       try {
         const { organizer: orgData, events: evtData } = await getOrganizerDetails(
-          resolvedParams.id
+          resolvedParams.id,
+          locale
         );
         setOrganizer(orgData);
         setEvents(evtData);
@@ -49,7 +50,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
       }
     }
     load();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, locale]);
 
   const getOrgTypeIcon = (type: string) => {
     switch (type) {

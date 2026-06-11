@@ -28,7 +28,7 @@ export default function OrganizersDirectory() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getOrganizers();
+        const data = await getOrganizers({ locale });
         setOrganizers(data);
       } catch (err) {
         console.error(err);
@@ -37,7 +37,7 @@ export default function OrganizersDirectory() {
       }
     }
     load();
-  }, []);
+  }, [locale]);
 
   const filteredOrganizers = organizers.filter((org) => {
     if (org.hidden) return false;

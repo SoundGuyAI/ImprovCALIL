@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Organizers Directory and Details E2E Tests", () => {
+  test.beforeEach(async ({ page }) => {
+    // Set fixed clock date matching seed database relative times
+    await page.clock.setFixedTime(new Date("2026-06-09T10:00:00Z"));
+  });
+
   test("should render the organizers list and support filtering and search", async ({ page }) => {
     // Navigate to the organizers page
     await page.goto("/en/organizers");

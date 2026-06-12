@@ -110,6 +110,16 @@ export default function SubmitContent() {
         setJsonError(data.error + (data.details ? ": " + JSON.stringify(data.details) : ""));
         return;
       }
+      if (data.errors && data.errors.length > 0) {
+        setJsonError(
+          (locale === "he" ? "חלק מהאירועים נכשלו בהגשה: " : "Some events failed to submit: ") +
+            data.errors.join("; ")
+        );
+        if (data.submissionIds && data.submissionIds.length > 0) {
+          setSuccess(true);
+        }
+        return;
+      }
       setSuccess(true);
       setJsonText("");
     } catch (err: unknown) {
@@ -158,7 +168,10 @@ export default function SubmitContent() {
       setEventCost(cost);
       setEventLanguage(lang);
       setEventRegion(region);
-      setEventTime(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)); // 3 days in future
+      const futureDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const tzOffset = futureDate.getTimezoneOffset() * 60000;
+      const localISOTime = new Date(futureDate.getTime() - tzOffset).toISOString().slice(0, 16);
+      setEventTime(localISOTime); // 3 days in future (local timezone)
 
       setAiParsing(false);
       setActiveTab("event"); // Switch to review form
@@ -169,7 +182,7 @@ export default function SubmitContent() {
     e.preventDefault();
     setError(false);
 
-    if (!eventName || !eventLocation || !submitterEmail) {
+    if (!eventName || !eventLocation || !submitterEmail || !eventTime) {
       setError(true);
       return;
     }

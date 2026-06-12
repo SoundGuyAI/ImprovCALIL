@@ -23,8 +23,8 @@ const createDefaultEventData = () => ({
   organizerId: "",
   organizerName: "",
   description: "",
-  time: Date.now() + 86400000,
-  endTime: (Date.now() + 86400000 + 7200000) as number | undefined,
+  time: 0,
+  endTime: undefined as number | undefined,
   recurrence: "one-time",
   location: "",
   mapLink: "",
@@ -75,7 +75,12 @@ export default function AdminEventFormModal({
         });
         setLinks(initialData.links ? [...initialData.links] : []);
       } else {
-        setFormData(createDefaultEventData());
+        const now = Date.now();
+        setFormData({
+          ...createDefaultEventData(),
+          time: now + 86400000,
+          endTime: now + 86400000 + 7200000,
+        });
         setLinks([]);
       }
     }

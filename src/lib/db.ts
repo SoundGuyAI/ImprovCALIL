@@ -727,10 +727,42 @@ export async function getOrganizerDetails(
   }
 }
 
+// Mock Submissions for Offline Dev/Test
+function getMockSubmissions(): FirestoreSubmission[] {
+  return [
+    {
+      id: "sub-mock-1",
+      type: "event",
+      status: "pending",
+      source: "web_form",
+      createdAt: Date.now() - 3600000,
+      submitterContact: { email: "user@example.com" },
+      data: {
+        name: "Mock Jam Event",
+        description: "This is a mock community jam event proposal submitted via the web form.",
+        time: Date.now() + 86400000,
+        endTime: Date.now() + 93600000,
+        recurrence: "weekly",
+        location: "Mock Studio, Tel Aviv",
+        region: "Tel-Aviv",
+        language: "he",
+        cost: "Free",
+        access: "Open",
+        organizerName: "Mock Improv Group",
+      },
+      links: [{ url: "https://example.com", type: "Website" }],
+    },
+  ];
+}
+
 // 5. Submit Event or Organizer from Forms
 export async function createSubmission(
   submission: Omit<FirestoreSubmission, "id" | "createdAt" | "status">
 ): Promise<string> {
+  if (isMock) {
+    console.log("[Mock] Creating submission:", submission);
+    return "sub-" + Math.random().toString(36).substring(2, 9);
+  }
   try {
     const docRef = await addDoc(collection(db, "submissions"), {
       ...submission,
@@ -746,6 +778,9 @@ export async function createSubmission(
 
 // 6. Get Pending Submissions
 export async function getPendingSubmissions(): Promise<FirestoreSubmission[]> {
+  if (isMock) {
+    return getMockSubmissions();
+  }
   try {
     const q = query(collection(db, "submissions"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
@@ -772,6 +807,10 @@ export async function getPendingSubmissions(): Promise<FirestoreSubmission[]> {
 
 // 7. Approve and Publish Submission
 export async function approveSubmission(id: string): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Approving submission:", id);
+    return;
+  }
   try {
     const sDoc = await getDoc(doc(db, "submissions", id));
     if (!sDoc.exists()) return;
@@ -786,14 +825,28 @@ export async function approveSubmission(id: string): Promise<void> {
       // Satisfy test check: const eventRef = doc(collection(db, "events"));
       const newEventId = eventRef.id;
 
+      let hidden = false;
+      let featured = false;
+      let createdAt = Date.now();
+
+      if (isEdit) {
+        const existingSnap = await getDoc(eventRef);
+        if (existingSnap.exists()) {
+          const ext = existingSnap.data();
+          if (ext.hidden !== undefined) hidden = ext.hidden;
+          if (ext.featured !== undefined) featured = ext.featured;
+          if (ext.createdAt) createdAt = ext.createdAt;
+        }
+      }
+
       batch.set(
         eventRef,
         {
           ...sData.data,
           id: newEventId,
-          hidden: false,
-          featured: false,
-          createdAt: sData.data.createdAt || Date.now(),
+          hidden,
+          featured,
+          createdAt,
         },
         { merge: true }
       );
@@ -828,14 +881,28 @@ export async function approveSubmission(id: string): Promise<void> {
       // Satisfy test check: const organizerRef = doc(collection(db, "organizers"));
       const newOrganizerId = organizerRef.id;
 
+      let hidden = false;
+      let createdAt = Date.now();
+
+      if (isEdit) {
+        const existingSnap = await getDoc(organizerRef);
+        if (existingSnap.exists()) {
+          const ext = existingSnap.data();
+          if (ext.hidden !== undefined) hidden = ext.hidden;
+          if (ext.createdAt) createdAt = ext.createdAt;
+        }
+      }
+
+      const { isUpdateProposal, ...cleanData } = sData.data;
+
       batch.set(
         organizerRef,
         {
-          ...sData.data,
+          ...cleanData,
           id: newOrganizerId,
           publishStatus: "published",
-          hidden: false,
-          createdAt: sData.data.createdAt || Date.now(),
+          hidden,
+          createdAt,
         },
         { merge: true }
       );
@@ -876,6 +943,10 @@ export async function approveSubmission(id: string): Promise<void> {
 
 // 8. Reject Submission
 export async function rejectSubmission(id: string, feedback?: string): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Rejecting submission:", id, feedback);
+    return;
+  }
   try {
     await updateDoc(doc(db, "submissions", id), {
       status: "rejected",
@@ -893,6 +964,10 @@ export async function updateRecordVisibility(
   id: string,
   hidden: boolean
 ): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating visibility:", collectionName, id, hidden);
+    return;
+  }
   try {
     await updateDoc(doc(db, collectionName, id), { hidden });
   } catch (err) {
@@ -903,6 +978,10 @@ export async function updateRecordVisibility(
 
 // 10. Update Event Featured Status
 export async function updateEventFeatured(id: string, featured: boolean): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating event featured:", id, featured);
+    return;
+  }
   try {
     await updateDoc(doc(db, "events", id), { featured });
   } catch (err) {
@@ -916,6 +995,10 @@ export async function deleteRecord(
   collectionName: "events" | "organizers",
   id: string
 ): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Deleting record:", collectionName, id);
+    return;
+  }
   try {
     const batch = writeBatch(db);
     batch.delete(doc(db, collectionName, id));
@@ -949,6 +1032,10 @@ export async function getSubmissionsConfig(): Promise<{ allowAnonymous: boolean 
 
 // 13. Update Submissions Config
 export async function updateSubmissionsConfig(allowAnonymous: boolean): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating submissions config:", allowAnonymous);
+    return;
+  }
   try {
     const { setDoc } = await import("firebase/firestore");
     await setDoc(doc(db, "config", "submissions"), { allowAnonymous });
@@ -963,6 +1050,10 @@ export async function createEvent(
   eventData: Omit<FirestoreEvent, "id" | "createdAt" | "links">,
   links?: EventLink[]
 ): Promise<string> {
+  if (isMock) {
+    console.log("[Mock] Creating event:", eventData, links);
+    return "evt-" + Math.random().toString(36).substring(2, 9);
+  }
   try {
     const batch = writeBatch(db);
     const eventRef = doc(collection(db, "events"));
@@ -1002,6 +1093,10 @@ export async function updateEvent(
   eventData: Partial<Omit<FirestoreEvent, "id" | "createdAt" | "links">>,
   links?: EventLink[]
 ): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating event:", eventId, eventData, links);
+    return;
+  }
   try {
     const batch = writeBatch(db);
     const eventRef = doc(db, "events", eventId);

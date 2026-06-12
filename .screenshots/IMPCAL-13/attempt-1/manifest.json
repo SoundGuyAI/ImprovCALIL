@@ -1,56 +1,56 @@
 {
   "issue_identifier": "IMPCAL-13",
   "attempt": 1,
-  "updated_at": "2026-06-12T00:29:00.274Z",
+  "updated_at": "2026-06-12T00:33:16.593Z",
   "screenshots": [
     {
       "filename": "month-view.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/month-view.png",
       "label": "Month View",
       "source": "playwright",
-      "captured_at": "2026-06-12T00:28:53.178Z"
+      "captured_at": "2026-06-12T00:33:09.182Z"
     },
     {
       "filename": "week-view.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/week-view.png",
       "label": "Week View",
       "source": "playwright",
-      "captured_at": "2026-06-12T00:28:56.531Z"
+      "captured_at": "2026-06-12T00:33:12.904Z"
     },
     {
       "filename": "event-details-modal.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/event-details-modal.png",
       "label": "Event Details Modal from Week View",
       "source": "playwright",
-      "captured_at": "2026-06-12T00:28:56.712Z"
+      "captured_at": "2026-06-12T00:33:13.118Z"
     },
     {
       "filename": "01_english_home.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/01_english_home.png",
       "label": "English home page with language switcher",
       "source": "playwright",
-      "captured_at": "2026-06-12T00:28:59.540Z"
+      "captured_at": "2026-06-12T00:33:15.545Z"
     },
     {
       "filename": "02_language_dropdown.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/02_language_dropdown.png",
       "label": "Language switcher dropdown open",
       "source": "playwright",
-      "captured_at": "2026-06-12T00:28:59.850Z"
+      "captured_at": "2026-06-12T00:33:15.693Z"
     },
     {
       "filename": "03_hebrew_home.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/03_hebrew_home.png",
       "label": "Hebrew home page (RTL) with language switcher",
       "source": "playwright",
-      "captured_at": "2026-06-12T00:29:00.080Z"
+      "captured_at": "2026-06-12T00:33:16.171Z"
     },
     {
       "filename": "04_app_version_footer.png",
       "relative_path": ".screenshots/IMPCAL-13/attempt-1/04_app_version_footer.png",
       "label": "App version rendered in footer",
       "source": "playwright",
-      "captured_at": "2026-06-12T00:29:00.274Z"
+      "captured_at": "2026-06-12T00:33:16.593Z"
     }
   ]
 }

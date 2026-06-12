@@ -572,7 +572,7 @@ export async function getOrganizers(filters?: {
         d.id,
         data.name || "",
         data.description || "",
-        filters?.locale ?? "en"
+        filters?.locale ?? getLocaleFromPath()
       );
 
       organizers.push({
@@ -627,7 +627,7 @@ export async function getOrganizerDetails(
       d.id,
       data.name || "",
       data.description || "",
-      locale ?? "en"
+      locale ?? getLocaleFromPath()
     );
 
     const organizer: FirestoreOrganizer = {

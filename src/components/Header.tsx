@@ -17,10 +17,12 @@ export default function Header() {
   const isAdminUser = isUserAdmin(profile);
 
   const navItems = [
-    { href: "/", label: t("calendar"), icon: Calendar },
-    { href: "/organizers", label: t("organizers"), icon: Users },
-    { href: "/submit", label: t("submit"), icon: FilePlus },
-    ...(isAdminUser ? [{ href: "/admin", label: t("admin"), icon: ShieldAlert }] : []),
+    { href: "/", label: t("calendar"), shortLabel: t("calendarShort"), icon: Calendar },
+    { href: "/organizers", label: t("organizers"), shortLabel: t("organizersShort"), icon: Users },
+    { href: "/submit", label: t("submit"), shortLabel: t("submitShort"), icon: FilePlus },
+    ...(isAdminUser
+      ? [{ href: "/admin", label: t("admin"), shortLabel: t("adminShort"), icon: ShieldAlert }]
+      : []),
   ];
 
   return (
@@ -84,7 +86,7 @@ export default function Header() {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span>{item.label.split(" ")[0]}</span>
+                <span>{item.shortLabel}</span>
               </Link>
             );
           })}

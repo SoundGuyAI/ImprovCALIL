@@ -250,7 +250,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
               <h3 className="text-md font-bold text-indigo-400 flex items-center gap-1.5 uppercase">
                 <Sparkles className="w-4 h-4" />
                 <span>{locale === "he" ? "אירועים קרובים" : "Upcoming Events"}</span>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-bold ml-1">
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-bold">
                   {upcomingEvents.length}
                 </span>
               </h3>
@@ -309,7 +309,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
               <h3 className="text-md font-bold text-zinc-500 flex items-center gap-1.5 uppercase">
                 <Clock className="w-4 h-4" />
                 <span>{locale === "he" ? "אירועים שעברו" : "Past Events"}</span>
-                <span className="px-2 py-0.5 rounded-full bg-zinc-850 border border-zinc-800 text-[10px] text-zinc-500 font-bold ml-1">
+                <span className="px-2 py-0.5 rounded-full bg-zinc-850 border border-zinc-800 text-[10px] text-zinc-500 font-bold">
                   {pastEvents.length}
                 </span>
               </h3>

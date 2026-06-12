@@ -102,7 +102,7 @@ export default function OrganizersDirectory() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={locale === "he" ? "חימוש מארגנים..." : "Search organizers..."}
+                placeholder={locale === "he" ? "חיפוש מארגנים..." : "Search organizers..."}
                 className="w-full px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 text-sm"
               />
             </div>

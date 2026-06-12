@@ -33,9 +33,13 @@
   },
   "Navigation": {
     "calendar": "לוח אירועים",
+    "calendarShort": "לוח",
     "organizers": "אינדקס מארגנים",
+    "organizersShort": "מארגנים",
     "submit": "הגשת אירוע/מארגן",
+    "submitShort": "הגשה",
     "admin": "פאנל ניהול",
+    "adminShort": "ניהול",
     "switchTo": "English"
   },
   "Filters": {

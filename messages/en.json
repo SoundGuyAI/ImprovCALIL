@@ -33,9 +33,13 @@
   },
   "Navigation": {
     "calendar": "Calendar",
+    "calendarShort": "Calendar",
     "organizers": "Organizers Directory",
+    "organizersShort": "Organizers",
     "submit": "Submit Event/Organizer",
+    "submitShort": "Submit",
     "admin": "Admin Panel",
+    "adminShort": "Admin",
     "switchTo": "עברית"
   },
   "Filters": {

@@ -37,7 +37,6 @@ import {
 } from "lucide-react";
 
 export default function AdminConsole() {
-  const tCommon = useTranslations("Common");
   const tAdmin = useTranslations("Admin");
   const tRegions = useTranslations("Regions");
   const locale = useLocale();
@@ -85,7 +84,7 @@ export default function AdminConsole() {
       setLoading(true);
       try {
         const evts = await getEvents({ includeHidden: true });
-        const orgs = await getOrganizers({ includeHidden: true });
+        const orgs = await getOrganizers({ includeHidden: true, locale: locale as "en" | "he" });
         const subs = await getPendingSubmissions();
         setEvents(evts);
         setOrganizers(orgs);
@@ -97,13 +96,13 @@ export default function AdminConsole() {
       }
     }
     load();
-  }, [activeTab]);
+  }, [activeTab, locale]);
 
   const refreshData = async () => {
     setLoading(true);
     try {
       const evts = await getEvents({ includeHidden: true });
-      const orgs = await getOrganizers({ includeHidden: true });
+      const orgs = await getOrganizers({ includeHidden: true, locale: locale as "en" | "he" });
       const subs = await getPendingSubmissions();
       setEvents(evts);
       setOrganizers(orgs);
@@ -936,11 +935,6 @@ export default function AdminConsole() {
           </div>
         )}
       </main>
-
-      {/* FOOTER */}
-      <footer className="w-full border-t border-zinc-900/80 bg-zinc-950 py-6 mt-12 text-center text-xs text-zinc-500 font-semibold">
-        <p className="max-w-7xl mx-auto px-4">{tCommon("footer")}</p>
-      </footer>
     </div>
   );
 }

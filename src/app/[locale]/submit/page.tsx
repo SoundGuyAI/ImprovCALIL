@@ -61,7 +61,7 @@ export default function SubmitContent() {
       setOrganizers(data);
     }
     load();
-  }, []);
+  }, [locale]);
 
   // Simulating an LLM parser
   const handleAiParse = () => {

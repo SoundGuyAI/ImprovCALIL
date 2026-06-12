@@ -8,7 +8,6 @@ import Header from "@/components/Header";
 
 export default function PrivacyPolicyPage() {
   const t = useTranslations("privacy");
-  const tCommon = useTranslations("Common");
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
@@ -70,11 +69,6 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="w-full border-t border-zinc-900/80 bg-zinc-950 py-6 text-center text-xs text-zinc-500 font-semibold mt-12">
-        <p className="max-w-7xl mx-auto px-4">{tCommon("footer")}</p>
-      </footer>
     </div>
   );
 }

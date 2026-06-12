@@ -108,6 +108,7 @@ test.describe("Calendar Views E2E Tests", () => {
 
     // Close modal
     await page.locator("button:has(svg.rotate-90)").first().click();
+    await expect(page.locator("h3:has-text('Grand Improv Night')")).not.toBeVisible();
 
     // Check filter interaction on Month View
     // Select Jerusalem region filter

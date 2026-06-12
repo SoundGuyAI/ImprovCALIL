@@ -15,6 +15,7 @@ export default function OrganizersDirectory() {
   const tFilters = useTranslations("Filters");
   const tRegions = useTranslations("Regions");
   const tOrgTypes = useTranslations("OrganizerTypes");
+  const tOrganizers = useTranslations("Organizers");
   const locale = useLocale() as "en" | "he";
 
   const [organizers, setOrganizers] = useState<FirestoreOrganizer[]>([]);
@@ -79,13 +80,9 @@ export default function OrganizersDirectory() {
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            {locale === "he" ? "אינדקס מארגני אימפרוב" : "Improv Organizers Directory"}
+            {tOrganizers("title")}
           </h1>
-          <p className="text-zinc-400 text-sm max-w-2xl">
-            {locale === "he"
-              ? "גלו קבוצות הופעה, בתי ספר וסדנאות, ותיאטראות המפעילים אירועי אימפרוביזציה בישראל."
-              : "Browse active improv troupes, training centers, and theater companies producing improv events in Israel."}
-          </p>
+          <p className="text-zinc-400 text-sm max-w-2xl">{tOrganizers("subtitle")}</p>
         </div>
 
         {/* SEARCH & FILTERS PANEL */}
@@ -93,7 +90,7 @@ export default function OrganizersDirectory() {
           <div className="flex flex-col md:flex-row gap-4 justify-between items-center w-full">
             <h3 className="text-md font-bold text-white flex items-center gap-2 w-full md:w-auto">
               <Info className="w-4 h-4 text-indigo-400" />
-              <span>{locale === "he" ? "סינון מארגנים" : "Filter Directory"}</span>
+              <span>{tOrganizers("filterTitle")}</span>
             </h3>
 
             {/* Search Input */}
@@ -102,7 +99,7 @@ export default function OrganizersDirectory() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={locale === "he" ? "חיפוש מארגנים..." : "Search organizers..."}
+                placeholder={tOrganizers("searchPlaceholder")}
                 className="w-full px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 text-sm"
               />
             </div>
@@ -119,7 +116,7 @@ export default function OrganizersDirectory() {
                 onChange={(e) => setSelectedRegion(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-300 text-sm focus:outline-none focus:border-indigo-500"
               >
-                <option value="all">{locale === "he" ? "כל האזורים" : "All Regions"}</option>
+                <option value="all">{tOrganizers("allRegions")}</option>
                 {REGIONS.map((key) => (
                   <option key={key} value={key}>
                     {tRegions(key)}
@@ -131,14 +128,14 @@ export default function OrganizersDirectory() {
             {/* Organizer Type Filter */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-zinc-500 font-bold uppercase">
-                {locale === "he" ? "סוג מארגן" : "Organizer Type"}
+                {tOrganizers("organizerType")}
               </label>
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-300 text-sm focus:outline-none focus:border-indigo-500"
               >
-                <option value="all">{locale === "he" ? "כל הסוגים" : "All Types"}</option>
+                <option value="all">{tOrganizers("allTypes")}</option>
                 {ORGANIZER_TYPES.map((key) => (
                   <option key={key} value={key}>
                     {tOrgTypes(key)}
@@ -193,9 +190,7 @@ export default function OrganizersDirectory() {
 
                   <div className="flex items-center justify-between border-t border-zinc-900 pt-4 mt-2">
                     <span className="text-[10px] text-zinc-500 font-bold uppercase">
-                      {locale === "he"
-                        ? `${org.languages.length} שפות`
-                        : `${org.languages.length} Languages`}
+                      {tOrganizers("languages", { count: org.languages.length })}
                     </span>
                     <span className="text-indigo-400 hover:text-indigo-300 font-bold text-xs flex items-center gap-1 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">
                       <span>{tCommon("details")}</span>
@@ -208,11 +203,6 @@ export default function OrganizersDirectory() {
           )}
         </section>
       </main>
-
-      {/* FOOTER */}
-      <footer className="w-full border-t border-zinc-900/80 bg-zinc-950 py-6 mt-12 text-center text-xs text-zinc-500 font-semibold">
-        <p className="max-w-7xl mx-auto px-4">{tCommon("footer")}</p>
-      </footer>
     </div>
   );
 }

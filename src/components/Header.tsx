@@ -26,72 +26,76 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-panel border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link
-            href="/"
-            locale={locale}
-            data-locale={locale}
-            className="flex items-center gap-2 group"
-          >
-            <span className="text-xl sm:text-2xl font-black tracking-tight text-gradient bg-gradient-primary pulse-hover">
-              {tCommon("logo")}
-            </span>
-          </Link>
+    <>
+      <header className="sticky top-0 z-50 w-full glass-panel border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link
+              href="/"
+              locale={locale}
+              data-locale={locale}
+              className="flex items-center gap-2 group"
+            >
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-gradient bg-gradient-primary pulse-hover">
+                {tCommon("logo")}
+              </span>
+            </Link>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex space-x-1 rtl:space-x-reverse items-center">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-zinc-800/80 text-white border-b-2 border-indigo-500 shadow-md shadow-indigo-500/10"
-                      : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/50"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${isActive ? "text-indigo-400" : "text-zinc-500 group-hover:text-zinc-300"}`}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+            {/* Navigation Links */}
+            <nav className="hidden md:flex space-x-1 rtl:space-x-reverse items-center">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-zinc-800/80 text-white border-b-2 border-indigo-500 shadow-md shadow-indigo-500/10"
+                        : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/50"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${isActive ? "text-indigo-400" : "text-zinc-500 group-hover:text-zinc-300"}`}
+                    />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
 
-          {/* Actions (Language Switcher & Profile) */}
-          <div className="flex items-center gap-2">
-            <LocaleSwitcher />
-            <ProfileMenu />
+            {/* Actions (Language Switcher & Profile) */}
+            <div className="flex items-center gap-2">
+              <LocaleSwitcher />
+              <ProfileMenu />
+            </div>
           </div>
         </div>
+      </header>
 
-        {/* Mobile Navigation Footer Bar for small screens */}
-        <div className="flex md:hidden justify-around py-2 border-t border-zinc-900/80">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
-                  isActive ? "text-indigo-400" : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{item.shortLabel}</span>
-              </Link>
-            );
-          })}
-        </div>
+      {/* Mobile Navigation Footer Bar for small screens */}
+      <div className="flex md:hidden fixed bottom-0 left-0 right-0 z-50 justify-around py-3 border-t border-zinc-900 bg-zinc-950/95 backdrop-blur-md shadow-lg shadow-black/40">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+                isActive ? "text-indigo-400" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span>{item.shortLabel}</span>
+            </Link>
+          );
+        })}
       </div>
-    </header>
+    </>
   );
 }

@@ -57,7 +57,7 @@ export default function SubmitContent() {
 
   useEffect(() => {
     async function load() {
-      const data = await getOrganizers();
+      const data = await getOrganizers({ locale: locale as "en" | "he" });
       setOrganizers(data);
     }
     load();

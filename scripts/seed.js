@@ -87,6 +87,8 @@ function createBatch() {
 }
 
 // Mock Data Definitions
+const baseTime = 1781000400000; // Fixed base time matching test frozen clock (June 9, 2026)
+
 const ORGANIZERS = [
   {
     id: "org-improv-school",
@@ -98,7 +100,7 @@ const ORGANIZERS = [
     languages: ["he", "en"],
     publishStatus: "published",
     hidden: false,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
   {
     id: "org-jlm-troupe",
@@ -110,7 +112,7 @@ const ORGANIZERS = [
     languages: ["he"],
     publishStatus: "published",
     hidden: false,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
   {
     id: "org-haifa-theater",
@@ -122,7 +124,7 @@ const ORGANIZERS = [
     languages: ["he", "en"],
     publishStatus: "published",
     hidden: false,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
 ];
 
@@ -135,8 +137,8 @@ const EVENTS = [
     organizerName: "Improv Israel School",
     description:
       "An evening of high-energy comedic theater made up on the spot based on your suggestions! Featuring top teachers and graduates.",
-    time: Date.now() + 2 * 24 * 60 * 60 * 1000, // 2 days in future
-    endTime: Date.now() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000, // +2 hours
+    time: baseTime + 2 * 24 * 60 * 60 * 1000, // 2 days in future
+    endTime: baseTime + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000, // +2 hours
     recurrence: "one-time",
     location: "Zoa House, Tel Aviv",
     mapLink: "https://maps.google.com/?q=Zoa+House+Tel+Aviv",
@@ -146,7 +148,7 @@ const EVENTS = [
     access: "Open",
     hidden: false,
     featured: true,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
   {
     id: "evt-weekly-jam",
@@ -156,8 +158,8 @@ const EVENTS = [
     organizerName: "Improv Israel School",
     description:
       "Our weekly open stage! Come play, watch, and learn. All levels welcome, zero pressure.",
-    time: Date.now() + 4 * 24 * 60 * 60 * 1000, // 4 days in future
-    endTime: Date.now() + 4 * 24 * 60 * 60 * 1000 + 2.5 * 60 * 60 * 1000,
+    time: baseTime + 4 * 24 * 60 * 60 * 1000, // 4 days in future
+    endTime: baseTime + 4 * 24 * 60 * 60 * 1000 + 2.5 * 60 * 60 * 1000,
     recurrence: "weekly",
     location: "Improv Studio, 12 Lilienblum St, Tel Aviv",
     mapLink: "https://maps.google.com/?q=12+Lilienblum+Tel+Aviv",
@@ -167,7 +169,7 @@ const EVENTS = [
     access: "Open",
     hidden: false,
     featured: false,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
   {
     id: "evt-jlm-workshop",
@@ -177,8 +179,8 @@ const EVENTS = [
     organizerName: "Jerusalem Improv Troupe",
     description:
       "Dive deep into the Harold and scenic relationships. Prior basic experience is required.",
-    time: Date.now() + 5 * 24 * 60 * 60 * 1000, // 5 days in future
-    endTime: Date.now() + 5 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000,
+    time: baseTime + 5 * 24 * 60 * 60 * 1000, // 5 days in future
+    endTime: baseTime + 5 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000,
     recurrence: "one-time",
     location: "Gerard Behar Center, Jerusalem",
     mapLink: "https://maps.google.com/?q=Gerard+Behar+Center+Jerusalem",
@@ -188,7 +190,7 @@ const EVENTS = [
     access: "Private",
     hidden: false,
     featured: false,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
   {
     id: "evt-haifa-festival",
@@ -197,8 +199,8 @@ const EVENTS = [
     organizerId: "org-haifa-theater",
     organizerName: "Haifa Improv Theater",
     description: "Three days of shows, jams, and international guest workshops on the bay.",
-    time: Date.now() + 8 * 24 * 60 * 60 * 1000, // 8 days in future
-    endTime: Date.now() + 11 * 24 * 60 * 60 * 1000, // 3 day festival
+    time: baseTime + 8 * 24 * 60 * 60 * 1000, // 8 days in future
+    endTime: baseTime + 11 * 24 * 60 * 60 * 1000, // 3 day festival
     recurrence: "one-time",
     location: "Beit Hecht, Haifa",
     mapLink: "https://maps.google.com/?q=Beit+Hecht+Haifa",
@@ -208,7 +210,7 @@ const EVENTS = [
     access: "Open",
     hidden: false,
     featured: true,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
   {
     id: "evt-hidden-show",
@@ -216,8 +218,8 @@ const EVENTS = [
     type: "Show",
     organizerName: "Living Room Troupe",
     description: "Private invite-only test. Should not appear on public calendar.",
-    time: Date.now() + 1 * 24 * 60 * 60 * 1000,
-    endTime: Date.now() + 1 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000,
+    time: baseTime + 1 * 24 * 60 * 60 * 1000,
+    endTime: baseTime + 1 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000,
     recurrence: "one-time",
     location: "Private Residence, Ra'anana",
     region: "Hasharon",
@@ -226,7 +228,7 @@ const EVENTS = [
     access: "Private",
     hidden: true,
     featured: false,
-    createdAt: Date.now(),
+    createdAt: baseTime,
   },
 ];
 
@@ -296,14 +298,14 @@ const SUBMISSIONS = [
     type: "event",
     status: "pending",
     source: "telegram",
-    createdAt: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
+    createdAt: baseTime - 2 * 60 * 60 * 1000, // 2 hours ago
     submitterContact: { email: "telegram-bot@soundguy.ai" },
     data: {
       name: "Late Night Scenegames Jam",
       organizerName: "Late Night Crew",
       description: "Fast paced improv games, short form and laughs till midnight.",
-      time: Date.now() + 3 * 24 * 60 * 60 * 1000,
-      endTime: Date.now() + 3 * 24 * 60 * 60 * 1000 + 1.5 * 60 * 60 * 1000,
+      time: baseTime + 3 * 24 * 60 * 60 * 1000,
+      endTime: baseTime + 3 * 24 * 60 * 60 * 1000 + 1.5 * 60 * 60 * 1000,
       recurrence: "one-time",
       location: "Basement Bar, Tel Aviv",
       region: "Tel-Aviv",
@@ -320,7 +322,7 @@ const SUBMISSIONS = [
     type: "organizer",
     status: "pending",
     source: "web_form",
-    createdAt: Date.now() - 4 * 60 * 60 * 1000, // 4 hours ago
+    createdAt: baseTime - 4 * 60 * 60 * 1000, // 4 hours ago
     submitterContact: { email: "ronit@improv.net", phone: "054-1234567" },
     data: {
       name: "Hasharon Improv Community",

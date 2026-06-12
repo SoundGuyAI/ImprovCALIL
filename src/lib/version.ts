@@ -1,6 +1,6 @@
-import pkg from "../../package.json";
+import pkgVersion from "../../version.json";
 
-export const APP_VERSION = pkg.version;
+export const APP_VERSION = pkgVersion.version;
 
 export const BUILD_COMMIT = process.env.NEXT_PUBLIC_BUILD_COMMIT?.trim() || "unknown";
 

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import EnvConfigAlert from "@/components/EnvConfigAlert";
-import AppVersion from "@/components/AppVersion";
+import Footer from "@/components/Footer";
 import "../globals.css";
 
 const rubik = Rubik({
@@ -37,10 +37,8 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <EnvConfigAlert />
           <AuthProvider locale={locale as "en" | "he"}>
-            <div className="flex-grow flex flex-col">{children}</div>
-            <div className="py-4 bg-zinc-950/20 border-t border-zinc-900/50">
-              <AppVersion />
-            </div>
+            <div className="flex-grow flex flex-col pb-16 md:pb-0">{children}</div>
+            <Footer />
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

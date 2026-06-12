@@ -264,5 +264,27 @@
     "section6Title": "6. Contact Us",
     "section6Content": "If you have questions or concerns regarding these terms, please contact us at support@soundguy.ai.",
     "backToHome": "Back to Home"
+  },
+  "Organizers": {
+    "title": "Improv Organizers Directory",
+    "subtitle": "Browse active improv troupes, training centers, and theater companies producing improv events in Israel.",
+    "filterTitle": "Filter Directory",
+    "searchPlaceholder": "Search organizers...",
+    "allRegions": "All Regions",
+    "organizerType": "Organizer Type",
+    "allTypes": "All Types",
+    "languages": "{count, plural, =1 {1 Language} other {# Languages}}",
+    "about": "About",
+    "contactLinks": "Contact Links",
+    "noLinks": "No contact links available for this organizer.",
+    "eventSchedule": "Event Schedule",
+    "upcomingEvents": "Upcoming Events",
+    "noUpcoming": "No scheduled upcoming events at this time.",
+    "pastEvents": "Past Events",
+    "noPast": "No archive events.",
+    "backToDirectory": "Back to Directory",
+    "backToDirectoryLong": "Back to Organizers Directory",
+    "notFound": "The requested organizer was not found or has been hidden.",
+    "languagesLabel": "Languages:"
   }
 }

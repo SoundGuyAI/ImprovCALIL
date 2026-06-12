@@ -375,19 +375,19 @@ function localizeOrganizer(
   }
   if (id === "org-jlm-troupe") {
     return {
-      name: locale === "he" ? "אנסמבל האימפרוב של ירושלים" : "Jerusalem Improv Troupe",
+      name: locale === "he" ? "אנסמבל האימפרוב הירושלמי" : "Jerusalem Improv Troupe",
       description:
         locale === "he"
-          ? "אנסמבל קהילתי המופיע מדי שבוע במופעי שורט-פורם ולונג-פורם בלב ירושלים."
+          ? "אנסמבל ממוקד קהילה המופיע במופעי שורט-פורם ולונג-פורם שבועיים בלב ירושלים."
           : "A community-focused ensemble performing weekly short-form and long-form shows in the heart of Jerusalem.",
     };
   }
   if (id === "org-haifa-theater") {
     return {
-      name: locale === "he" ? "תיאטרון האימפרוב של חיפה" : "Haifa Improv Theater",
+      name: locale === "he" ? "תיאטרון האימפרוב חיפה" : "Haifa Improv Theater",
       description:
         locale === "he"
-          ? "במה ייעודית לאמנויות הבמה האלטרנטיביות ומשחקי אימפרוביזציה על הר הכרמל."
+          ? "מקום ייעודי לאמנויות הבמה האלטרנטיביות ותחרויות אימפרוב על הכרמל."
           : "A dedicated venue for alternative performing arts and improv matches on Mount Carmel.",
     };
   }

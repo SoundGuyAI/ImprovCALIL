@@ -37,8 +37,10 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <EnvConfigAlert />
           <AuthProvider locale={locale as "en" | "he"}>
-            <div className="flex-grow flex flex-col pb-16 md:pb-0">{children}</div>
-            <Footer />
+            <div className="flex-grow flex flex-col pb-16 md:pb-0">
+              {children}
+              <Footer />
+            </div>
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

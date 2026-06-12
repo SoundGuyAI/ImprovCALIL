@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "eventLink": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "type": { "type": "string" },
+        "label": { "type": "string" }
+      },
+      "required": ["url", "type"]
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "organizerId": { "type": "string" },
+        "organizerName": { "type": "string" },
+        "description": { "type": "string" },
+        "time": { "type": "number" },
+        "endTime": { "type": "number" },
+        "recurrence": { "type": "string" },
+        "location": { "type": "string" },
+        "mapLink": { "type": "string" },
+        "region": { "type": "string" },
+        "language": { "type": "string" },
+        "cost": { "type": "string" },
+        "access": { "type": "string" },
+        "links": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/eventLink" }
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "time",
+        "recurrence",
+        "location",
+        "region",
+        "language",
+        "cost",
+        "access",
+        "organizerName"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/definitions/event" },
+    {
+      "type": "array",
+      "items": { "$ref": "#/definitions/event" }
+    }
+  ]
+}

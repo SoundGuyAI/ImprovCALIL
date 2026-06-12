@@ -551,7 +551,7 @@ export default function AdminConsole() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search events..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-xs"
                 />
               </div>
             </div>
@@ -676,7 +676,7 @@ export default function AdminConsole() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search organizers..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-xs"
                 />
               </div>
             </div>

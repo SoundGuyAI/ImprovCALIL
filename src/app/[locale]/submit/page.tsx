@@ -4,7 +4,19 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createSubmission, getOrganizers, FirestoreOrganizer } from "@/lib/db";
 import Header from "@/components/Header";
-import { Sparkles, Clock, Mail, Phone, CheckCircle, Building, Trash2, Plus } from "lucide-react";
+import {
+  Sparkles,
+  Clock,
+  Mail,
+  Phone,
+  CheckCircle,
+  Building,
+  Trash2,
+  Plus,
+  Code,
+} from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { isUserAdmin } from "@/lib/permissions";
 
 const REGION_KEYS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
 const ORGANIZER_TYPE_KEYS = ["Group", "School", "Theater", "Other"];
@@ -15,10 +27,16 @@ export default function SubmitContent() {
   const tOrgTypes = useTranslations("OrganizerTypes");
   const locale = useLocale();
 
-  const [activeTab, setActiveTab] = useState<"event" | "organizer" | "ai">("event");
+  const [activeTab, setActiveTab] = useState<"event" | "organizer" | "ai" | "json">("event");
   const [organizers, setOrganizers] = useState<FirestoreOrganizer[]>([]);
+  const { profile } = useAuth();
+  const isAdmin = isUserAdmin(profile);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
+
+  // JSON State
+  const [jsonText, setJsonText] = useState("");
+  const [jsonError, setJsonError] = useState<string | null>(null);
 
   // 1. Structured Event Form State
   const [eventName, setEventName] = useState("");
@@ -56,13 +74,51 @@ export default function SubmitContent() {
 
   useEffect(() => {
     async function load() {
-      const data = await getOrganizers({ locale: locale as "en" | "he" });
-      setOrganizers(data);
+      try {
+        const data = await getOrganizers({ locale: locale as "en" | "he" });
+        setOrganizers(data);
+      } catch (err) {
+        console.error("Failed to load organizers:", err);
+      }
     }
     load();
   }, [locale]);
 
   // Simulating an LLM parser
+  const handleJsonSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(false);
+    setJsonError(null);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setJsonError("Invalid JSON format: " + errorMessage);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/submissions/json", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setJsonError(data.error + (data.details ? ": " + JSON.stringify(data.details) : ""));
+        return;
+      }
+      setSuccess(true);
+      setJsonText("");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setJsonError(errorMessage);
+      setError(true);
+    }
+  };
+
   const handleAiParse = () => {
     if (!flyerText.trim()) return;
     setAiParsing(true);
@@ -299,6 +355,25 @@ export default function SubmitContent() {
             <Sparkles className="w-4 h-4" />
             <span>{tSub("flyerTab")}</span>
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setActiveTab("json");
+                setSuccess(false);
+                setError(false);
+                setJsonError(null);
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                activeTab === "json"
+                  ? "bg-zinc-800 text-white shadow-md"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"
+              }`}
+            >
+              <Code className="w-4 h-4 text-emerald-400" />
+              <span>JSON</span>
+            </button>
+          )}
         </div>
 
         {/* FEEDBACK BANNER */}
@@ -528,7 +603,7 @@ export default function SubmitContent() {
                   value={eventDescription}
                   onChange={(e) => setEventDescription(e.target.value)}
                   placeholder="Tell the community what your event is about..."
-                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm resize-none"
+                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm resize-none"
                 />
               </div>
             </div>
@@ -800,7 +875,7 @@ export default function SubmitContent() {
                   value={orgDesc}
                   onChange={(e) => setOrgDesc(e.target.value)}
                   placeholder="Describe your troupe, school, theater or community platform..."
-                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm resize-none"
+                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm resize-none"
                 />
               </div>
             </div>
@@ -819,7 +894,7 @@ export default function SubmitContent() {
                     value={submitterEmail}
                     onChange={(e) => setSubmitterEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
               </div>
@@ -835,7 +910,7 @@ export default function SubmitContent() {
                     value={submitterPhone}
                     onChange={(e) => setSubmitterPhone(e.target.value)}
                     placeholder="e.g. 054-1234567"
-                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
               </div>
@@ -920,6 +995,50 @@ export default function SubmitContent() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* 4. JSON SUBMISSION (ADMIN ONLY) */}
+        {isAdmin && activeTab === "json" && !success && (
+          <form
+            onSubmit={handleJsonSubmit}
+            className="glass-card rounded-2xl p-6 flex flex-col gap-6"
+          >
+            <div className="border-b border-zinc-850 pb-3">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Code className="w-5 h-5 text-emerald-400" />
+                <span>Bulk JSON Submission</span>
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Submit an event or array of events using JSON format.
+              </p>
+            </div>
+
+            {jsonError && (
+              <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 text-sm font-semibold whitespace-pre-wrap">
+                {jsonError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <textarea
+                rows={12}
+                required
+                value={jsonText}
+                onChange={(e) => setJsonText(e.target.value)}
+                placeholder={
+                  '[\n  {\n    "name": "My Event",\n    "description": "...",\n    "time": 1720000000000,\n    ...\n  }\n]'
+                }
+                className="w-full px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 font-mono text-xs placeholder-zinc-600 focus:outline-none focus:border-emerald-500 resize-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold hover:shadow-lg hover:shadow-emerald-500/25 transition-all text-sm mt-4 cursor-pointer"
+            >
+              Submit JSON
+            </button>
+          </form>
         )}
       </main>
     </div>

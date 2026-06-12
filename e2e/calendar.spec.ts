@@ -3,7 +3,7 @@ import { captureScreenshot } from "./helpers/screenshots";
 
 test.describe("Calendar Views E2E Tests", () => {
   test.beforeAll(() => {
-    process.env.SYMPHONY_ISSUE_ID = "IMPCAL-13";
+    process.env.SYMPHONY_ISSUE_ID = "IMPCAL-51";
     process.env.SYMPHONY_ATTEMPT = "1";
   });
 

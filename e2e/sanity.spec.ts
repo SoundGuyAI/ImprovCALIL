@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { captureScreenshot } from "./helpers/screenshots";
 
+test.beforeAll(() => {
+  process.env.SYMPHONY_ISSUE_ID = "IMPCAL-51";
+  process.env.SYMPHONY_ATTEMPT = "1";
+});
+
 test("sanity check - home page redirect and title", async ({ page }) => {
   // Navigate to root
   await page.goto("/");

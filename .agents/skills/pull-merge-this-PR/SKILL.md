@@ -85,7 +85,7 @@ Read all reviews and comments on the Pull Request, resolve the bugs/issues local
        - **description**: Detailed markdown describing the bug, why it couldn't be resolved now, and a reference/link to the PR comment where it was raised.
 
 ## ⚠️ Step 5: Iterative Local Verification & Review Cycle (Harness + Reviewers)
-**CRITICAL CONSTRAINT**: Under no circumstances should you run any `git push` command before this step has completed with all-green verification and approval from both reviewers. Running reviewers *after* pushing is a violation.
+**CRITICAL CONSTRAINT**: Under no circumstances should you run any `git push` command before this step has completed with all-green verification and approval from both reviewers. Pushing before verification is completely forbidden because it wastes CI runner quota and money if the build fails. You must run the `verify-harness.js` script and BOTH reviewer subagents (Code Reviewer and Bug Hunter) BEFORE pushing. Running verification or reviewers *after* pushing is a serious violation.
 
 1. **Run Local Verification**:
    Run the local verification harness to ensure the project builds, format passes, and all tests run successfully:
@@ -107,6 +107,7 @@ Read all reviews and comments on the Pull Request, resolve the bugs/issues local
      - Invoke a developer subagent to fix them.
      - **REQUIRED**: After the developer subagent completes its fixes, you **MUST** run the local verification harness (`node scripts/verify-harness.js`) again, and then launch both reviewer subagents (Code Reviewer and Bug Hunter) to review the new changes.
      - **Do NOT bypass or skip re-running the reviewers after developer fixes.** Every fix must be audited by both reviewers.
+     - **CRITICAL RULE**: You MUST call the two reviewer subagents (one for code review and one for bug finding) after EVERY single developer subagent run, without exception.
      - **Repeat this loop until both reviewers explicitly approve the changes and the harness is 100% green.**
 
 ---
@@ -159,11 +160,17 @@ To avoid terminal command execution prompts, **do not run local shell scripts to
    - **Success (Checks Green)**: If all status checks and runners have completed with a success conclusion, proceed to Step 7.3.
 
 3. **Check for New Comments and Reviews**:
-   - Fetch the latest PR comments and reviews using GitHub MCP tools `get_pull_request_comments` and `get_pull_request_reviews`.
-   - Carefully review them to ensure no new issues, bugs, or requests have been raised by reviewers since your last push.
+   - You must wait until ALL checks and runners have completely finished executing (not just passed initially, but reached a terminal completion state).
+   - Only *after* all runners have finished, fetch the latest PR comments and reviews using GitHub MCP tools `get_pull_request_comments` and `get_pull_request_reviews`.
+   - Carefully review them to ensure no new issues, bugs, or requests have been raised by reviewers while the runners were executing or since your last push.
    - If there are new comments or issues:
      - Go back to **Step 4** (Read PR Comments & Resolve Feedback) to resolve them locally.
      - **Step 5** (Iterative Local Verification & Review Cycle) must be fully executed, verified, and approved before pushing again.
-   - If there are no new comments, all previous feedback has been addressed, and all checks are green:
-     - The integration is complete.
-     - **You may now proceed to starting the dev server and notifying the user on Telegram.** Do not perform these notification/server steps until all checks have passed and no new issues exist.
+   - If there are no new comments, all previous feedback has been addressed, and all checks are green, then the integration is complete.
+
+---
+
+## 🚀 Step 8: Finalize and Notify
+Once the PR is completely clean, all checks have passed, and no new comments exist:
+1. Start the dev server locally using the terminal (e.g., `npm run dev` or the specified dev command like `npm run dev3`).
+2. Send a message using the Telegram tool (if available) or output to the user indicating they should go check the dev server.

@@ -112,8 +112,13 @@ function getLocaleFromPath(): "en" | "he" {
   return "en";
 }
 
+let mockEventsBaseTime: number | undefined;
+
 function getMockEvents(): FirestoreEvent[] {
-  const baseTime = Date.now();
+  if (mockEventsBaseTime === undefined) {
+    mockEventsBaseTime = Date.now();
+  }
+  const baseTime = mockEventsBaseTime;
   return [
     {
       id: "evt-grand-show",
@@ -234,9 +239,7 @@ interface OrganizerJsonItem {
   links?: { url: string; type: string; label?: string }[];
 }
 
-function getMockOrganizers(): FirestoreOrganizer[] {
-  const locale = getLocaleFromPath();
-
+function getMockOrganizers(locale: "en" | "he" = getLocaleFromPath()): FirestoreOrganizer[] {
   const parsedOrganizers: FirestoreOrganizer[] = (
     organizersData as unknown as OrganizerJsonItem[]
   ).map((org, index) => {
@@ -354,6 +357,113 @@ function getMockOrganizers(): FirestoreOrganizer[] {
   return allOrgs;
 }
 
+function localizeOrganizer(
+  id: string,
+  fallbackName: string,
+  fallbackDesc: string,
+  locale: "en" | "he"
+): { name: string; description: string } {
+  // 1. Try to find in hardcoded seedOrgs
+  if (id === "org-improv-school") {
+    const canonicalEnName = "Improv Israel School";
+    const canonicalEnDesc =
+      "The leading improvisation training program in Israel, offering courses from beginner to advanced performance levels.";
+    return {
+      name:
+        fallbackName === canonicalEnName
+          ? locale === "he"
+            ? "בית הספר לאימפרוב ישראל"
+            : canonicalEnName
+          : fallbackName,
+      description:
+        fallbackDesc === canonicalEnDesc
+          ? locale === "he"
+            ? "תוכנית הכשרת האלתור המובילה בישראל, המציעה קורסים מרמת מתחילים ועד לרמות מופע מתקדמות."
+            : canonicalEnDesc
+          : fallbackDesc,
+    };
+  }
+  if (id === "org-jlm-troupe") {
+    const canonicalEnName = "Jerusalem Improv Troupe";
+    const canonicalEnDesc =
+      "A community-focused ensemble performing weekly short-form and long-form shows in the heart of Jerusalem.";
+    return {
+      name:
+        fallbackName === canonicalEnName
+          ? locale === "he"
+            ? "אנסמבל האימפרוב הירושלמי"
+            : canonicalEnName
+          : fallbackName,
+      description:
+        fallbackDesc === canonicalEnDesc
+          ? locale === "he"
+            ? "אנסמבל ממוקד קהילה המופיע במופעי שורט-פורם ולונג-פורם שבועיים בלב ירושלים."
+            : canonicalEnDesc
+          : fallbackDesc,
+    };
+  }
+  if (id === "org-haifa-theater") {
+    const canonicalEnName = "Haifa Improv Theater";
+    const canonicalEnDesc =
+      "A dedicated venue for alternative performing arts and improv matches on Mount Carmel.";
+    return {
+      name:
+        fallbackName === canonicalEnName
+          ? locale === "he"
+            ? "תיאטרון האימפרוב חיפה"
+            : canonicalEnName
+          : fallbackName,
+      description:
+        fallbackDesc === canonicalEnDesc
+          ? locale === "he"
+            ? "מקום ייעודי לאמנויות הבמה האלטרנטיביות ותחרויות אימפרוב על הכרמל."
+            : canonicalEnDesc
+          : fallbackDesc,
+    };
+  }
+
+  // 2. Try to find in organizersData JSON
+  const jsonOrg = (organizersData as unknown as OrganizerJsonItem[]).find((org) => {
+    const englishNameObj = org.name.find((n) => n.locale === "en") || org.name[0];
+    const englishName = englishNameObj ? englishNameObj.value : "";
+    const orgId =
+      "org-" +
+      englishName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+    return orgId === id;
+  });
+
+  if (jsonOrg) {
+    const canonicalEnNameObj = jsonOrg.name.find((n) => n.locale === "en") || jsonOrg.name[0];
+    const canonicalEnName = canonicalEnNameObj ? canonicalEnNameObj.value : "";
+
+    const canonicalEnDescObj =
+      jsonOrg.description.find((d) => d.locale === "en") || jsonOrg.description[0];
+    const canonicalEnDesc = canonicalEnDescObj ? canonicalEnDescObj.value : "";
+
+    const nameObj =
+      jsonOrg.name.find((n) => n.locale === locale) ||
+      jsonOrg.name.find((n) => n.locale === "en") ||
+      jsonOrg.name[0];
+    const localizedName = nameObj ? nameObj.value : fallbackName;
+
+    const descObj =
+      jsonOrg.description.find((d) => d.locale === locale) ||
+      jsonOrg.description.find((d) => d.locale === "en") ||
+      jsonOrg.description[0];
+    const localizedDesc = descObj ? descObj.value : fallbackDesc;
+
+    return {
+      name: fallbackName === canonicalEnName ? localizedName : fallbackName,
+      description: fallbackDesc === canonicalEnDesc ? localizedDesc : fallbackDesc,
+    };
+  }
+
+  return { name: fallbackName, description: fallbackDesc };
+}
+
 // 2. Fetch Events
 export async function getEvents(filters?: {
   region?: string;
@@ -416,6 +526,7 @@ export async function getEvents(filters?: {
       ) {
         continue;
       }
+
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
         continue;
       if (filters?.cost && filters.cost !== "all" && data.cost !== filters.cost) continue;
@@ -457,9 +568,10 @@ export async function getOrganizers(filters?: {
   region?: string;
   type?: string;
   includeHidden?: boolean;
+  locale?: "en" | "he";
 }): Promise<FirestoreOrganizer[]> {
   if (isMock) {
-    const allOrgs = getMockOrganizers();
+    const allOrgs = getMockOrganizers(filters?.locale ?? getLocaleFromPath());
     const filtered: FirestoreOrganizer[] = [];
     for (const data of allOrgs) {
       if (!filters?.includeHidden && data.hidden) continue;
@@ -496,11 +608,18 @@ export async function getOrganizers(filters?: {
 
       const links = await fetchLinksForParent(d.id);
 
+      const { name, description } = localizeOrganizer(
+        d.id,
+        data.name || "",
+        data.description || "",
+        filters?.locale ?? getLocaleFromPath()
+      );
+
       organizers.push({
         id: d.id,
-        name: data.name || "",
+        name,
         type: data.type || "Other",
-        description: data.description || "",
+        description,
         region: normalizeRegion(data.region),
         languages: data.languages || ["he"],
         logoUrl: data.logoUrl,
@@ -520,12 +639,15 @@ export async function getOrganizers(filters?: {
 }
 
 // 4. Fetch Individual Organizer Reference Details & their Events
-export async function getOrganizerDetails(id: string): Promise<{
+export async function getOrganizerDetails(
+  id: string,
+  locale?: "en" | "he"
+): Promise<{
   organizer: FirestoreOrganizer | null;
   events: FirestoreEvent[];
 }> {
   if (isMock) {
-    const allOrgs = getMockOrganizers();
+    const allOrgs = getMockOrganizers(locale ?? getLocaleFromPath());
     const organizer = allOrgs.find((o) => o.id === id) || null;
     if (!organizer) return { organizer: null, events: [] };
 
@@ -541,11 +663,18 @@ export async function getOrganizerDetails(id: string): Promise<{
     const data = d.data();
     const links = await fetchLinksForParent(d.id);
 
+    const { name, description } = localizeOrganizer(
+      d.id,
+      data.name || "",
+      data.description || "",
+      locale ?? getLocaleFromPath()
+    );
+
     const organizer: FirestoreOrganizer = {
       id: d.id,
-      name: data.name || "",
+      name,
       type: data.type || "Other",
-      description: data.description || "",
+      description,
       region: normalizeRegion(data.region),
       languages: data.languages || ["he"],
       logoUrl: data.logoUrl,

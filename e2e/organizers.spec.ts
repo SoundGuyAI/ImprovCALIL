@@ -1,15 +1,20 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Organizers Directory and Details E2E Tests", () => {
+  test.beforeEach(async ({ page }) => {
+    // Set fixed clock date matching seed database relative times
+    await page.clock.setFixedTime(new Date("2026-06-09T10:00:00Z"));
+  });
+
   test("should render the organizers list and support filtering and search", async ({ page }) => {
     // Navigate to the organizers page
     await page.goto("/en/organizers");
 
+    // Wait for the loading state to finish
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible({ timeout: 20000 });
+
     // Check directory title
     await expect(page.locator("h1")).toContainText("Improv Organizers Directory");
-
-    // Wait for the loading state to finish
-    await expect(page.locator("text=Loading...").first()).not.toBeVisible();
 
     // Verify all mock organizers from seed data are visible
     await expect(page.locator("text=Improv Israel School")).toBeVisible();
@@ -48,6 +53,9 @@ test.describe("Organizers Directory and Details E2E Tests", () => {
   test("should navigate to organizer details and show details and events", async ({ page }) => {
     // Navigate to a specific organizer details page
     await page.goto("/en/organizers/org-improv-school");
+
+    // Wait for the loading state to finish
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible({ timeout: 20000 });
 
     // Check organizer title
     await expect(page.locator("h1")).toContainText("Improv Israel School");

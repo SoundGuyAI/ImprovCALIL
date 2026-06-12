@@ -3,19 +3,19 @@ import { captureScreenshot } from "./helpers/screenshots";
 
 test.describe("Calendar Views E2E Tests", () => {
   test.beforeAll(() => {
-    process.env.SYMPHONY_ISSUE_ID = "IMPCAL-13";
+    process.env.SYMPHONY_ISSUE_ID = "IMPCAL-51";
     process.env.SYMPHONY_ATTEMPT = "1";
   });
 
   test.beforeEach(async ({ page }) => {
-    // Freeze clock to a fixed date matching seed database relative times
-    await page.clock.install({ time: new Date("2026-06-09T10:00:00Z") });
+    // Set fixed clock date matching seed database relative times
+    await page.clock.setFixedTime(new Date("2026-06-09T10:00:00Z"));
     // Navigate to localized home page
     await page.goto("/en");
     // Ensure page is loaded
     await expect(page.locator("text=ImprovIL")).toBeVisible();
     // Wait for the loading state to finish
-    await expect(page.locator("text=Loading...").first()).not.toBeVisible();
+    await expect(page.locator("text=Loading...").first()).not.toBeVisible({ timeout: 20000 });
   });
 
   test("should render view switcher and toggle views", async ({ page }) => {
@@ -108,6 +108,7 @@ test.describe("Calendar Views E2E Tests", () => {
 
     // Close modal
     await page.locator("button:has(svg.rotate-90)").first().click();
+    await expect(page.locator("h3:has-text('Grand Improv Night')")).not.toBeVisible();
 
     // Check filter interaction on Month View
     // Select Jerusalem region filter

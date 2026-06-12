@@ -10,7 +10,6 @@ const REGION_KEYS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon",
 const ORGANIZER_TYPE_KEYS = ["Group", "School", "Theater", "Other"];
 
 export default function SubmitContent() {
-  const tCommon = useTranslations("Common");
   const tSub = useTranslations("Submissions");
   const tRegions = useTranslations("Regions");
   const tOrgTypes = useTranslations("OrganizerTypes");
@@ -57,11 +56,11 @@ export default function SubmitContent() {
 
   useEffect(() => {
     async function load() {
-      const data = await getOrganizers();
+      const data = await getOrganizers({ locale: locale as "en" | "he" });
       setOrganizers(data);
     }
     load();
-  }, []);
+  }, [locale]);
 
   // Simulating an LLM parser
   const handleAiParse = () => {
@@ -923,11 +922,6 @@ export default function SubmitContent() {
           </div>
         )}
       </main>
-
-      {/* FOOTER */}
-      <footer className="w-full border-t border-zinc-900/80 bg-zinc-950 py-6 mt-12 text-center text-xs text-zinc-500 font-semibold">
-        <p className="max-w-7xl mx-auto px-4">{tCommon("footer")}</p>
-      </footer>
     </div>
   );
 }

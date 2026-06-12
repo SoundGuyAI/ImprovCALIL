@@ -17,6 +17,13 @@
     "cancel": "ביטול",
     "unknown": "לא ידוע",
     "featured": "מומלץ",
+    "english": "אנגלית",
+    "hebrew": "עברית",
+    "language": "בחר שפה",
+    "englishNative": "English",
+    "hebrewNative": "עברית",
+    "switchToEnglish": "שנה שפה לאנגלית",
+    "switchToHebrew": "שנה שפה לעברית",
     "listView": "תצוגת רשימה",
     "weekView": "תצוגת שבוע",
     "monthView": "תצוגת חודש",
@@ -26,9 +33,13 @@
   },
   "Navigation": {
     "calendar": "לוח אירועים",
+    "calendarShort": "לוח",
     "organizers": "אינדקס מארגנים",
+    "organizersShort": "מארגנים",
     "submit": "הגשת אירוע/מארגן",
+    "submitShort": "הגשה",
     "admin": "פאנל ניהול",
+    "adminShort": "ניהול",
     "switchTo": "English"
   },
   "Filters": {
@@ -253,5 +264,27 @@
     "section6Title": "6. יצירת קשר",
     "section6Content": "אם יש לך שאלות או חששות לגבי תנאים אלה, אנא פנה אלינו בכתובת support@soundguy.ai.",
     "backToHome": "חזרה לדף הבית"
+  },
+  "Organizers": {
+    "title": "אינדקס מארגני אימפרוב",
+    "subtitle": "גלו קבוצות הופעה, בתי ספר וסדנאות, ותיאטראות המפעילים אירועי אימפרוביזציה בישראל.",
+    "filterTitle": "סינון מארגנים",
+    "searchPlaceholder": "חיפוש מארגנים...",
+    "allRegions": "כל האזורים",
+    "organizerType": "סוג מארגן",
+    "allTypes": "כל הסוגים",
+    "languages": "{count, plural, =1 {שפה אחת} other {# שפות}}",
+    "about": "אודות",
+    "contactLinks": "קישורים ליצירת קשר",
+    "noLinks": "לא עודכנו קישורים עבור מארגן זה.",
+    "eventSchedule": "לוח מופעים ואירועים",
+    "upcomingEvents": "אירועים קרובים",
+    "noUpcoming": "אין אירועים קרובים מתוכננים כרגע.",
+    "pastEvents": "אירועים שעברו",
+    "noPast": "אין אירועים בארכיון.",
+    "backToDirectory": "חזרה לאינדקס",
+    "backToDirectoryLong": "חזרה לאינדקס המארגנים",
+    "notFound": "המארגן המבוקש לא נמצא או הוסתר.",
+    "languagesLabel": "שפות:"
   }
 }

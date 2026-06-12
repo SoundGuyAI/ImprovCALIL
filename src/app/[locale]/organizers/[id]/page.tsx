@@ -28,7 +28,8 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
   const tRegions = useTranslations("Regions");
   const tOrgTypes = useTranslations("OrganizerTypes");
   const tLinks = useTranslations("LinkTypes");
-  const locale = useLocale();
+  const tOrganizers = useTranslations("Organizers");
+  const locale = useLocale() as "en" | "he";
 
   const [organizer, setOrganizer] = useState<FirestoreOrganizer | null>(null);
   const [events, setEvents] = useState<FirestoreEvent[]>([]);
@@ -38,7 +39,8 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
     async function load() {
       try {
         const { organizer: orgData, events: evtData } = await getOrganizerDetails(
-          resolvedParams.id
+          resolvedParams.id,
+          locale
         );
         setOrganizer(orgData);
         setEvents(evtData);
@@ -49,7 +51,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
       }
     }
     load();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, locale]);
 
   const getOrgTypeIcon = (type: string) => {
     switch (type) {
@@ -112,16 +114,12 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
       <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
         <Header />
         <div className="flex-grow max-w-7xl mx-auto px-4 py-20 text-center flex flex-col items-center justify-center gap-4">
-          <p className="text-zinc-400">
-            {locale === "he"
-              ? "המארגן המבוקש לא נמצא או הוסתר."
-              : "The requested organizer was not found or has been hidden."}
-          </p>
+          <p className="text-zinc-400">{tOrganizers("notFound")}</p>
           <Link
             href="/organizers"
             className="px-5 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm font-semibold transition-all"
           >
-            {locale === "he" ? "חזרה לאינדקס המארגנים" : "Back to Organizers Directory"}
+            {tOrganizers("backToDirectoryLong")}
           </Link>
         </div>
       </div>
@@ -139,7 +137,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
           className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 font-bold text-xs uppercase w-fit cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
-          <span>{locale === "he" ? "חזרה לאינדקס" : "Back to Directory"}</span>
+          <span>{tOrganizers("backToDirectory")}</span>
         </Link>
 
         {/* ORGANIZER HEADER PANEL */}
@@ -163,9 +161,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs font-bold bg-zinc-950/40 p-2.5 rounded-xl border border-zinc-900">
-            <span className="text-zinc-500 uppercase">
-              {locale === "he" ? "שפות:" : "Languages:"}
-            </span>
+            <span className="text-zinc-500 uppercase">{tOrganizers("languagesLabel")}</span>
             {organizer.languages.map((lang) => (
               <span
                 key={lang}
@@ -182,7 +178,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
           {/* Main Description */}
           <section className="lg:col-span-2 flex flex-col gap-4 glass-card rounded-2xl p-6">
             <h3 className="text-md font-bold text-indigo-400 uppercase tracking-wide border-b border-zinc-900 pb-2">
-              {locale === "he" ? "אודות" : "About"}
+              {tOrganizers("about")}
             </h3>
             <p className="text-sm sm:text-base text-zinc-300 leading-relaxed whitespace-pre-wrap">
               {organizer.description}
@@ -192,7 +188,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
           {/* Outbound Social / Website Links */}
           <section className="flex flex-col gap-4 glass-card rounded-2xl p-6">
             <h3 className="text-md font-bold text-indigo-400 uppercase tracking-wide border-b border-zinc-900 pb-2">
-              {locale === "he" ? "קישורים ליצירת קשר" : "Contact Links"}
+              {tOrganizers("contactLinks")}
             </h3>
             {organizer.links && organizer.links.length > 0 ? (
               <div className="flex flex-col gap-2.5">
@@ -225,11 +221,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-zinc-500 italic py-2">
-                {locale === "he"
-                  ? "לא עודכנו קישורים עבור מארגן זה."
-                  : "No contact links available for this organizer."}
-              </p>
+              <p className="text-xs text-zinc-500 italic py-2">{tOrganizers("noLinks")}</p>
             )}
           </section>
         </div>
@@ -238,9 +230,7 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
         <section className="flex flex-col gap-6">
           <div className="flex items-center gap-2 border-b border-zinc-900 pb-3">
             <CalendarIcon className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-xl font-bold text-white">
-              {locale === "he" ? "לוח מופעים ואירועים" : "Event Schedule"}
-            </h2>
+            <h2 className="text-xl font-bold text-white">{tOrganizers("eventSchedule")}</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -248,17 +238,15 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
             <div className="flex flex-col gap-4">
               <h3 className="text-md font-bold text-indigo-400 flex items-center gap-1.5 uppercase">
                 <Sparkles className="w-4 h-4" />
-                <span>{locale === "he" ? "אירועים קרובים" : "Upcoming Events"}</span>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-bold ml-1">
+                <span>{tOrganizers("upcomingEvents")}</span>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-bold">
                   {upcomingEvents.length}
                 </span>
               </h3>
 
               {upcomingEvents.length === 0 ? (
                 <div className="glass-card rounded-xl p-8 text-center text-zinc-500 text-xs italic">
-                  {locale === "he"
-                    ? "אין אירועים קרובים מתוכננים כרגע."
-                    : "No scheduled upcoming events at this time."}
+                  {tOrganizers("noUpcoming")}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -307,15 +295,15 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
             <div className="flex flex-col gap-4">
               <h3 className="text-md font-bold text-zinc-500 flex items-center gap-1.5 uppercase">
                 <Clock className="w-4 h-4" />
-                <span>{locale === "he" ? "אירועים שעברו" : "Past Events"}</span>
-                <span className="px-2 py-0.5 rounded-full bg-zinc-850 border border-zinc-800 text-[10px] text-zinc-500 font-bold ml-1">
+                <span>{tOrganizers("pastEvents")}</span>
+                <span className="px-2 py-0.5 rounded-full bg-zinc-850 border border-zinc-800 text-[10px] text-zinc-500 font-bold">
                   {pastEvents.length}
                 </span>
               </h3>
 
               {pastEvents.length === 0 ? (
                 <div className="glass-card rounded-xl p-8 text-center text-zinc-500 text-xs italic">
-                  {locale === "he" ? "אין אירועים בארכיון." : "No archive events."}
+                  {tOrganizers("noPast")}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -346,11 +334,6 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
           </div>
         </section>
       </main>
-
-      {/* FOOTER */}
-      <footer className="w-full border-t border-zinc-900/80 bg-zinc-950 py-6 mt-12 text-center text-xs text-zinc-500 font-semibold">
-        <p className="max-w-7xl mx-auto px-4">{tCommon("footer")}</p>
-      </footer>
     </div>
   );
 }

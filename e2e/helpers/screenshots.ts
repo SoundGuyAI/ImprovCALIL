@@ -115,6 +115,14 @@ export async function captureScreenshot(
   filename: string,
   label?: string
 ): Promise<string> {
+  const issueId = process.env.SYMPHONY_ISSUE_ID?.trim();
+  const screenshotDir = process.env.SYMPHONY_SCREENSHOT_DIR?.trim();
+  if (!issueId && !screenshotDir) {
+    console.warn(
+      `Skipping screenshot capture for ${filename} because SYMPHONY_ISSUE_ID and SYMPHONY_SCREENSHOT_DIR are not set.`
+    );
+    return "";
+  }
   const runDir = getScreenshotRunDir();
   fs.mkdirSync(runDir, { recursive: true });
   const filePath = path.join(runDir, filename);

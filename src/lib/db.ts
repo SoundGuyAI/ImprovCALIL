@@ -10,7 +10,6 @@ import {
   orderBy,
   addDoc,
   updateDoc,
-  deleteDoc,
   writeBatch,
 } from "firebase/firestore";
 
@@ -918,7 +917,16 @@ export async function deleteRecord(
   id: string
 ): Promise<void> {
   try {
-    await deleteDoc(doc(db, collectionName, id));
+    const batch = writeBatch(db);
+    batch.delete(doc(db, collectionName, id));
+
+    const q = query(collection(db, "links"), where("parentId", "==", id));
+    const snap = await getDocs(q);
+    snap.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+
+    await batch.commit();
   } catch (err) {
     console.error("Error deleting record:", err);
     throw err;
@@ -946,6 +954,83 @@ export async function updateSubmissionsConfig(allowAnonymous: boolean): Promise<
     await setDoc(doc(db, "config", "submissions"), { allowAnonymous });
   } catch (err) {
     console.error("Error updating submissions config:", err);
+    throw err;
+  }
+}
+
+// 14. Create Event (Admin CRUD)
+export async function createEvent(
+  eventData: Omit<FirestoreEvent, "id" | "createdAt" | "links">,
+  links?: EventLink[]
+): Promise<string> {
+  try {
+    const batch = writeBatch(db);
+    const eventRef = doc(collection(db, "events"));
+    const newEventId = eventRef.id;
+
+    batch.set(eventRef, {
+      ...eventData,
+      id: newEventId,
+      createdAt: Date.now(),
+    });
+
+    if (links && links.length > 0) {
+      links.forEach((lnk: EventLink, idx: number) => {
+        const lnkRef = doc(collection(db, "links"));
+        batch.set(lnkRef, {
+          parentId: newEventId,
+          parentType: "event",
+          url: lnk.url,
+          type: lnk.type || "Other",
+          label: lnk.label || "",
+          sortOrder: idx,
+        });
+      });
+    }
+
+    await batch.commit();
+    return newEventId;
+  } catch (err) {
+    console.error("Error creating event:", err);
+    throw err;
+  }
+}
+
+// 15. Update Event (Admin CRUD)
+export async function updateEvent(
+  eventId: string,
+  eventData: Partial<Omit<FirestoreEvent, "id" | "createdAt" | "links">>,
+  links?: EventLink[]
+): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+    const eventRef = doc(db, "events", eventId);
+
+    batch.update(eventRef, eventData);
+
+    if (links !== undefined) {
+      const q = query(collection(db, "links"), where("parentId", "==", eventId));
+      const snap = await getDocs(q);
+      snap.docs.forEach((d) => {
+        batch.delete(d.ref);
+      });
+
+      links.forEach((lnk: EventLink, idx: number) => {
+        const lnkRef = doc(collection(db, "links"));
+        batch.set(lnkRef, {
+          parentId: eventId,
+          parentType: "event",
+          url: lnk.url,
+          type: lnk.type || "Other",
+          label: lnk.label || "",
+          sortOrder: idx,
+        });
+      });
+    }
+
+    await batch.commit();
+  } catch (err) {
+    console.error("Error updating event:", err);
     throw err;
   }
 }

@@ -13,11 +13,15 @@ import {
   deleteRecord,
   getSubmissionsConfig,
   updateSubmissionsConfig,
+  createEvent,
+  updateEvent,
   FirestoreEvent,
   FirestoreOrganizer,
   FirestoreSubmission,
+  EventLink,
 } from "@/lib/db";
 import Header from "@/components/Header";
+import AdminEventFormModal from "@/components/admin/AdminEventFormModal";
 import {
   ShieldCheck,
   Calendar as CalendarIcon,
@@ -34,6 +38,8 @@ import {
   Search,
   Activity,
   Settings,
+  Pencil,
+  Plus,
 } from "lucide-react";
 
 export default function AdminConsole() {
@@ -53,6 +59,10 @@ export default function AdminConsole() {
   // Show Hidden records toggle
   const [showHidden, setShowHidden] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Event Modal State
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<FirestoreEvent | null>(null);
 
   // Simulator State
   const [simSource, setSimSource] = useState<"telegram" | "whatsapp">("telegram");
@@ -195,7 +205,25 @@ export default function AdminConsole() {
     }
   };
 
-  // 5. Ingestion Simulator trigger
+  // 5. Save Event (Create/Update)
+  const handleSaveEvent = async (
+    data: Omit<FirestoreEvent, "id" | "createdAt" | "links">,
+    links: EventLink[]
+  ) => {
+    try {
+      if (editingEvent) {
+        await updateEvent(editingEvent.id, data, links);
+      } else {
+        await createEvent(data, links);
+      }
+      await refreshData();
+    } catch (err) {
+      console.error("Error saving event:", err);
+      throw err;
+    }
+  };
+
+  // 6. Ingestion Simulator trigger
   const runIngestionSim = () => {
     if (!simText.trim()) return;
     setSimulating(true);
@@ -530,8 +558,18 @@ export default function AdminConsole() {
         {!loading && activeTab === "events" && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              {/* Show Hidden and Search controls */}
+              {/* Show Hidden, Add Event, and Search controls */}
               <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-500 bg-indigo-500/10 text-white text-xs font-bold transition-all cursor-pointer hover:bg-indigo-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  {locale === "he" ? "הוסף אירוע" : "Add Event"}
+                </button>
                 <button
                   onClick={() => setShowHidden(!showHidden)}
                   className={`px-4 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
@@ -623,6 +661,17 @@ export default function AdminConsole() {
                             ) : (
                               <EyeOff className="w-4 h-4 text-zinc-500" />
                             )}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setEditingEvent(evt);
+                              setIsEventModalOpen(true);
+                            }}
+                            className="p-1.5 rounded bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer"
+                            title={locale === "he" ? "ערוך" : "Edit"}
+                          >
+                            <Pencil className="w-4 h-4" />
                           </button>
 
                           <button
@@ -934,6 +983,17 @@ export default function AdminConsole() {
             </div>
           </div>
         )}
+        <AdminEventFormModal
+          isOpen={isEventModalOpen}
+          onClose={() => {
+            setIsEventModalOpen(false);
+            setEditingEvent(null);
+          }}
+          onSave={handleSaveEvent}
+          initialData={editingEvent}
+          organizers={organizers}
+          locale={locale}
+        />
       </main>
     </div>
   );

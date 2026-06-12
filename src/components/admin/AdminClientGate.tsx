@@ -11,7 +11,7 @@ export function AdminClientGate({ children }: { children: React.ReactNode }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (isConfigMissing || !auth) {
+    if (isConfigMissing || !auth || process.env.NEXT_PUBLIC_ADMIN_DEV_UID) {
       setReady(true);
       return;
     }

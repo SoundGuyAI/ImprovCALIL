@@ -365,30 +365,60 @@ function localizeOrganizer(
 ): { name: string; description: string } {
   // 1. Try to find in hardcoded seedOrgs
   if (id === "org-improv-school") {
+    const canonicalEnName = "Improv Israel School";
+    const canonicalEnDesc =
+      "The leading improvisation training program in Israel, offering courses from beginner to advanced performance levels.";
     return {
-      name: locale === "he" ? "בית הספר לאימפרוב ישראל" : "Improv Israel School",
+      name:
+        fallbackName === canonicalEnName
+          ? locale === "he"
+            ? "בית הספר לאימפרוב ישראל"
+            : canonicalEnName
+          : fallbackName,
       description:
-        locale === "he"
-          ? "תוכנית הכשרת האלתור המובילה בישראל, המציעה קורסים מרמת מתחילים ועד לרמות מופע מתקדמות."
-          : "The leading improvisation training program in Israel, offering courses from beginner to advanced performance levels.",
+        fallbackDesc === canonicalEnDesc
+          ? locale === "he"
+            ? "תוכנית הכשרת האלתור המובילה בישראל, המציעה קורסים מרמת מתחילים ועד לרמות מופע מתקדמות."
+            : canonicalEnDesc
+          : fallbackDesc,
     };
   }
   if (id === "org-jlm-troupe") {
+    const canonicalEnName = "Jerusalem Improv Troupe";
+    const canonicalEnDesc =
+      "A community-focused ensemble performing weekly short-form and long-form shows in the heart of Jerusalem.";
     return {
-      name: locale === "he" ? "אנסמבל האימפרוב הירושלמי" : "Jerusalem Improv Troupe",
+      name:
+        fallbackName === canonicalEnName
+          ? locale === "he"
+            ? "אנסמבל האימפרוב הירושלמי"
+            : canonicalEnName
+          : fallbackName,
       description:
-        locale === "he"
-          ? "אנסמבל ממוקד קהילה המופיע במופעי שורט-פורם ולונג-פורם שבועיים בלב ירושלים."
-          : "A community-focused ensemble performing weekly short-form and long-form shows in the heart of Jerusalem.",
+        fallbackDesc === canonicalEnDesc
+          ? locale === "he"
+            ? "אנסמבל ממוקד קהילה המופיע במופעי שורט-פורם ולונג-פורם שבועיים בלב ירושלים."
+            : canonicalEnDesc
+          : fallbackDesc,
     };
   }
   if (id === "org-haifa-theater") {
+    const canonicalEnName = "Haifa Improv Theater";
+    const canonicalEnDesc =
+      "A dedicated venue for alternative performing arts and improv matches on Mount Carmel.";
     return {
-      name: locale === "he" ? "תיאטרון האימפרוב חיפה" : "Haifa Improv Theater",
+      name:
+        fallbackName === canonicalEnName
+          ? locale === "he"
+            ? "תיאטרון האימפרוב חיפה"
+            : canonicalEnName
+          : fallbackName,
       description:
-        locale === "he"
-          ? "מקום ייעודי לאמנויות הבמה האלטרנטיביות ותחרויות אימפרוב על הכרמל."
-          : "A dedicated venue for alternative performing arts and improv matches on Mount Carmel.",
+        fallbackDesc === canonicalEnDesc
+          ? locale === "he"
+            ? "מקום ייעודי לאמנויות הבמה האלטרנטיביות ותחרויות אימפרוב על הכרמל."
+            : canonicalEnDesc
+          : fallbackDesc,
     };
   }
 
@@ -406,19 +436,29 @@ function localizeOrganizer(
   });
 
   if (jsonOrg) {
+    const canonicalEnNameObj = jsonOrg.name.find((n) => n.locale === "en") || jsonOrg.name[0];
+    const canonicalEnName = canonicalEnNameObj ? canonicalEnNameObj.value : "";
+
+    const canonicalEnDescObj =
+      jsonOrg.description.find((d) => d.locale === "en") || jsonOrg.description[0];
+    const canonicalEnDesc = canonicalEnDescObj ? canonicalEnDescObj.value : "";
+
     const nameObj =
       jsonOrg.name.find((n) => n.locale === locale) ||
       jsonOrg.name.find((n) => n.locale === "en") ||
       jsonOrg.name[0];
-    const name = nameObj ? nameObj.value : fallbackName;
+    const localizedName = nameObj ? nameObj.value : fallbackName;
 
     const descObj =
       jsonOrg.description.find((d) => d.locale === locale) ||
       jsonOrg.description.find((d) => d.locale === "en") ||
       jsonOrg.description[0];
-    const description = descObj ? descObj.value : fallbackDesc;
+    const localizedDesc = descObj ? descObj.value : fallbackDesc;
 
-    return { name, description };
+    return {
+      name: fallbackName === canonicalEnName ? localizedName : fallbackName,
+      description: fallbackDesc === canonicalEnDesc ? localizedDesc : fallbackDesc,
+    };
   }
 
   return { name: fallbackName, description: fallbackDesc };

@@ -819,8 +819,12 @@ export async function approveSubmissionsBatch(
 
   for (const id of ids) {
     try {
-      await approveSubmission(id);
-      approved.push(id);
+      const didApprove = await approveSubmission(id);
+      if (didApprove) {
+        approved.push(id);
+      } else {
+        failed.push({ id, error: "Submission not found or already approved" });
+      }
     } catch (err: unknown) {
       const error = err instanceof Error ? err.message : String(err);
       failed.push({ id, error });
@@ -830,17 +834,17 @@ export async function approveSubmissionsBatch(
   return { approved, failed };
 }
 
-export async function approveSubmission(id: string): Promise<void> {
+export async function approveSubmission(id: string): Promise<boolean> {
   if (isMock) {
     console.log("[Mock] Approving submission:", id);
-    return;
+    return true;
   }
   try {
     const sDoc = await getDoc(doc(db, "submissions", id));
-    if (!sDoc.exists()) return;
+    if (!sDoc.exists()) return false;
     const sData = sDoc.data();
 
-    if (sData.status === "approved") return;
+    if (sData.status === "approved") return false;
     if (sData.status !== "pending") {
       throw new Error(`Submission is not pending (status: ${sData.status})`);
     }
@@ -956,6 +960,7 @@ export async function approveSubmission(id: string): Promise<void> {
     // Update submission status to approved
     batch.update(doc(db, "submissions", id), { status: "approved" });
     await batch.commit();
+    return true;
   } catch (err) {
     console.error("Error approving submission:", err);
     throw err;

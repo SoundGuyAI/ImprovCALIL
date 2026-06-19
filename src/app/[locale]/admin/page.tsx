@@ -105,9 +105,13 @@ export default function AdminConsole() {
       try {
         // Only fetch what the active tab actually needs to avoid loading all three
         // Firestore collections on every tab switch.
-        const needsEvents = activeTab === "dashboard" || activeTab === "events";
+        const needsEvents =
+          activeTab === "dashboard" || activeTab === "events" || activeTab === "queue";
         const needsOrganizers =
-          activeTab === "dashboard" || activeTab === "organizers" || activeTab === "events";
+          activeTab === "dashboard" ||
+          activeTab === "organizers" ||
+          activeTab === "events" ||
+          activeTab === "queue";
         const needsSubmissions = activeTab === "dashboard" || activeTab === "queue";
 
         const [evts, orgs, subs] = await Promise.all([
@@ -356,7 +360,9 @@ export default function AdminConsole() {
             return (
               <button
                 key={tab.id}
-                onClick={() =>
+                onClick={() => {
+                  setIsEventModalOpen(false);
+                  setEditingEvent(null);
                   setActiveTab(
                     tab.id as
                       | "dashboard"
@@ -365,8 +371,8 @@ export default function AdminConsole() {
                       | "organizers"
                       | "simulator"
                       | "settings"
-                  )
-                }
+                  );
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                   isSelected
                     ? "bg-zinc-800 text-white shadow-md"

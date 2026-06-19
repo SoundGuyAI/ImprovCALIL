@@ -97,6 +97,7 @@
     "approveImmediately": "Approve & Publish Immediately",
     "publishedSuccess": "Event approved and published to the calendar successfully!",
     "publishing": "Publishing...",
+    "submitting": "Submitting...",
     "submitError": "Failed to submit. Please check the fields and try again.",
     "eventFormDesc": "Suggest an upcoming improv show, jam, workshop, or festival. Admins will review before publishing.",
     "eventName": "Event Title",
@@ -129,7 +130,9 @@
     "pasteFlyer": "Paste your flyer or event description here...",
     "parseBtn": "Extract Fields with AI",
     "parsing": "AI is analyzing text and extracting event details...",
-    "parsedFields": "AI Extracted Fields (Review and edit before submitting)"
+    "parsedFields": "AI Extracted Fields (Review and edit before submitting)",
+    "submitJson": "Submit JSON",
+    "submittingJson": "Submitting JSON..."
   },
   "Admin": {
     "title": "Admin Moderation Console",

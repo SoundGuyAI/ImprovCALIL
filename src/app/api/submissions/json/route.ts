@@ -16,10 +16,14 @@ function getValidate() {
   return validate;
 }
 
+const MAX_EVENTS_PER_REQUEST = 50;
+
 export async function POST(request: Request) {
   try {
     const profile = await getCurrentProfile();
-    const devBypass = process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
+    const devBypass =
+      (process.env.NODE_ENV === "development" || process.env.ALLOW_DEV_BYPASS === "true") &&
+      process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
     if (!devBypass && !isUserAdmin(profile)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -42,6 +46,13 @@ export async function POST(request: Request) {
     }
 
     const events = Array.isArray(body) ? body : [body];
+
+    if (events.length > MAX_EVENTS_PER_REQUEST) {
+      return NextResponse.json(
+        { error: `Batch too large. Maximum ${MAX_EVENTS_PER_REQUEST} events per request.` },
+        { status: 400 }
+      );
+    }
 
     const results = await Promise.allSettled(
       events.map((event) =>
@@ -81,7 +92,9 @@ export async function POST(request: Request) {
       if (result.status === "fulfilled") {
         submissionIds.push(result.value);
       } else {
-        errors.push(`Event at index ${index} failed: ${result.reason?.message || "Unknown error"}`);
+        errors.push(
+          `Event at index ${index} failed: ${result.reason instanceof Error ? result.reason.message : String(result.reason ?? "Unknown error")}`
+        );
       }
     });
 
@@ -95,10 +108,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, submissionIds }, { status: 201 });
   } catch (error: unknown) {
     console.error("JSON submission error:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return NextResponse.json(
-      { error: "Internal Server Error", message: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

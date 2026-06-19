@@ -31,6 +31,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       NEXT_PUBLIC_ADMIN_DEV_UID: "admin-test",
+      ALLOW_DEV_BYPASS: "true",
     },
   },
 });

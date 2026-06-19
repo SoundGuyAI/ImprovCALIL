@@ -319,7 +319,10 @@ export async function createCustomTokenForCurrentProfile(): Promise<string | nul
 export async function getCurrentProfile(): Promise<AuthProfile | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
-  if (!sessionCookie && process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test") {
+  const isDevBypass =
+    (process.env.NODE_ENV === "development" || process.env.ALLOW_DEV_BYPASS === "true") &&
+    process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
+  if (!sessionCookie && isDevBypass) {
     return {
       uid: "admin-test",
       displayName: "Admin Test User",

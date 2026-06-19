@@ -38,6 +38,9 @@ export default function SubmitContent() {
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [submittingJson, setSubmittingJson] = useState(false);
+  const [submittingEvent, setSubmittingEvent] = useState(false);
+  const [submittingOrganizer, setSubmittingOrganizer] = useState(false);
 
   const handleApproveImmediately = async () => {
     if (!lastSubmissionId) return;
@@ -124,6 +127,7 @@ export default function SubmitContent() {
       return;
     }
 
+    setSubmittingJson(true);
     try {
       const res = await fetch("/api/submissions/json", {
         method: "POST",
@@ -155,6 +159,8 @@ export default function SubmitContent() {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setJsonError(errorMessage);
       setError(true);
+    } finally {
+      setSubmittingJson(false);
     }
   };
 
@@ -219,6 +225,7 @@ export default function SubmitContent() {
       return;
     }
 
+    setSubmittingEvent(true);
     try {
       const selectedOrg = organizers.find((o) => o.id === eventOrganizerId);
       const subId = await createSubmission({
@@ -253,6 +260,8 @@ export default function SubmitContent() {
     } catch (err) {
       console.error(err);
       setError(true);
+    } finally {
+      setSubmittingEvent(false);
     }
   };
 
@@ -268,6 +277,7 @@ export default function SubmitContent() {
       return;
     }
 
+    setSubmittingOrganizer(true);
     try {
       const subId = await createSubmission({
         type: "organizer",
@@ -297,6 +307,8 @@ export default function SubmitContent() {
     } catch (err) {
       console.error(err);
       setError(true);
+    } finally {
+      setSubmittingOrganizer(false);
     }
   };
 
@@ -801,9 +813,17 @@ export default function SubmitContent() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-primary text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer"
+              disabled={submittingEvent}
+              className="w-full py-3 rounded-xl bg-gradient-primary disabled:from-zinc-850 disabled:to-zinc-850 disabled:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer flex items-center justify-center gap-2"
             >
-              {tSub("submitBtn")}
+              {submittingEvent ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                  <span>{tSub("submitting")}</span>
+                </>
+              ) : (
+                <span>{tSub("submitBtn")}</span>
+              )}
             </button>
           </form>
         )}
@@ -1012,9 +1032,17 @@ export default function SubmitContent() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-primary text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer"
+              disabled={submittingOrganizer}
+              className="w-full py-3 rounded-xl bg-gradient-primary disabled:from-zinc-850 disabled:to-zinc-850 disabled:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer flex items-center justify-center gap-2"
             >
-              {tSub("submitBtn")}
+              {submittingOrganizer ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                  <span>{tSub("submitting")}</span>
+                </>
+              ) : (
+                <span>{tSub("submitBtn")}</span>
+              )}
             </button>
           </form>
         )}
@@ -1128,9 +1156,17 @@ export default function SubmitContent() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold hover:shadow-lg hover:shadow-emerald-500/25 transition-all text-sm mt-4 cursor-pointer"
+              disabled={submittingJson}
+              className="w-full py-3 rounded-xl bg-emerald-600 disabled:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold hover:shadow-lg hover:shadow-emerald-500/25 transition-all text-sm mt-4 cursor-pointer flex items-center justify-center gap-2"
             >
-              Submit JSON
+              {submittingJson ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                  <span>{tSub("submittingJson")}</span>
+                </>
+              ) : (
+                <span>{tSub("submitJson")}</span>
+              )}
             </button>
           </form>
         )}

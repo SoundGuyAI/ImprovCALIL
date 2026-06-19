@@ -929,6 +929,21 @@ export default function AdminConsole() {
           </div>
         )}
 
+        {/* EVENT FORM MODAL — only mounted when the events tab is active */}
+        {activeTab === "events" && (
+          <AdminEventFormModal
+            isOpen={isEventModalOpen}
+            onClose={() => {
+              setIsEventModalOpen(false);
+              setEditingEvent(null);
+            }}
+            onSave={handleSaveEvent}
+            initialData={editingEvent}
+            organizers={organizers}
+            locale={locale}
+          />
+        )}
+
         {/* F. SYSTEM SETTINGS */}
         {!loading && activeTab === "settings" && (
           <div className="glass-card rounded-2xl p-6 flex flex-col gap-6 animate-fadeIn">
@@ -993,17 +1008,6 @@ export default function AdminConsole() {
             </div>
           </div>
         )}
-        <AdminEventFormModal
-          isOpen={isEventModalOpen}
-          onClose={() => {
-            setIsEventModalOpen(false);
-            setEditingEvent(null);
-          }}
-          onSave={handleSaveEvent}
-          initialData={editingEvent}
-          organizers={organizers}
-          locale={locale}
-        />
       </main>
     </div>
   );

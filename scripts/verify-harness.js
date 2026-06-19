@@ -390,6 +390,7 @@ async function main() {
   // Use production server for E2E tests in the harness to avoid lazy compilation timeouts
   process.env.PLAYWRIGHT_START_PROD = "true";
   process.env.NEXT_PUBLIC_ADMIN_DEV_UID = "admin-test";
+  process.env.ALLOW_DEV_BYPASS = "true";
 
   // Dynamic port allocation for E2E testing
   if (!process.env.PORT) {

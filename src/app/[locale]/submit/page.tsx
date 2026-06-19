@@ -8,12 +8,7 @@ import {
   FirestoreOrganizer,
   approveSubmissionsBatch,
 } from "@/lib/db";
-import {
-  browserDatetimeLocalToJerusalemLocal,
-  convertJerusalemLocalToUtc,
-  convertUtcToJerusalemLocal,
-  jerusalemLocalToBrowserDatetimeLocal,
-} from "@/lib/date-utils";
+import { convertJerusalemLocalToUtc, convertUtcToJerusalemLocal } from "@/lib/date-utils";
 import Header from "@/components/Header";
 import {
   Sparkles,
@@ -26,7 +21,7 @@ import {
   Plus,
   Code,
 } from "lucide-react";
-import { getIdToken, signInWithCustomToken } from "firebase/auth";
+import { signInWithCustomToken } from "firebase/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { auth, isConfigMissing, isMock } from "@/lib/firebase";
 import { isUserAdmin } from "@/lib/permissions";
@@ -35,8 +30,10 @@ async function ensureFirebaseAdminAuth(): Promise<void> {
   if (isConfigMissing || !auth || isMock) return;
 
   if (auth.currentUser) {
-    await getIdToken(auth.currentUser, true);
-    return;
+    const tokenResult = await auth.currentUser.getIdTokenResult(true);
+    if (tokenResult.claims.isAdmin) {
+      return;
+    }
   }
 
   const controller = new AbortController();

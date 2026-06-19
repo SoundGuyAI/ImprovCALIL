@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { convertJerusalemLocalToUtc } from "@/lib/date-utils";
 import { getEvents, FirestoreEvent, normalizeRegion } from "@/lib/db";
@@ -420,7 +420,7 @@ export default function Home() {
   };
 
   // Date Helpers for Calendar Views
-  const getStartOfWeek = (date: Date): Date => {
+  const getStartOfWeek = useCallback((date: Date): Date => {
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: "Asia/Jerusalem",
       weekday: "short",
@@ -432,7 +432,7 @@ export default function Home() {
     const p = getJerusalemParts(date);
     const d = new Date(Date.UTC(p.year, p.month, p.day - dayOfWeek));
     return jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0);
-  };
+  }, []);
 
   const getWeekDays = (startOfWeek: Date): Date[] => {
     const days = [];
@@ -462,25 +462,28 @@ export default function Home() {
     return jerusalemToDate(nextYear, nextMonth, targetDay, p.hour, p.minute);
   };
 
-  const getMonthDaysGrid = (refDate: Date): Date[] => {
-    const p = getJerusalemParts(refDate);
-    const firstDay = jerusalemToDate(p.year, p.month, 1, 0, 0);
-    const startDate = getStartOfWeek(firstDay);
+  const getMonthDaysGrid = useCallback(
+    (refDate: Date): Date[] => {
+      const p = getJerusalemParts(refDate);
+      const firstDay = jerusalemToDate(p.year, p.month, 1, 0, 0);
+      const startDate = getStartOfWeek(firstDay);
 
-    const cells: Date[] = [];
-    const startParts = getJerusalemParts(startDate);
-    for (let i = 0; i < 42; i++) {
-      const d = new Date(Date.UTC(startParts.year, startParts.month, startParts.day + i));
-      cells.push(jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0));
-    }
-    return cells;
-  };
+      const cells: Date[] = [];
+      const startParts = getJerusalemParts(startDate);
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(Date.UTC(startParts.year, startParts.month, startParts.day + i));
+        cells.push(jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0));
+      }
+      return cells;
+    },
+    [getStartOfWeek]
+  );
 
   const displayEvents = useMemo(
     () =>
       getExpandedEvents(filteredEvents, viewMode, currentDate, getStartOfWeek, getMonthDaysGrid),
 
-    [filteredEvents, viewMode, currentDate]
+    [filteredEvents, viewMode, currentDate, getStartOfWeek, getMonthDaysGrid]
   );
 
   const getEventsForDay = (dayDate: Date): FirestoreEvent[] => {

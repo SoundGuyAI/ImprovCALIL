@@ -461,7 +461,7 @@ export default function AdminConsole() {
                 {submissions
                   .filter((s) => s.status === "pending")
                   .map((sub) => {
-                    const editTargetId = sub.targetDocumentId || sub.data?.id;
+                    const editTargetId = sub.targetDocumentId;
                     return (
                       <div
                         key={sub.id}

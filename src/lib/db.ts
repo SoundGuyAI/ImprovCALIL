@@ -820,9 +820,13 @@ export async function approveSubmission(id: string): Promise<void> {
     if (!sDoc.exists()) return;
     const sData = sDoc.data();
 
+    if (sData.status !== "pending") {
+      return;
+    }
+
     const batch = writeBatch(db);
-    const targetDocumentId = sData.targetDocumentId || sData.data?.id;
-    const isEdit = !!targetDocumentId;
+    const targetDocumentId = sData.targetDocumentId;
+    const isEdit = typeof targetDocumentId === "string" && targetDocumentId.length > 0;
 
     if (sData.type === "event") {
       const eventRef = isEdit ? doc(db, "events", targetDocumentId) : doc(collection(db, "events"));

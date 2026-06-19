@@ -32,6 +32,7 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_ADMIN_DEV_UID: "admin-test",
       ALLOW_DEV_BYPASS: "true",
+      IS_LOCAL_TEST_ENV: "true",
     },
   },
 });

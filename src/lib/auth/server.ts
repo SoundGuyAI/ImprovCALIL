@@ -21,7 +21,10 @@ function shouldGrantAdminClaim(profileIsAdmin: boolean | undefined, uid: string)
   if (profileIsAdmin) {
     return true;
   }
-  return process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_ADMIN_DEV_UID === uid;
+  return (
+    (process.env.NODE_ENV === "development" || process.env.IS_LOCAL_TEST_ENV === "true") &&
+    process.env.NEXT_PUBLIC_ADMIN_DEV_UID === uid
+  );
 }
 
 async function syncAdminCustomClaim(uid: string, shouldBeAdmin: boolean): Promise<void> {
@@ -340,7 +343,7 @@ export async function getCurrentProfile(): Promise<AuthProfile | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
   const isDevBypass =
-    process.env.NODE_ENV === "development" &&
+    (process.env.NODE_ENV === "development" || process.env.IS_LOCAL_TEST_ENV === "true") &&
     process.env.ALLOW_DEV_BYPASS === "true" &&
     process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
   if (!sessionCookie && isDevBypass) {

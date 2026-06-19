@@ -810,6 +810,123 @@ export async function getPendingSubmissions(): Promise<FirestoreSubmission[]> {
 }
 
 // 7. Approve and Publish Submission
+export async function approveSubmissionsBatch(ids: string[]): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Batch approving submissions:", ids);
+    return;
+  }
+
+  if (ids.length === 0) return;
+
+  const batch = writeBatch(db);
+
+  for (const id of ids) {
+    const sDoc = await getDoc(doc(db, "submissions", id));
+    if (!sDoc.exists()) continue;
+    const sData = sDoc.data();
+    if (sData.status !== "pending") continue;
+
+    const targetDocumentId = sData.targetDocumentId || sData.data?.id;
+    const isEdit = !!targetDocumentId;
+
+    if (sData.type === "event") {
+      const eventRef = isEdit ? doc(db, "events", targetDocumentId) : doc(collection(db, "events"));
+      const newEventId = eventRef.id;
+
+      if (isEdit) {
+        const submittedFields = { ...sData.data };
+        delete submittedFields.hidden;
+        delete submittedFields.featured;
+        delete submittedFields.createdAt;
+        batch.set(eventRef, { ...submittedFields, id: newEventId }, { merge: true });
+      } else {
+        batch.set(eventRef, {
+          ...sData.data,
+          id: newEventId,
+          hidden: false,
+          featured: false,
+          createdAt: Date.now(),
+        });
+      }
+
+      if (isEdit) {
+        const q = query(collection(db, "links"), where("parentId", "==", targetDocumentId));
+        const snap = await getDocs(q);
+        snap.docs.forEach((d) => {
+          batch.delete(d.ref);
+        });
+      }
+
+      if (sData.links && sData.links.length > 0) {
+        sData.links.forEach((lnk: EventLink, idx: number) => {
+          const lnkRef = doc(collection(db, "links"));
+          batch.set(lnkRef, {
+            parentId: newEventId,
+            parentType: "event",
+            url: lnk.url,
+            type: lnk.type || "Other",
+            label: lnk.label || "",
+            sortOrder: idx,
+          });
+        });
+      }
+    } else if (sData.type === "organizer") {
+      const organizerRef = isEdit
+        ? doc(db, "organizers", targetDocumentId)
+        : doc(collection(db, "organizers"));
+      const newOrganizerId = organizerRef.id;
+
+      const cleanData = { ...sData.data };
+      delete cleanData.isUpdateProposal;
+
+      if (isEdit) {
+        const submittedFields = { ...cleanData };
+        delete submittedFields.hidden;
+        delete submittedFields.createdAt;
+        batch.set(
+          organizerRef,
+          { ...submittedFields, id: newOrganizerId, publishStatus: "published" },
+          { merge: true }
+        );
+      } else {
+        batch.set(organizerRef, {
+          ...cleanData,
+          id: newOrganizerId,
+          publishStatus: "published",
+          hidden: false,
+          createdAt: Date.now(),
+        });
+      }
+
+      if (isEdit) {
+        const q = query(collection(db, "links"), where("parentId", "==", targetDocumentId));
+        const snap = await getDocs(q);
+        snap.docs.forEach((d) => {
+          batch.delete(d.ref);
+        });
+      }
+
+      if (sData.links && sData.links.length > 0) {
+        sData.links.forEach((lnk: EventLink, idx: number) => {
+          const lnkRef = doc(collection(db, "links"));
+          batch.set(lnkRef, {
+            parentId: newOrganizerId,
+            parentType: "organizer",
+            url: lnk.url,
+            type: lnk.type || "Other",
+            label: lnk.label || "",
+            sortOrder: idx,
+          });
+        });
+      }
+    }
+
+    batch.update(doc(db, "submissions", id), { status: "approved" });
+  }
+
+  await batch.commit();
+}
+
 export async function approveSubmission(id: string): Promise<void> {
   if (isMock) {
     console.log("[Mock] Approving submission:", id);
@@ -837,7 +954,10 @@ export async function approveSubmission(id: string): Promise<void> {
       if (isEdit) {
         // Merge submitted fields only — do not touch admin-managed fields (hidden, featured, createdAt)
         // so that concurrent admin changes are not silently overwritten.
-        const { hidden: _h, featured: _f, createdAt: _c, ...submittedFields } = sData.data;
+        const submittedFields = { ...sData.data };
+        delete submittedFields.hidden;
+        delete submittedFields.featured;
+        delete submittedFields.createdAt;
         batch.set(eventRef, { ...submittedFields, id: newEventId }, { merge: true });
       } else {
         batch.set(eventRef, {
@@ -884,7 +1004,9 @@ export async function approveSubmission(id: string): Promise<void> {
 
       if (isEdit) {
         // Merge submitted fields only — do not touch admin-managed fields (hidden, createdAt).
-        const { hidden: _h, createdAt: _c, ...submittedFields } = cleanData;
+        const submittedFields = { ...cleanData };
+        delete submittedFields.hidden;
+        delete submittedFields.createdAt;
         batch.set(
           organizerRef,
           { ...submittedFields, id: newOrganizerId, publishStatus: "published" },
@@ -1103,10 +1225,7 @@ export async function updateEvent(
     if ("endTime" in eventData && eventData.endTime === undefined) {
       payload.endTime = deleteField();
     }
-    if (
-      "mapLink" in eventData &&
-      (eventData.mapLink === undefined || eventData.mapLink === "")
-    ) {
+    if ("mapLink" in eventData && (eventData.mapLink === undefined || eventData.mapLink === "")) {
       payload.mapLink = deleteField();
     }
     batch.update(eventRef, payload);

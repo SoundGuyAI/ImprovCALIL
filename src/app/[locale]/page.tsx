@@ -60,13 +60,7 @@ const getJerusalemParts = (date: Date) => {
   };
 };
 
-const jerusalemToDate = (
-  year: number,
-  month: number,
-  day: number,
-  hour = 0,
-  minute = 0
-): Date => {
+const jerusalemToDate = (year: number, month: number, day: number, hour = 0, minute = 0): Date => {
   const localStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   return new Date(convertJerusalemLocalToUtc(localStr));
 };
@@ -98,17 +92,17 @@ const getExpandedEvents = (
     );
   } else if (view === "week") {
     startRange = getStartOfWeekFn(anchorDate);
-    endRange = new Date(startRange.getTime());
-    endRange.setDate(endRange.getDate() + 7);
-    endRange.setHours(23, 59, 59, 999);
+    const p = getJerusalemParts(startRange);
+    const d = new Date(Date.UTC(p.year, p.month, p.day + 7));
+    endRange = jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59);
   } else {
     // month view
     const grid = getMonthDaysGridFn(anchorDate);
-    startRange = new Date(grid[0].getTime());
-    startRange.setHours(0, 0, 0, 0);
+    const sp = getJerusalemParts(grid[0]);
+    startRange = jerusalemToDate(sp.year, sp.month, sp.day, 0, 0);
 
-    endRange = new Date(grid[grid.length - 1].getTime());
-    endRange.setHours(23, 59, 59, 999);
+    const ep = getJerusalemParts(grid[grid.length - 1]);
+    endRange = jerusalemToDate(ep.year, ep.month, ep.day, 23, 59);
   }
 
   const expanded: FirestoreEvent[] = [];
@@ -126,8 +120,7 @@ const getExpandedEvents = (
     ) {
       const eventStart = new Date(event.time);
       const duration = event.endTime ? event.endTime - event.time : 0;
-
-      const current = new Date(eventStart.getTime());
+      let current = new Date(eventStart.getTime());
 
       // Fast-forward current to just before startRange so the 500-iteration safety
       // cap covers the visible window, not the gap between the event's birth date and today.
@@ -147,8 +140,7 @@ const getExpandedEvents = (
           const startParts = getJerusalemParts(startRange);
           const currentParts = getJerusalemParts(current);
           const monthsApart =
-            (startParts.year - currentParts.year) * 12 +
-            (startParts.month - currentParts.month);
+            (startParts.year - currentParts.year) * 12 + (startParts.month - currentParts.month);
           const monthsToSkip = Math.max(0, monthsApart - 2);
           if (monthsToSkip > 0) {
             let targetMonth = currentParts.month + monthsToSkip;
@@ -380,20 +372,26 @@ export default function Home() {
   };
 
   // Date Helpers for Calendar Views
-  const getStartOfWeek = (d: Date): Date => {
-    const date = new Date(d.getTime());
-    const day = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    date.setDate(date.getDate() - day);
-    date.setHours(0, 0, 0, 0);
-    return date;
+  const getStartOfWeek = (date: Date): Date => {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Jerusalem",
+      weekday: "short",
+    });
+    const weekdayStr = formatter.format(date);
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dayOfWeek = days.indexOf(weekdayStr);
+
+    const p = getJerusalemParts(date);
+    const d = new Date(Date.UTC(p.year, p.month, p.day - dayOfWeek));
+    return jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0);
   };
 
   const getWeekDays = (startOfWeek: Date): Date[] => {
     const days = [];
+    const p = getJerusalemParts(startOfWeek);
     for (let i = 0; i < 7; i++) {
-      const d = new Date(startOfWeek.getTime());
-      d.setDate(d.getDate() + i);
-      days.push(d);
+      const d = new Date(Date.UTC(p.year, p.month, p.day + i));
+      days.push(jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0));
     }
     return days;
   };
@@ -405,31 +403,27 @@ export default function Home() {
   };
 
   const addMonths = (date: Date, months: number): Date => {
-    const day = date.getDate();
-    const result = new Date(date.getFullYear(), date.getMonth() + months, 1);
-    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
-    result.setDate(Math.min(day, lastDay));
-    return result;
+    const p = getJerusalemParts(date);
+    const tempUtc = new Date(Date.UTC(p.year, p.month + months, 1, p.hour, p.minute));
+    const nextYear = tempUtc.getUTCFullYear();
+    const nextMonth = tempUtc.getUTCMonth();
+
+    const lastDayOfTargetMonth = new Date(Date.UTC(nextYear, nextMonth + 1, 0)).getUTCDate();
+    const targetDay = Math.min(p.day, lastDayOfTargetMonth);
+
+    return jerusalemToDate(nextYear, nextMonth, targetDay, p.hour, p.minute);
   };
 
   const getMonthDaysGrid = (refDate: Date): Date[] => {
-    const year = refDate.getFullYear();
-    const month = refDate.getMonth();
-
-    // First day of the current month
-    const firstDay = new Date(year, month, 1);
-    const firstDayOfWeek = firstDay.getDay(); // Sunday starts at 0
-
-    // Start date is the Sunday of the week containing the 1st of the month
-    const startDate = new Date(firstDay.getTime());
-    startDate.setDate(startDate.getDate() - firstDayOfWeek);
+    const p = getJerusalemParts(refDate);
+    const firstDay = jerusalemToDate(p.year, p.month, 1, 0, 0);
+    const startDate = getStartOfWeek(firstDay);
 
     const cells: Date[] = [];
-    // 42 cells (6 weeks of 7 days)
+    const startParts = getJerusalemParts(startDate);
     for (let i = 0; i < 42; i++) {
-      const d = new Date(startDate.getTime());
-      d.setDate(d.getDate() + i);
-      cells.push(d);
+      const d = new Date(Date.UTC(startParts.year, startParts.month, startParts.day + i));
+      cells.push(jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0));
     }
     return cells;
   };
@@ -448,13 +442,14 @@ export default function Home() {
   const handlePrev = () => {
     if (viewMode === "week") {
       setCurrentDate((prev) => {
-        const nextD = new Date(prev.getTime());
-        nextD.setDate(nextD.getDate() - 7);
-        return nextD;
+        const p = getJerusalemParts(prev);
+        const d = new Date(Date.UTC(p.year, p.month, p.day - 7));
+        return jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0);
       });
     } else if (viewMode === "month") {
       setCurrentDate((prev) => {
-        const temp = new Date(prev.getFullYear(), prev.getMonth(), 1);
+        const p = getJerusalemParts(prev);
+        const temp = jerusalemToDate(p.year, p.month, 1, 0, 0);
         return addMonths(temp, -1);
       });
       setSelectedCalendarDay(null);
@@ -464,13 +459,14 @@ export default function Home() {
   const handleNext = () => {
     if (viewMode === "week") {
       setCurrentDate((prev) => {
-        const nextD = new Date(prev.getTime());
-        nextD.setDate(nextD.getDate() + 7);
-        return nextD;
+        const p = getJerusalemParts(prev);
+        const d = new Date(Date.UTC(p.year, p.month, p.day + 7));
+        return jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0);
       });
     } else if (viewMode === "month") {
       setCurrentDate((prev) => {
-        const temp = new Date(prev.getFullYear(), prev.getMonth(), 1);
+        const p = getJerusalemParts(prev);
+        const temp = jerusalemToDate(p.year, p.month, 1, 0, 0);
         return addMonths(temp, 1);
       });
       setSelectedCalendarDay(null);

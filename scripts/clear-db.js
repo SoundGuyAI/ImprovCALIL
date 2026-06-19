@@ -192,11 +192,15 @@ async function main() {
       );
       process.exit(1);
     }
-    if (
-      !projectId.includes("dev") &&
-      !projectId.includes("staging") &&
-      !projectId.includes("test")
-    ) {
+    const allowedProjects = ["improv-calendar-il"];
+    const isAllowed =
+      allowedProjects.includes(projectId) ||
+      projectId.includes("dev") ||
+      projectId.includes("staging") ||
+      projectId.includes("test") ||
+      projectId.includes("emulator");
+
+    if (!isAllowed) {
       console.error(
         `Safety Error: DB cleanup blocked on project ${projectId} to prevent production data loss.`
       );

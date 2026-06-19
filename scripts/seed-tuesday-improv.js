@@ -47,6 +47,12 @@ const startTime = 1782234000000; // Tuesday June 23, 2026 20:00 IDT (17:00 UTC)
 const endTime = 1782241200000; // Tuesday June 23, 2026 22:00 IDT (19:00 UTC)
 
 async function seed() {
+  const eventDoc = await db.collection("events").doc(eventId).get();
+  if (eventDoc.exists) {
+    console.log("Tuesday Night Improv event already exists. Skipping seed.");
+    return;
+  }
+
   const batch = db.batch();
 
   // 1. Set Event

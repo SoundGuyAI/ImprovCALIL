@@ -60,44 +60,144 @@ if (!useAdmin) {
   console.log("Fallback: Initialized Firebase Client SDK.");
 }
 
-async function deleteCollection(collectionName) {
-  console.log(`Fetching documents from collection: ${collectionName}...`);
-  if (useAdmin) {
-    const colRef = db.collection(collectionName);
-    const snapshot = await colRef.get();
-    if (snapshot.empty) {
-      console.log(`Collection ${collectionName} is already empty.`);
-      return;
+async function clearDatabase() {
+  const firestore = !useAdmin ? require("firebase/firestore") : null;
+  const deletedEventIds = new Set();
+  const deletedSubmissionIds = new Set();
+
+  // 1. Clear test/mock events
+  console.log("Fetching documents from collection: events...");
+  const eventsSnapshot = useAdmin
+    ? await db.collection("events").get()
+    : await firestore.getDocs(firestore.collection(db, "events"));
+
+  const eventsToDelete = [];
+  eventsSnapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    const id = doc.id;
+    const name = data.name || "";
+    // Only delete seeded events, test events, or E2E events
+    const isMockOrTest =
+      id.startsWith("evt-") ||
+      id.startsWith("test-") ||
+      name.includes("E2E") ||
+      name.includes("Test") ||
+      name.includes("Mock") ||
+      data.isTest === true ||
+      data.isMock === true;
+
+    if (isMockOrTest) {
+      eventsToDelete.push(doc);
+      deletedEventIds.add(id);
     }
-    console.log(`Deleting ${snapshot.size} documents from ${collectionName}...`);
-    const batch = db.batch();
-    snapshot.docs.forEach((doc) => {
+  });
+
+  if (eventsToDelete.length > 0) {
+    console.log(`Deleting ${eventsToDelete.length} test/mock documents from events...`);
+    const batch = useAdmin ? db.batch() : firestore.writeBatch(db);
+    eventsToDelete.forEach((doc) => {
       batch.delete(doc.ref);
     });
     await batch.commit();
+    console.log("Successfully cleared test/mock events.");
   } else {
-    const { getDocs, collection, writeBatch } = require("firebase/firestore");
-    const colRef = collection(db, collectionName);
-    const snapshot = await getDocs(colRef);
-    if (snapshot.empty) {
-      console.log(`Collection ${collectionName} is already empty.`);
-      return;
+    console.log("No test/mock events found to delete.");
+  }
+
+  // 2. Clear test/mock submissions
+  console.log("Fetching documents from collection: submissions...");
+  const submissionsSnapshot = useAdmin
+    ? await db.collection("submissions").get()
+    : await firestore.getDocs(firestore.collection(db, "submissions"));
+
+  const submissionsToDelete = [];
+  submissionsSnapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    const id = doc.id;
+    const name = data.name || data.data?.name || "";
+    // Only delete E2E/test submissions or seeded submissions
+    const isMockOrTest =
+      id.startsWith("sub-") ||
+      id.startsWith("test-") ||
+      name.includes("E2E") ||
+      name.includes("Test") ||
+      name.includes("Mock") ||
+      data.isTest === true ||
+      data.isMock === true ||
+      (data.submitterContact?.email === "admin@json-api" && name.includes("E2E"));
+
+    if (isMockOrTest) {
+      submissionsToDelete.push(doc);
+      deletedSubmissionIds.add(id);
     }
-    console.log(`Deleting ${snapshot.size} documents from ${collectionName}...`);
-    const batch = writeBatch(db);
-    snapshot.docs.forEach((doc) => {
+  });
+
+  if (submissionsToDelete.length > 0) {
+    console.log(`Deleting ${submissionsToDelete.length} test/mock documents from submissions...`);
+    const batch = useAdmin ? db.batch() : firestore.writeBatch(db);
+    submissionsToDelete.forEach((doc) => {
       batch.delete(doc.ref);
     });
     await batch.commit();
+    console.log("Successfully cleared test/mock submissions.");
+  } else {
+    console.log("No test/mock submissions found to delete.");
   }
-  console.log(`Successfully cleared ${collectionName}.`);
+
+  // 3. Clear test/mock links
+  console.log("Fetching documents from collection: links...");
+  const linksSnapshot = useAdmin
+    ? await db.collection("links").get()
+    : await firestore.getDocs(firestore.collection(db, "links"));
+
+  const linksToDelete = [];
+  linksSnapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    const id = doc.id;
+    const parentId = data.parentId || "";
+    const isMockOrTest =
+      id.startsWith("lnk-") ||
+      id.startsWith("test-") ||
+      parentId.startsWith("evt-") ||
+      parentId.startsWith("test-") ||
+      deletedEventIds.has(parentId) ||
+      deletedSubmissionIds.has(parentId);
+
+    if (isMockOrTest) {
+      linksToDelete.push(doc);
+    }
+  });
+
+  if (linksToDelete.length > 0) {
+    console.log(`Deleting ${linksToDelete.length} test/mock documents from links...`);
+    const batch = useAdmin ? db.batch() : firestore.writeBatch(db);
+    linksToDelete.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+    console.log("Successfully cleared test/mock links.");
+  } else {
+    console.log("No test/mock links found to delete.");
+  }
 }
 
 async function main() {
   try {
-    await deleteCollection("events");
-    await deleteCollection("links");
-    await deleteCollection("submissions");
+    const projectId = clientConfig.projectId || config.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    // Safety check: protect production project from accidental test runs
+    if (
+      projectId &&
+      !projectId.includes("dev") &&
+      !projectId.includes("staging") &&
+      !projectId.includes("test") &&
+      !projectId.includes("il")
+    ) {
+      console.error(
+        `Safety Error: DB cleanup blocked on project ${projectId} to prevent production data loss.`
+      );
+      process.exit(1);
+    }
+    await clearDatabase();
     console.log("Cleanup complete!");
     process.exit(0);
   } catch (err) {

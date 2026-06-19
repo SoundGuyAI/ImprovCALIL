@@ -34,7 +34,7 @@ export default function SubmitContent() {
   const isAdmin = isUserAdmin(profile);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
-  const [lastSubmissionId, setLastSubmissionId] = useState<string | null>(null);
+  const [lastSubmissionIds, setLastSubmissionIds] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -43,11 +43,11 @@ export default function SubmitContent() {
   const [submittingOrganizer, setSubmittingOrganizer] = useState(false);
 
   const handleApproveImmediately = async () => {
-    if (!lastSubmissionId) return;
+    if (lastSubmissionIds.length === 0) return;
     setPublishing(true);
     setPublishError(null);
     try {
-      await approveSubmission(lastSubmissionId);
+      await Promise.all(lastSubmissionIds.map((id) => approveSubmission(id)));
       setPublished(true);
     } catch (err: unknown) {
       console.error("Failed to approve immediately:", err);
@@ -114,7 +114,7 @@ export default function SubmitContent() {
     e.preventDefault();
     setError(false);
     setJsonError(null);
-    setLastSubmissionId(null);
+    setLastSubmissionIds([]);
     setPublished(false);
     setPublishError(null);
 
@@ -146,13 +146,13 @@ export default function SubmitContent() {
         );
         if (data.submissionIds && data.submissionIds.length > 0) {
           setSuccess(true);
-          setLastSubmissionId(data.submissionIds[0]);
+          setLastSubmissionIds(data.submissionIds);
         }
         return;
       }
       setSuccess(true);
       if (data.submissionIds && data.submissionIds.length > 0) {
-        setLastSubmissionId(data.submissionIds[0]);
+        setLastSubmissionIds(data.submissionIds);
       }
       setJsonText("");
     } catch (err: unknown) {
@@ -216,7 +216,7 @@ export default function SubmitContent() {
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(false);
-    setLastSubmissionId(null);
+    setLastSubmissionIds([]);
     setPublished(false);
     setPublishError(null);
 
@@ -255,7 +255,7 @@ export default function SubmitContent() {
         links: eventLinks,
       });
       setSuccess(true);
-      setLastSubmissionId(subId);
+      setLastSubmissionIds([subId]);
       clearEventForm();
     } catch (err) {
       console.error(err);
@@ -268,7 +268,7 @@ export default function SubmitContent() {
   const handleOrganizerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(false);
-    setLastSubmissionId(null);
+    setLastSubmissionIds([]);
     setPublished(false);
     setPublishError(null);
 
@@ -302,7 +302,7 @@ export default function SubmitContent() {
         links: orgLinks,
       });
       setSuccess(true);
-      setLastSubmissionId(subId);
+      setLastSubmissionIds([subId]);
       clearOrganizerForm();
     } catch (err) {
       console.error(err);
@@ -375,7 +375,7 @@ export default function SubmitContent() {
               setActiveTab("event");
               setSuccess(false);
               setError(false);
-              setLastSubmissionId(null);
+              setLastSubmissionIds([]);
               setPublished(false);
               setPublishError(null);
             }}
@@ -394,7 +394,7 @@ export default function SubmitContent() {
               setActiveTab("organizer");
               setSuccess(false);
               setError(false);
-              setLastSubmissionId(null);
+              setLastSubmissionIds([]);
               setPublished(false);
               setPublishError(null);
             }}
@@ -413,7 +413,7 @@ export default function SubmitContent() {
               setActiveTab("ai");
               setSuccess(false);
               setError(false);
-              setLastSubmissionId(null);
+              setLastSubmissionIds([]);
               setPublished(false);
               setPublishError(null);
             }}
@@ -434,7 +434,7 @@ export default function SubmitContent() {
                 setSuccess(false);
                 setError(false);
                 setJsonError(null);
-                setLastSubmissionId(null);
+                setLastSubmissionIds([]);
                 setPublished(false);
                 setPublishError(null);
               }}
@@ -458,7 +458,7 @@ export default function SubmitContent() {
               <span>{published ? tSub("publishedSuccess") : tSub("submitSuccess")}</span>
             </div>
 
-            {isAdmin && lastSubmissionId && !published && (
+            {isAdmin && lastSubmissionIds.length > 0 && !published && (
               <div className="mt-2 flex flex-col gap-3">
                 <div className="h-px bg-emerald-500/20 w-full" />
                 <div className="flex flex-wrap items-center justify-between gap-3">

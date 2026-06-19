@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getIdToken, signInWithCustomToken } from "firebase/auth";
+import { signInWithCustomToken } from "firebase/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { auth, isConfigMissing, isMock } from "@/lib/firebase";
 
@@ -16,21 +16,12 @@ export function AdminClientGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (loading) {
-      return;
-    }
-
-    if (user && auth.currentUser) {
-      void getIdToken(auth.currentUser, true)
-        .then(() => setReady(true))
-        .catch(() => setFailed(true));
-      return;
-    }
+    if (loading) return;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    void (async () => {
+    const fetchCustomToken = async () => {
       try {
         const response = await fetch("/api/auth/custom-token", {
           cache: "no-store",
@@ -38,26 +29,37 @@ export function AdminClientGate({ children }: { children: React.ReactNode }) {
         });
         clearTimeout(timeoutId);
         if (!response.ok) {
-          if (!controller.signal.aborted) {
-            setFailed(true);
-          }
+          if (!controller.signal.aborted) setFailed(true);
           return;
         }
-
         const data = (await response.json()) as { customToken: string };
         const credential = await signInWithCustomToken(auth, data.customToken);
         await credential.user.getIdToken(true);
-
-        if (!controller.signal.aborted) {
-          setReady(true);
-        }
+        if (!controller.signal.aborted) setReady(true);
       } catch {
         clearTimeout(timeoutId);
-        if (!controller.signal.aborted) {
-          setFailed(true);
-        }
+        if (!controller.signal.aborted) setFailed(true);
       }
-    })();
+    };
+
+    if (user && auth.currentUser) {
+      void auth.currentUser
+        .getIdTokenResult(true)
+        .then((result) => {
+          if (result.claims.isAdmin) {
+            clearTimeout(timeoutId);
+            setReady(true);
+          } else {
+            void fetchCustomToken();
+          }
+        })
+        .catch(() => {
+          clearTimeout(timeoutId);
+          setFailed(true);
+        });
+    } else {
+      void fetchCustomToken();
+    }
 
     return () => {
       controller.abort();

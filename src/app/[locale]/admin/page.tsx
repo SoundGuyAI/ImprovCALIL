@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   getEvents,
@@ -311,22 +311,31 @@ export default function AdminConsole() {
   };
 
   // Filter lists based on Show Hidden & Search query
-  const filteredEvents = events.filter((e) => {
-    if (!showHidden && e.hidden) return false;
-    if (
-      searchQuery &&
-      !e.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !e.organizerName.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-      return false;
-    return true;
-  });
+  const filteredEvents = useMemo(
+    () =>
+      events.filter((e) => {
+        if (!showHidden && e.hidden) return false;
+        if (
+          searchQuery &&
+          !e.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !e.organizerName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+          return false;
+        return true;
+      }),
+    [events, showHidden, searchQuery]
+  );
 
-  const filteredOrganizers = organizers.filter((org) => {
-    if (!showHidden && org.hidden) return false;
-    if (searchQuery && !org.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  const filteredOrganizers = useMemo(
+    () =>
+      organizers.filter((org) => {
+        if (!showHidden && org.hidden) return false;
+        if (searchQuery && !org.name.toLowerCase().includes(searchQuery.toLowerCase()))
+          return false;
+        return true;
+      }),
+    [organizers, showHidden, searchQuery]
+  );
 
   const pendingSubsCount = submissions.filter((s) => s.status === "pending").length;
 

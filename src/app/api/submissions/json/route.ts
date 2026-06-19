@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSubmission } from "@/lib/db";
+import { createSubmissionAdmin } from "@/lib/submissions-server";
 import Ajv from "ajv";
 import schema from "../../../../../docs/event-submission-schema.json";
 import { getCurrentProfile } from "@/lib/auth/server";
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
     const results = await Promise.allSettled(
       events.map((event) =>
-        createSubmission({
+        createSubmissionAdmin({
           type: "event",
           source: "api_json",
           submitterContact: {

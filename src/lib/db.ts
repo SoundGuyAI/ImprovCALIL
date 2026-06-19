@@ -857,7 +857,7 @@ export async function approveSubmission(id: string): Promise<void> {
     }
 
     const batch = writeBatch(db);
-    const targetDocumentId = sData.targetDocumentId || sData.data?.id;
+    const targetDocumentId = sData.targetDocumentId;
     const isEdit = !!targetDocumentId;
 
     if (sData.type === "event") {

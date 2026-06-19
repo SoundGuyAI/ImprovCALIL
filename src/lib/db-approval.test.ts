@@ -11,4 +11,13 @@ describe("submission approval publishing", () => {
     expect(dbSource).toContain('const eventRef = doc(collection(db, "events"));');
     expect(dbSource).toContain('const organizerRef = doc(collection(db, "organizers"));');
   });
+
+  it("ignores already-processed submissions to prevent duplicate publishes", () => {
+    expect(dbSource).toContain('if (sData.status !== "pending")');
+  });
+
+  it("treats only targetDocumentId as an edit target, not data.id", () => {
+    expect(dbSource).toContain("const targetDocumentId = sData.targetDocumentId;");
+    expect(dbSource).not.toContain("sData.data?.id");
+  });
 });

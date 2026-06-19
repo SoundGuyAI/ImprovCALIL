@@ -3,7 +3,7 @@ import { getAdminFirestore } from "@/lib/firebase-admin";
 import { FirestoreSubmission } from "@/lib/db";
 import Ajv from "ajv";
 import schema from "../../../../../docs/event-submission-schema.json";
-import { getCurrentProfile } from "@/lib/auth/server";
+import { getCurrentProfile, isAdminDevBypassEnabled } from "@/lib/auth/server";
 import { isUserAdmin } from "@/lib/permissions";
 import { ValidateFunction } from "ajv";
 
@@ -22,14 +22,7 @@ const MAX_EVENTS_PER_REQUEST = 50;
 export async function POST(request: Request) {
   try {
     const profile = await getCurrentProfile();
-    const isProdTestBypass =
-      process.env.NODE_ENV === "production" &&
-      process.env.E2E_ADMIN_BYPASS_SECRET === "e2e-bypass-secret-12345";
-
-    const devBypass =
-      (process.env.NODE_ENV === "development" || isProdTestBypass) &&
-      process.env.ALLOW_DEV_BYPASS === "true" &&
-      process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
+    const devBypass = isAdminDevBypassEnabled();
     if (!devBypass && !isUserAdmin(profile)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

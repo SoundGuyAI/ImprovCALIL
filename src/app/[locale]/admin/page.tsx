@@ -444,7 +444,13 @@ export default function AdminConsole() {
                           <div className="flex flex-wrap items-center gap-4 text-[10px] text-zinc-500 font-bold mt-1">
                             {sub.data.location && <span>Location: {sub.data.location}</span>}
                             {sub.data.time && (
-                              <span>Time: {new Date(sub.data.time).toLocaleString()}</span>
+                              <span>
+                                Time:{" "}
+                                {new Date(sub.data.time).toLocaleString(
+                                  locale === "he" ? "he-IL" : "en-US",
+                                  { timeZone: "Asia/Jerusalem" }
+                                )}
+                              </span>
                             )}
                             {sub.submitterContact?.email && (
                               <span>Submitter: {sub.submitterContact.email}</span>
@@ -634,7 +640,11 @@ export default function AdminConsole() {
                       </td>
                       <td className="px-6 py-4 text-xs font-semibold">{evt.organizerName}</td>
                       <td className="px-6 py-4 text-xs">{tRegions(evt.region)}</td>
-                      <td className="px-6 py-4 text-xs">{new Date(evt.time).toLocaleString()}</td>
+                      <td className="px-6 py-4 text-xs">
+                        {new Date(evt.time).toLocaleString(locale === "he" ? "he-IL" : "en-US", {
+                          timeZone: "Asia/Jerusalem",
+                        })}
+                      </td>
                       <td className="px-6 py-4 text-xs">
                         <div className="flex gap-1.5 flex-wrap">
                           {evt.hidden && (

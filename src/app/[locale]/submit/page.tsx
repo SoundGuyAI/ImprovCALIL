@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { createSubmission, getOrganizers, FirestoreOrganizer } from "@/lib/db";
+import { createSubmission, getOrganizers, FirestoreOrganizer, approveSubmission } from "@/lib/db";
 import Header from "@/components/Header";
 import {
   Sparkles,
@@ -33,6 +33,28 @@ export default function SubmitContent() {
   const isAdmin = isUserAdmin(profile);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
+  const [lastSubmissionId, setLastSubmissionId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  const handleApproveImmediately = async () => {
+    if (!lastSubmissionId) return;
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      await approveSubmission(lastSubmissionId);
+      setPublished(true);
+    } catch (err: unknown) {
+      console.error("Failed to approve immediately:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setPublishError(
+        locale === "he" ? `שגיאה באישור מיידי: ${msg}` : `Failed to approve immediately: ${msg}`
+      );
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   // JSON State
   const [jsonText, setJsonText] = useState("");
@@ -84,11 +106,13 @@ export default function SubmitContent() {
     load();
   }, [locale]);
 
-  // Simulating an LLM parser
   const handleJsonSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(false);
     setJsonError(null);
+    setLastSubmissionId(null);
+    setPublished(false);
+    setPublishError(null);
 
     let parsed;
     try {
@@ -117,10 +141,14 @@ export default function SubmitContent() {
         );
         if (data.submissionIds && data.submissionIds.length > 0) {
           setSuccess(true);
+          setLastSubmissionId(data.submissionIds[0]);
         }
         return;
       }
       setSuccess(true);
+      if (data.submissionIds && data.submissionIds.length > 0) {
+        setLastSubmissionId(data.submissionIds[0]);
+      }
       setJsonText("");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -181,6 +209,9 @@ export default function SubmitContent() {
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(false);
+    setLastSubmissionId(null);
+    setPublished(false);
+    setPublishError(null);
 
     if (!eventName || !eventLocation || !submitterEmail || !eventTime) {
       setError(true);
@@ -189,7 +220,7 @@ export default function SubmitContent() {
 
     try {
       const selectedOrg = organizers.find((o) => o.id === eventOrganizerId);
-      await createSubmission({
+      const subId = await createSubmission({
         type: "event",
         source: flyerText ? "free_text" : "web_form",
         submitterContact: {
@@ -216,6 +247,7 @@ export default function SubmitContent() {
         links: eventLinks,
       });
       setSuccess(true);
+      setLastSubmissionId(subId);
       clearEventForm();
     } catch (err) {
       console.error(err);
@@ -226,6 +258,9 @@ export default function SubmitContent() {
   const handleOrganizerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(false);
+    setLastSubmissionId(null);
+    setPublished(false);
+    setPublishError(null);
 
     if (!orgName || !orgDesc || !submitterEmail || (isUpdate && !orgTargetId)) {
       setError(true);
@@ -233,7 +268,7 @@ export default function SubmitContent() {
     }
 
     try {
-      await createSubmission({
+      const subId = await createSubmission({
         type: "organizer",
         source: "web_form",
         ...(isUpdate && orgTargetId ? { targetDocumentId: orgTargetId } : {}),
@@ -256,6 +291,7 @@ export default function SubmitContent() {
         links: orgLinks,
       });
       setSuccess(true);
+      setLastSubmissionId(subId);
       clearOrganizerForm();
     } catch (err) {
       console.error(err);
@@ -326,6 +362,9 @@ export default function SubmitContent() {
               setActiveTab("event");
               setSuccess(false);
               setError(false);
+              setLastSubmissionId(null);
+              setPublished(false);
+              setPublishError(null);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
               activeTab === "event"
@@ -342,6 +381,9 @@ export default function SubmitContent() {
               setActiveTab("organizer");
               setSuccess(false);
               setError(false);
+              setLastSubmissionId(null);
+              setPublished(false);
+              setPublishError(null);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
               activeTab === "organizer"
@@ -358,6 +400,9 @@ export default function SubmitContent() {
               setActiveTab("ai");
               setSuccess(false);
               setError(false);
+              setLastSubmissionId(null);
+              setPublished(false);
+              setPublishError(null);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer relative overflow-hidden group border ${
               activeTab === "ai"
@@ -376,6 +421,9 @@ export default function SubmitContent() {
                 setSuccess(false);
                 setError(false);
                 setJsonError(null);
+                setLastSubmissionId(null);
+                setPublished(false);
+                setPublishError(null);
               }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                 activeTab === "json"
@@ -391,9 +439,41 @@ export default function SubmitContent() {
 
         {/* FEEDBACK BANNER */}
         {success && (
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-sm font-bold">
-            <CheckCircle className="w-5 h-5 flex-shrink-0" />
-            <span>{tSub("submitSuccess")}</span>
+          <div className="flex flex-col gap-4 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400">
+            <div className="flex items-center gap-3 text-sm font-bold">
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <span>{published ? tSub("publishedSuccess") : tSub("submitSuccess")}</span>
+            </div>
+
+            {isAdmin && lastSubmissionId && !published && (
+              <div className="mt-2 flex flex-col gap-3">
+                <div className="h-px bg-emerald-500/20 w-full" />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-zinc-400">
+                    {locale === "he"
+                      ? "הנך מחובר כמנהל מערכת. באפשרותך לאשר ולפרסם הגשה זו ישירות ללוח האירועים."
+                      : "You are logged in as an administrator. You can approve and publish this submission directly to the calendar."}
+                  </p>
+                  <button
+                    onClick={handleApproveImmediately}
+                    disabled={publishing}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 text-white rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
+                  >
+                    {publishing ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                        <span>{tSub("publishing")}</span>
+                      </>
+                    ) : (
+                      <span>{tSub("approveImmediately")}</span>
+                    )}
+                  </button>
+                </div>
+                {publishError && (
+                  <p className="text-xs text-red-400 font-semibold mt-1">{publishError}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 

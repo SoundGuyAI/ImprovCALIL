@@ -29,6 +29,111 @@ import {
 const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
 const EVENT_TYPES = ["Show", "Jam", "Workshop", "Festival", "Other"];
 
+const getJerusalemParts = (date: Date) => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jerusalem",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const getPart = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  return {
+    year: parseInt(getPart("year"), 10),
+    month: parseInt(getPart("month"), 10) - 1,
+    day: parseInt(getPart("day"), 10),
+    hour: parseInt(getPart("hour"), 10),
+    minute: parseInt(getPart("minute"), 10),
+  };
+};
+
+const getExpandedEvents = (
+  rawEvents: FirestoreEvent[],
+  view: "list" | "week" | "month",
+  anchorDate: Date,
+  getStartOfWeekFn: (d: Date) => Date,
+  getMonthDaysGridFn: (refDate: Date) => Date[]
+): FirestoreEvent[] => {
+  let startRange: Date;
+  let endRange: Date;
+
+  if (view === "list") {
+    // 30 days in the past to 90 days in the future
+    startRange = new Date(anchorDate.getTime());
+    startRange.setDate(startRange.getDate() - 30);
+    startRange.setHours(0, 0, 0, 0);
+
+    endRange = new Date(anchorDate.getTime());
+    endRange.setDate(endRange.getDate() + 90);
+    endRange.setHours(23, 59, 59, 999);
+  } else if (view === "week") {
+    startRange = getStartOfWeekFn(anchorDate);
+    endRange = new Date(startRange.getTime());
+    endRange.setDate(endRange.getDate() + 7);
+    endRange.setHours(23, 59, 59, 999);
+  } else {
+    // month view
+    const grid = getMonthDaysGridFn(anchorDate);
+    startRange = new Date(grid[0].getTime());
+    startRange.setHours(0, 0, 0, 0);
+
+    endRange = new Date(grid[grid.length - 1].getTime());
+    endRange.setHours(23, 59, 59, 999);
+  }
+
+  const expanded: FirestoreEvent[] = [];
+
+  for (const event of rawEvents) {
+    if (!event.recurrence || event.recurrence === "one-time") {
+      if (event.time >= startRange.getTime() && event.time <= endRange.getTime()) {
+        expanded.push(event);
+      }
+    } else if (
+      event.recurrence === "weekly" ||
+      event.recurrence === "bi-weekly" ||
+      event.recurrence === "monthly"
+    ) {
+      const eventStart = new Date(event.time);
+      const duration = event.endTime ? event.endTime - event.time : 0;
+
+      const current = new Date(eventStart.getTime());
+      let safetyCount = 0;
+
+      while (current.getTime() <= endRange.getTime() && safetyCount < 500) {
+        safetyCount++;
+        const currentMs = current.getTime();
+
+        if (currentMs >= startRange.getTime() && currentMs >= event.time) {
+          expanded.push({
+            ...event,
+            id: `${event.id}-${currentMs}`,
+            time: currentMs,
+            endTime: event.endTime ? currentMs + duration : undefined,
+          });
+        }
+
+        if (event.recurrence === "weekly") {
+          current.setDate(current.getDate() + 7);
+        } else if (event.recurrence === "bi-weekly") {
+          current.setDate(current.getDate() + 14);
+        } else if (event.recurrence === "monthly") {
+          const targetMonth = current.getMonth() + 1;
+          const origDay = eventStart.getDate();
+          current.setDate(1);
+          current.setMonth(targetMonth);
+          const daysInMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
+          current.setDate(Math.min(origDay, daysInMonth));
+        }
+      }
+    }
+  }
+
+  return expanded.sort((a, b) => a.time - b.time);
+};
+
 export default function Home() {
   const t = useTranslations("Common");
   const tFilters = useTranslations("Filters");
@@ -176,12 +281,17 @@ export default function Home() {
       weekday: "long",
       day: "numeric",
       month: "long",
+      timeZone: "Asia/Jerusalem",
     });
   };
 
   const formatTime = (timestamp: number) => {
     const d = new Date(timestamp);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString(locale === "he" ? "he-IL" : "en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jerusalem",
+    });
   };
 
   // Date Helpers for Calendar Views
@@ -204,11 +314,9 @@ export default function Home() {
   };
 
   const isSameDay = (d1: Date, d2: Date): boolean => {
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
+    const p1 = getJerusalemParts(d1);
+    const p2 = getJerusalemParts(d2);
+    return p1.year === p2.year && p1.month === p2.month && p1.day === p2.day;
   };
 
   const addMonths = (date: Date, months: number): Date => {
@@ -241,8 +349,16 @@ export default function Home() {
     return cells;
   };
 
+  const displayEvents = getExpandedEvents(
+    filteredEvents,
+    viewMode,
+    currentDate,
+    getStartOfWeek,
+    getMonthDaysGrid
+  );
+
   const getEventsForDay = (dayDate: Date): FirestoreEvent[] => {
-    return filteredEvents.filter((event) => isSameDay(new Date(event.time), dayDate));
+    return displayEvents.filter((event) => isSameDay(new Date(event.time), dayDate));
   };
 
   const handlePrev = () => {
@@ -298,9 +414,9 @@ export default function Home() {
     return currentDate.toLocaleDateString(localeStr, { month: "long", year: "numeric" });
   };
 
-  // Group events by day for weekly view
+  // Group events by day for list view
   const groupedEvents: { [key: string]: FirestoreEvent[] } = {};
-  filteredEvents.forEach((e) => {
+  displayEvents.forEach((e) => {
     const dateStr = formatDate(e.time);
     if (!groupedEvents[dateStr]) {
       groupedEvents[dateStr] = [];
@@ -597,7 +713,7 @@ export default function Home() {
               <div className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-indigo-500 animate-spin"></div>
               <span>{t("loading")}</span>
             </div>
-          ) : viewMode === "list" && filteredEvents.length === 0 ? (
+          ) : viewMode === "list" && displayEvents.length === 0 ? (
             <div className="glass-card rounded-2xl py-16 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
               <span>{t("noEvents")}</span>
             </div>

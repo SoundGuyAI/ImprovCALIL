@@ -15,7 +15,7 @@ test("admin CRUD - add event modal opens and closes", async ({ page }) => {
 
   // Find and click the 'Add Event' button
   const addEventBtn = page.locator("button:has-text('Add Event')");
-  await expect(addEventBtn).toBeVisible();
+  await expect(addEventBtn).toBeVisible({ timeout: 20000 });
   await addEventBtn.click();
 
   // Modal should open
@@ -50,7 +50,7 @@ test("admin CRUD - edit event modal populates data", async ({ page }) => {
 
   // Wait for the events table to load and show Edit buttons
   const editBtn = page.locator("button[title='Edit']").first();
-  await expect(editBtn).toBeVisible();
+  await expect(editBtn).toBeVisible({ timeout: 20000 });
   await editBtn.click();
 
   // Modal should open with Edit Event

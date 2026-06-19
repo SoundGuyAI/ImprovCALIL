@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getIdToken, signInWithCustomToken } from "firebase/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { auth, isConfigMissing } from "@/lib/firebase";
+import { auth, isConfigMissing, isMock } from "@/lib/firebase";
 
 export function AdminClientGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -11,7 +11,7 @@ export function AdminClientGate({ children }: { children: React.ReactNode }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (isConfigMissing || !auth || process.env.NEXT_PUBLIC_ADMIN_DEV_UID) {
+    if (isConfigMissing || !auth || isMock) {
       setReady(true);
       return;
     }

@@ -17,7 +17,7 @@ describe("deleteCurrentAccount finalization order", () => {
   it("clears admin claims and commits Firestore cleanup before deleting the Auth user", () => {
     const tail = getDeleteCurrentAccountTail(serverSource);
     const claimIndex = tail.indexOf("await syncAdminCustomClaim(profile.uid, false)");
-    const commitIndex = tail.indexOf("await batch.commit()");
+    const commitIndex = tail.indexOf("await profileBatch.commit()");
     const deleteIndex = tail.indexOf("await auth.deleteUser(profile.uid)");
 
     expect(claimIndex).toBeGreaterThanOrEqual(0);

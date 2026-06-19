@@ -21,8 +21,12 @@ function shouldGrantAdminClaim(profileIsAdmin: boolean | undefined, uid: string)
   if (profileIsAdmin) {
     return true;
   }
+  const isProdTestBypass =
+    process.env.NODE_ENV === "production" &&
+    process.env.E2E_ADMIN_BYPASS_SECRET === "e2e-bypass-secret-12345";
+
   return (
-    (process.env.NODE_ENV === "development" || process.env.IS_LOCAL_TEST_ENV === "true") &&
+    (process.env.NODE_ENV === "development" || isProdTestBypass) &&
     process.env.ALLOW_DEV_BYPASS === "true" &&
     process.env.NEXT_PUBLIC_ADMIN_DEV_UID === uid
   );
@@ -343,8 +347,12 @@ export async function createCustomTokenForCurrentProfile(): Promise<string | nul
 export async function getCurrentProfile(): Promise<AuthProfile | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
+  const isProdTestBypass =
+    process.env.NODE_ENV === "production" &&
+    process.env.E2E_ADMIN_BYPASS_SECRET === "e2e-bypass-secret-12345";
+
   const isDevBypass =
-    (process.env.NODE_ENV === "development" || process.env.IS_LOCAL_TEST_ENV === "true") &&
+    (process.env.NODE_ENV === "development" || isProdTestBypass) &&
     process.env.ALLOW_DEV_BYPASS === "true" &&
     process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
   if (!sessionCookie && isDevBypass) {

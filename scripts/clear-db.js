@@ -92,9 +92,8 @@ async function clearDatabase() {
     const isMockOrTest =
       id.startsWith("evt-") ||
       id.startsWith("test-") ||
-      name.includes("E2E") ||
-      name.includes("Test") ||
-      name.includes("Mock") ||
+      name === "Bilingual English/Hebrew Improv Jam E2E" ||
+      name === "Draft Secret Performance" ||
       data.isTest === true ||
       data.isMock === true;
 
@@ -127,12 +126,11 @@ async function clearDatabase() {
     const isMockOrTest =
       id.startsWith("sub-") ||
       id.startsWith("test-") ||
-      name.includes("E2E") ||
-      name.includes("Test") ||
-      name.includes("Mock") ||
+      name === "Bilingual English/Hebrew Improv Jam E2E" ||
+      data.organizerName === "Bilingual Improv Community" ||
+      name === "Draft Secret Performance" ||
       data.isTest === true ||
-      data.isMock === true ||
-      (data.submitterContact?.email === "admin@json-api" && name.includes("E2E"));
+      data.isMock === true;
 
     if (isMockOrTest) {
       submissionsToDelete.push(doc);

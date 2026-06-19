@@ -820,6 +820,11 @@ export async function approveSubmission(id: string): Promise<void> {
     if (!sDoc.exists()) return;
     const sData = sDoc.data();
 
+    if (sData.status === "approved") return;
+    if (sData.status !== "pending") {
+      throw new Error(`Submission is not pending (status: ${sData.status})`);
+    }
+
     const batch = writeBatch(db);
     const targetDocumentId = sData.targetDocumentId || sData.data?.id;
     const isEdit = !!targetDocumentId;

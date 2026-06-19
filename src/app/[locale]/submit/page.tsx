@@ -477,6 +477,12 @@ export default function SubmitContent() {
               <span>{published ? tSub("publishedSuccess") : tSub("submitSuccess")}</span>
             </div>
 
+            {jsonError && (
+              <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-sm font-semibold whitespace-pre-wrap">
+                {jsonError}
+              </div>
+            )}
+
             {isAdmin && lastSubmissionIds.length > 0 && !published && (
               <div className="mt-2 flex flex-col gap-3">
                 <div className="h-px bg-emerald-500/20 w-full" />

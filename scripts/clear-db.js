@@ -60,6 +60,18 @@ if (!useAdmin) {
   console.log("Fallback: Initialized Firebase Client SDK.");
 }
 
+// Firestore batches are limited to 500 operations. Delete in chunks.
+const BATCH_CHUNK_SIZE = 499;
+
+async function deleteDocs(docs, firestore) {
+  for (let i = 0; i < docs.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = docs.slice(i, i + BATCH_CHUNK_SIZE);
+    const batch = useAdmin ? db.batch() : firestore.writeBatch(db);
+    chunk.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  }
+}
+
 async function clearDatabase() {
   const firestore = !useAdmin ? require("firebase/firestore") : null;
   const deletedEventIds = new Set();
@@ -94,11 +106,7 @@ async function clearDatabase() {
 
   if (eventsToDelete.length > 0) {
     console.log(`Deleting ${eventsToDelete.length} test/mock documents from events...`);
-    const batch = useAdmin ? db.batch() : firestore.writeBatch(db);
-    eventsToDelete.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
+    await deleteDocs(eventsToDelete, firestore);
     console.log("Successfully cleared test/mock events.");
   } else {
     console.log("No test/mock events found to delete.");
@@ -134,11 +142,7 @@ async function clearDatabase() {
 
   if (submissionsToDelete.length > 0) {
     console.log(`Deleting ${submissionsToDelete.length} test/mock documents from submissions...`);
-    const batch = useAdmin ? db.batch() : firestore.writeBatch(db);
-    submissionsToDelete.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
+    await deleteDocs(submissionsToDelete, firestore);
     console.log("Successfully cleared test/mock submissions.");
   } else {
     console.log("No test/mock submissions found to delete.");
@@ -170,11 +174,7 @@ async function clearDatabase() {
 
   if (linksToDelete.length > 0) {
     console.log(`Deleting ${linksToDelete.length} test/mock documents from links...`);
-    const batch = useAdmin ? db.batch() : firestore.writeBatch(db);
-    linksToDelete.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
+    await deleteDocs(linksToDelete, firestore);
     console.log("Successfully cleared test/mock links.");
   } else {
     console.log("No test/mock links found to delete.");
@@ -184,9 +184,15 @@ async function clearDatabase() {
 async function main() {
   try {
     const projectId = clientConfig.projectId || config.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    // Safety check: protect production project from accidental test runs
+    // Safety check: protect production project from accidental test runs.
+    // An undefined projectId is not a safe default — require it to be explicit.
+    if (!projectId) {
+      console.error(
+        "Safety Error: projectId is undefined. Cannot safely determine target project for DB cleanup."
+      );
+      process.exit(1);
+    }
     if (
-      projectId &&
       !projectId.includes("dev") &&
       !projectId.includes("staging") &&
       !projectId.includes("test") &&

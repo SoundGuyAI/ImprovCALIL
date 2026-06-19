@@ -1,6 +1,8 @@
 export const EMAIL_LOOKUP_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 export const EMAIL_LOOKUP_UNIQUE_EMAIL_LIMIT = 10;
 export const EMAIL_LOOKUP_REQUEST_LIMIT = 30;
+export const EMAIL_LOOKUP_UNKNOWN_CLIENT_REQUEST_LIMIT = 5;
+export const EMAIL_LOOKUP_UNKNOWN_CLIENT_UNIQUE_EMAIL_LIMIT = 2;
 
 interface EmailLookupAttempt {
   email: string;
@@ -41,9 +43,15 @@ export function checkEmailLookupRateLimit(
   );
   const uniqueEmails = new Set(recentAttempts.map((attempt) => attempt.email));
   const wouldAddUniqueEmail = normalizedEmail.length > 0 && !uniqueEmails.has(normalizedEmail);
-  const exceedsRequestLimit = recentAttempts.length >= EMAIL_LOOKUP_REQUEST_LIMIT;
-  const exceedsUniqueEmailLimit =
-    uniqueEmails.size >= EMAIL_LOOKUP_UNIQUE_EMAIL_LIMIT && wouldAddUniqueEmail;
+  const isUnknownClient = clientKey === "unknown-client";
+  const requestLimit = isUnknownClient
+    ? EMAIL_LOOKUP_UNKNOWN_CLIENT_REQUEST_LIMIT
+    : EMAIL_LOOKUP_REQUEST_LIMIT;
+  const uniqueEmailLimit = isUnknownClient
+    ? EMAIL_LOOKUP_UNKNOWN_CLIENT_UNIQUE_EMAIL_LIMIT
+    : EMAIL_LOOKUP_UNIQUE_EMAIL_LIMIT;
+  const exceedsRequestLimit = recentAttempts.length >= requestLimit;
+  const exceedsUniqueEmailLimit = uniqueEmails.size >= uniqueEmailLimit && wouldAddUniqueEmail;
 
   if (exceedsRequestLimit || exceedsUniqueEmailLimit) {
     const oldestRelevantAttempt = recentAttempts.sort((a, b) => a.timestamp - b.timestamp)[0];
@@ -73,5 +81,7 @@ export function resetEmailLookupRateLimitForTests(): void {
 export function getEmailLookupClientKey(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const realIp = request.headers.get("x-real-ip")?.trim();
-  return forwardedFor || realIp || "unknown-client";
+  const cfIp = request.headers.get("cf-connecting-ip")?.trim();
+  const vercelIp = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim();
+  return forwardedFor || realIp || cfIp || vercelIp || "unknown-client";
 }

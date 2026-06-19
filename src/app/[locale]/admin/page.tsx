@@ -70,11 +70,21 @@ export default function AdminConsole() {
   const [simulating, setSimulating] = useState(false);
   const [simSuccess, setSimSuccess] = useState(false);
 
+  // Moderation error feedback
+  const [moderationError, setModerationError] = useState<string | null>(null);
+
   // Settings State
   const [allowAnonymous, setAllowAnonymous] = useState(true);
   const persistedAllowAnonymousRef = useRef(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const simTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (simTimerRef.current !== null) clearTimeout(simTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadSettings() {
@@ -93,12 +103,23 @@ export default function AdminConsole() {
     async function load() {
       setLoading(true);
       try {
-        const evts = await getEvents({ includeHidden: true });
-        const orgs = await getOrganizers({ includeHidden: true, locale: locale as "en" | "he" });
-        const subs = await getPendingSubmissions();
-        setEvents(evts);
-        setOrganizers(orgs);
-        setSubmissions(subs);
+        // Only fetch what the active tab actually needs to avoid loading all three
+        // Firestore collections on every tab switch.
+        const needsEvents = activeTab === "dashboard" || activeTab === "events";
+        const needsOrganizers = activeTab === "dashboard" || activeTab === "organizers";
+        const needsSubmissions = activeTab === "dashboard" || activeTab === "queue";
+
+        const [evts, orgs, subs] = await Promise.all([
+          needsEvents ? getEvents({ includeHidden: true }) : Promise.resolve(null),
+          needsOrganizers
+            ? getOrganizers({ includeHidden: true, locale: locale as "en" | "he" })
+            : Promise.resolve(null),
+          needsSubmissions ? getPendingSubmissions() : Promise.resolve(null),
+        ]);
+
+        if (evts !== null) setEvents(evts);
+        if (orgs !== null) setOrganizers(orgs);
+        if (subs !== null) setSubmissions(subs);
       } catch (err) {
         console.error(err);
       } finally {
@@ -146,20 +167,32 @@ export default function AdminConsole() {
 
   // 1. Moderation actions
   const handleApprove = async (id: string) => {
+    setModerationError(null);
     try {
       await approveSubmission(id);
       await refreshData();
     } catch (err) {
       console.error(err);
+      setModerationError(
+        locale === "he"
+          ? "האישור נכשל. נסו שוב."
+          : `Approval failed: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     }
   };
 
   const handleReject = async (id: string) => {
+    setModerationError(null);
     try {
       await rejectSubmission(id);
       await refreshData();
     } catch (err) {
       console.error(err);
+      setModerationError(
+        locale === "he"
+          ? "הדחייה נכשלה. נסו שוב."
+          : `Rejection failed: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     }
   };
 
@@ -229,7 +262,7 @@ export default function AdminConsole() {
     setSimulating(true);
     setSimSuccess(false);
 
-    setTimeout(async () => {
+    simTimerRef.current = setTimeout(async () => {
       // Simulate LLM parse and add to submissions
       try {
         const mockSubmissionData = {
@@ -412,6 +445,12 @@ export default function AdminConsole() {
         {!loading && activeTab === "queue" && (
           <div className="flex flex-col gap-6">
             <h2 className="text-lg font-bold text-white">{tAdmin("queue")}</h2>
+
+            {moderationError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {moderationError}
+              </div>
+            )}
 
             {submissions.filter((s) => s.status === "pending").length === 0 ? (
               <div className="glass-card rounded-2xl py-12 text-center text-zinc-500 text-sm">

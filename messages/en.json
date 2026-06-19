@@ -52,6 +52,10 @@
     "access": "Access",
     "free": "Free Only",
     "paid": "Paid Only",
+    "donation": "Donation Only",
+    "costFree": "Free",
+    "costPaid": "Paid",
+    "costDonation": "Donation",
     "open": "Open to All",
     "private": "Private / Registration Required",
     "clearAll": "Clear Filters"

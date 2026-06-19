@@ -119,7 +119,8 @@ export default function AdminEventFormModal({
         const org = organizers.find((o) => o.id === value);
         if (org) {
           next.organizerName = org.name;
-        } else if (value === "custom") {
+        } else {
+          // "custom" or "-- Select --": clear the name so the select reflects the right state
           next.organizerName = "";
         }
       }
@@ -387,9 +388,10 @@ export default function AdminEventFormModal({
                   className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:outline-none focus:border-indigo-500"
                 >
                   <option value="one-time">One-time</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
                   <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="bi-weekly">Bi-weekly</option>
+                  <option value="monthly">Monthly</option>
                 </select>
               </div>
             </div>

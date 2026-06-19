@@ -27,13 +27,18 @@ export function AdminClientGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     void (async () => {
       try {
-        const response = await fetch("/api/auth/custom-token", { cache: "no-store" });
+        const response = await fetch("/api/auth/custom-token", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         if (!response.ok) {
-          if (!cancelled) {
+          if (!controller.signal.aborted) {
             setFailed(true);
           }
           return;
@@ -43,18 +48,20 @@ export function AdminClientGate({ children }: { children: React.ReactNode }) {
         const credential = await signInWithCustomToken(auth, data.customToken);
         await credential.user.getIdToken(true);
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setReady(true);
         }
       } catch {
-        if (!cancelled) {
+        clearTimeout(timeoutId);
+        if (!controller.signal.aborted) {
           setFailed(true);
         }
       }
     })();
 
     return () => {
-      cancelled = true;
+      controller.abort();
+      clearTimeout(timeoutId);
     };
   }, [user, loading]);
 

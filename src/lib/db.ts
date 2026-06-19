@@ -11,6 +11,7 @@ import {
   addDoc,
   updateDoc,
   writeBatch,
+  deleteField,
 } from "firebase/firestore";
 
 export function normalizeRegion(region?: string | null): string {
@@ -504,36 +505,37 @@ export async function getEvents(filters?: {
     const q = query(collection(db, "events"), orderBy("time", "asc"));
 
     const snap = await getDocs(q);
-    const events: FirestoreEvent[] = [];
 
-    for (const docOfSnap of snap.docs) {
+    // Client-side filtering to bypass Firestore index dependencies on first load
+    const filteredDocs = snap.docs.filter((docOfSnap) => {
       const data = docOfSnap.data();
-
-      // Client-side filtering to bypass Firestore index dependencies on first load
-      if (!filters?.includeHidden && data.hidden) continue;
+      if (!filters?.includeHidden && data.hidden) return false;
       if (
         filters?.region &&
         filters.region !== "all" &&
         normalizeRegion(data.region) !== normalizeRegion(filters.region)
       )
-        continue;
+        return false;
       if (
         filters?.type &&
         filters.type !== "all" &&
         data.recurrence !== filters.type &&
         data.type !== filters.type
-      ) {
-        continue;
-      }
-
+      )
+        return false;
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
-        continue;
-      if (filters?.cost && filters.cost !== "all" && data.cost !== filters.cost) continue;
-      if (filters?.access && filters.access !== "all" && data.access !== filters.access) continue;
+        return false;
+      if (filters?.cost && filters.cost !== "all" && data.cost !== filters.cost) return false;
+      if (filters?.access && filters.access !== "all" && data.access !== filters.access)
+        return false;
+      return true;
+    });
 
-      const links = await fetchLinksForParent(docOfSnap.id);
+    const linksArrays = await Promise.all(filteredDocs.map((d) => fetchLinksForParent(d.id)));
 
-      events.push({
+    return filteredDocs.map((docOfSnap, i) => {
+      const data = docOfSnap.data();
+      return {
         id: docOfSnap.id,
         name: data.name || "",
         type: data.type,
@@ -552,11 +554,9 @@ export async function getEvents(filters?: {
         hidden: !!data.hidden,
         featured: !!data.featured,
         createdAt: data.createdAt || 0,
-        links,
-      });
-    }
-
-    return events;
+        links: linksArrays[i],
+      };
+    });
   } catch (err) {
     console.error("Error fetching events:", err);
     return [];
@@ -590,31 +590,33 @@ export async function getOrganizers(filters?: {
   try {
     const q = query(collection(db, "organizers"), orderBy("name", "asc"));
     const snap = await getDocs(q);
-    const organizers: FirestoreOrganizer[] = [];
+    const locale = filters?.locale ?? getLocaleFromPath();
 
-    for (const d of snap.docs) {
+    const filteredDocs = snap.docs.filter((d) => {
       const data = d.data();
-
-      if (!filters?.includeHidden && data.hidden) continue;
-      if (data.publishStatus !== "published" && !filters?.includeHidden) continue;
+      if (!filters?.includeHidden && data.hidden) return false;
+      if (data.publishStatus !== "published" && !filters?.includeHidden) return false;
       if (
         filters?.region &&
         filters.region !== "all" &&
         normalizeRegion(data.region) !== normalizeRegion(filters.region)
       )
-        continue;
-      if (filters?.type && filters.type !== "all" && data.type !== filters.type) continue;
+        return false;
+      if (filters?.type && filters.type !== "all" && data.type !== filters.type) return false;
+      return true;
+    });
 
-      const links = await fetchLinksForParent(d.id);
+    const linksArrays = await Promise.all(filteredDocs.map((d) => fetchLinksForParent(d.id)));
 
+    return filteredDocs.map((d, i) => {
+      const data = d.data();
       const { name, description } = localizeOrganizer(
         d.id,
         data.name || "",
         data.description || "",
-        filters?.locale ?? getLocaleFromPath()
+        locale
       );
-
-      organizers.push({
+      return {
         id: d.id,
         name,
         type: data.type || "Other",
@@ -626,11 +628,9 @@ export async function getOrganizers(filters?: {
         hidden: !!data.hidden,
         createdAt: data.createdAt || 0,
         ownerUid: data.ownerUid || null,
-        links,
-      });
-    }
-
-    return organizers;
+        links: linksArrays[i],
+      };
+    });
   } catch (err) {
     console.error("Error fetching organizers:", err);
     return [];
@@ -660,6 +660,7 @@ export async function getOrganizerDetails(
     if (!d.exists()) return { organizer: null, events: [] };
 
     const data = d.data();
+    if (data.hidden) return { organizer: null, events: [] };
     const links = await fetchLinksForParent(d.id);
 
     const { name, description } = localizeOrganizer(
@@ -693,10 +694,11 @@ export async function getOrganizerDetails(
     const snap = await getDocs(q);
     const events: FirestoreEvent[] = [];
 
-    for (const evtDoc of snap.docs) {
+    const visibleEvtDocs = snap.docs.filter((d) => !d.data().hidden);
+    const evtLinksArrays = await Promise.all(visibleEvtDocs.map((d) => fetchLinksForParent(d.id)));
+
+    visibleEvtDocs.forEach((evtDoc, i) => {
       const evtData = evtDoc.data();
-      if (evtData.hidden) continue;
-      const evtLinks = await fetchLinksForParent(evtDoc.id);
       events.push({
         id: evtDoc.id,
         name: evtData.name || "",
@@ -716,9 +718,9 @@ export async function getOrganizerDetails(
         hidden: !!evtData.hidden,
         featured: !!evtData.featured,
         createdAt: evtData.createdAt || 0,
-        links: evtLinks,
+        links: evtLinksArrays[i],
       });
-    }
+    });
 
     return { organizer, events };
   } catch (err) {
@@ -782,23 +784,25 @@ export async function getPendingSubmissions(): Promise<FirestoreSubmission[]> {
     return getMockSubmissions();
   }
   try {
-    const q = query(collection(db, "submissions"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "submissions"), where("status", "==", "pending"));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: d.id,
-        type: data.type,
-        status: data.status,
-        source: data.source || "web_form",
-        data: data.data,
-        links: data.links || [],
-        createdAt: data.createdAt,
-        submitterContact: data.submitterContact,
-        moderationFeedback: data.moderationFeedback,
-        targetDocumentId: data.targetDocumentId,
-      };
-    });
+    return snap.docs
+      .map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: data.type,
+          status: data.status,
+          source: data.source || "web_form",
+          data: data.data,
+          links: data.links || [],
+          createdAt: data.createdAt,
+          submitterContact: data.submitterContact,
+          moderationFeedback: data.moderationFeedback,
+          targetDocumentId: data.targetDocumentId,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
   } catch (err) {
     console.error("Error fetching pending submissions:", err);
     return [];
@@ -825,31 +829,20 @@ export async function approveSubmission(id: string): Promise<void> {
       // Satisfy test check: const eventRef = doc(collection(db, "events"));
       const newEventId = eventRef.id;
 
-      let hidden = false;
-      let featured = false;
-      let createdAt = Date.now();
-
       if (isEdit) {
-        const existingSnap = await getDoc(eventRef);
-        if (existingSnap.exists()) {
-          const ext = existingSnap.data();
-          if (ext.hidden !== undefined) hidden = ext.hidden;
-          if (ext.featured !== undefined) featured = ext.featured;
-          if (ext.createdAt) createdAt = ext.createdAt;
-        }
-      }
-
-      batch.set(
-        eventRef,
-        {
+        // Merge submitted fields only — do not touch admin-managed fields (hidden, featured, createdAt)
+        // so that concurrent admin changes are not silently overwritten.
+        const { hidden: _h, featured: _f, createdAt: _c, ...submittedFields } = sData.data;
+        batch.set(eventRef, { ...submittedFields, id: newEventId }, { merge: true });
+      } else {
+        batch.set(eventRef, {
           ...sData.data,
           id: newEventId,
-          hidden,
-          featured,
-          createdAt,
-        },
-        { merge: true }
-      );
+          hidden: false,
+          featured: false,
+          createdAt: Date.now(),
+        });
+      }
 
       // If it's an edit, delete existing links
       if (isEdit) {
@@ -881,32 +874,26 @@ export async function approveSubmission(id: string): Promise<void> {
       // Satisfy test check: const organizerRef = doc(collection(db, "organizers"));
       const newOrganizerId = organizerRef.id;
 
-      let hidden = false;
-      let createdAt = Date.now();
-
-      if (isEdit) {
-        const existingSnap = await getDoc(organizerRef);
-        if (existingSnap.exists()) {
-          const ext = existingSnap.data();
-          if (ext.hidden !== undefined) hidden = ext.hidden;
-          if (ext.createdAt) createdAt = ext.createdAt;
-        }
-      }
-
       const cleanData = { ...sData.data };
       delete cleanData.isUpdateProposal;
 
-      batch.set(
-        organizerRef,
-        {
+      if (isEdit) {
+        // Merge submitted fields only — do not touch admin-managed fields (hidden, createdAt).
+        const { hidden: _h, createdAt: _c, ...submittedFields } = cleanData;
+        batch.set(
+          organizerRef,
+          { ...submittedFields, id: newOrganizerId, publishStatus: "published" },
+          { merge: true }
+        );
+      } else {
+        batch.set(organizerRef, {
           ...cleanData,
           id: newOrganizerId,
           publishStatus: "published",
-          hidden,
-          createdAt,
-        },
-        { merge: true }
-      );
+          hidden: false,
+          createdAt: Date.now(),
+        });
+      }
 
       // If it's an edit, delete existing links
       if (isEdit) {
@@ -931,6 +918,9 @@ export async function approveSubmission(id: string): Promise<void> {
           });
         });
       }
+    } else {
+      // Unknown or future type — refuse to silently mark as approved with nothing written.
+      throw new Error(`Cannot approve submission with unknown type: "${sData.type}"`);
     }
 
     // Update submission status to approved
@@ -1102,7 +1092,16 @@ export async function updateEvent(
     const batch = writeBatch(db);
     const eventRef = doc(db, "events", eventId);
 
-    batch.update(eventRef, eventData);
+    // Map optional fields that are explicitly undefined to deleteField() so Firestore
+    // actually removes them rather than silently ignoring the undefined value.
+    const payload: Record<string, unknown> = { ...eventData };
+    if ("endTime" in eventData && eventData.endTime === undefined) {
+      payload.endTime = deleteField();
+    }
+    if ("mapLink" in eventData && eventData.mapLink === undefined) {
+      payload.mapLink = deleteField();
+    }
+    batch.update(eventRef, payload);
 
     if (links !== undefined) {
       const q = query(collection(db, "links"), where("parentId", "==", eventId));

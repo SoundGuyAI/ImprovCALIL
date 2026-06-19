@@ -10,7 +10,10 @@
 export function convertJerusalemLocalToUtc(localStr: string): number {
   if (!localStr) return 0;
   const match = localStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!match) return new Date(localStr).getTime();
+  if (!match) {
+    const fallback = new Date(localStr).getTime();
+    return isNaN(fallback) ? 0 : fallback;
+  }
   const [, yearStr, monthStr, dayStr, hourStr, minuteStr] = match;
   const year = parseInt(yearStr, 10);
   const month = parseInt(monthStr, 10) - 1; // 0-indexed

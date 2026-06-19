@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, DocumentReference } from "firebase-admin/firestore";
 import { AUTH_SESSION_COOKIE, AUTH_SESSION_EXPIRES_IN_MS } from "@/lib/auth/constants";
 import { isMatchingAccountEmail } from "@/lib/auth/delete-account";
 import {
@@ -170,6 +170,22 @@ export async function updateCurrentProfile(
   );
 }
 
+// Firestore Admin SDK batches share the same 500-operation limit as the client SDK.
+// Chunk update writes to avoid failures for users with many documents.
+const ADMIN_BATCH_CHUNK = 499;
+
+type AdminDb = ReturnType<typeof getAdminFirestore>;
+type AdminUpdateEntry = { ref: DocumentReference; data: Record<string, unknown> };
+
+async function commitUpdatesInChunks(db: AdminDb, updates: AdminUpdateEntry[]): Promise<void> {
+  for (let i = 0; i < updates.length; i += ADMIN_BATCH_CHUNK) {
+    const chunk = updates.slice(i, i + ADMIN_BATCH_CHUNK);
+    const batch = db.batch();
+    chunk.forEach(({ ref, data }) => batch.update(ref, data));
+    await batch.commit();
+  }
+}
+
 export async function deleteCurrentAccount(
   profile: AuthProfile,
   typedEmail: unknown
@@ -181,7 +197,9 @@ export async function deleteCurrentAccount(
   const auth = getAdminAuth();
   const db = getAdminFirestore();
   const now = FieldValue.serverTimestamp();
-  const batch = db.batch();
+
+  // Collect all update writes; commit in ≤499-operation batches to respect Firestore limits.
+  const updates: AdminUpdateEntry[] = [];
 
   // 1. Orphan organizers
   const organizersSnapshot = await db
@@ -189,10 +207,9 @@ export async function deleteCurrentAccount(
     .where("ownerUid", "==", profile.uid)
     .get();
   organizersSnapshot.docs.forEach((doc) => {
-    batch.update(doc.ref, {
-      ownerUid: null,
-      ownerStatus: "orphaned",
-      ownerDeletedAt: now,
+    updates.push({
+      ref: doc.ref,
+      data: { ownerUid: null, ownerStatus: "orphaned", ownerDeletedAt: now },
     });
   });
 
@@ -232,13 +249,13 @@ export async function deleteCurrentAccount(
     });
   }
 
-  // Apply all submission updates to the batch
   submissionUpdates.forEach((data, id) => {
-    batch.update(db.collection("submissions").doc(id), data);
+    updates.push({ ref: db.collection("submissions").doc(id), data });
   });
 
-  // 3. Mark user profile as deleted
-  batch.set(
+  // 3. Mark user profile as deleted in its own batch (uses set+merge, not update).
+  const profileBatch = db.batch();
+  profileBatch.set(
     db.collection(USERS_COLLECTION).doc(profile.uid),
     {
       accountStatus: "deleted",
@@ -253,10 +270,13 @@ export async function deleteCurrentAccount(
     },
     { merge: true }
   );
-  // Clear admin custom claims first while user exists, then commit Firestore mutations, and finally delete Auth user.
-  // This guarantees that if the Firestore commit fails, the Auth user is not orphaned with active PII.
+
+  // Clear admin custom claims first while user exists, then commit Firestore mutations,
+  // and finally delete Auth user. This guarantees that if the Firestore commit fails,
+  // the Auth user is not orphaned with active PII.
   await syncAdminCustomClaim(profile.uid, false);
-  await batch.commit();
+  await commitUpdatesInChunks(db, updates);
+  await profileBatch.commit();
   await auth.deleteUser(profile.uid);
 }
 

@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-test.beforeAll(() => {
-  process.env.NEXT_PUBLIC_ADMIN_DEV_UID = "admin-test";
-});
+// Admin dev bypass is controlled by NEXT_PUBLIC_ADMIN_DEV_UID in .env.local (read by the
+// Next.js dev server process). Setting process.env here only affects the test runner and
+// has no effect on the server — the variable must be pre-configured in .env.local.
 
 test("JSON Submission & Moderation Approval Pipeline E2E Test", async ({ context, page }) => {
   // Set local bypass cookie for admin profile mocking
@@ -24,13 +24,15 @@ test("JSON Submission & Moderation Approval Pipeline E2E Test", async ({ context
   await jsonTab.click();
 
   // 3. Fill the textarea with our bilingual event JSON
+  // Use a timestamp 7 days from now so the event always falls within the calendar's
+  // 90-day lookahead window regardless of when the test runs.
   const jsonPayload = {
     name: "Bilingual English/Hebrew Improv Jam E2E",
     type: "Jam",
     organizerName: "Bilingual Improv Community",
     description:
       "RSVP for our first English/Hebrew-friendly improv jam on Thursday, June 18th, 20:00, in central Tel-Aviv. All experience levels welcome!",
-    time: 1781802000000,
+    time: Date.now() + 7 * 24 * 60 * 60 * 1000,
     recurrence: "one-time",
     location: "Central Tel Aviv",
     region: "Tel-Aviv",

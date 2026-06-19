@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createSubmission, getOrganizers, FirestoreOrganizer, approveSubmission } from "@/lib/db";
 import { convertJerusalemLocalToUtc } from "@/lib/date-utils";
@@ -97,6 +97,15 @@ export default function SubmitContent() {
   // 3. AI Parser State
   const [flyerText, setFlyerText] = useState("");
   const [aiParsing, setAiParsing] = useState(false);
+  const aiParseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (aiParseTimerRef.current !== null) {
+        clearTimeout(aiParseTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -168,7 +177,7 @@ export default function SubmitContent() {
     if (!flyerText.trim()) return;
     setAiParsing(true);
 
-    setTimeout(() => {
+    aiParseTimerRef.current = setTimeout(() => {
       // Analyze text keywords to mock LLM structured extraction
       const lower = flyerText.toLowerCase();
 
@@ -181,6 +190,7 @@ export default function SubmitContent() {
       let cost = "Paid";
       if (lower.includes("free") || lower.includes("חינם") || lower.includes("כניסה חופשית"))
         cost = "Free";
+      else if (lower.includes("donation") || lower.includes("תרומה")) cost = "Donation";
 
       let lang = "he";
       if (lower.includes("english") || lower.includes("אנגלית")) lang = "en";
@@ -326,9 +336,13 @@ export default function SubmitContent() {
   };
 
   const clearOrganizerForm = () => {
+    setIsUpdate(false);
     setOrgTargetId("");
     setOrgName("");
+    setOrgType("Group");
     setOrgDesc("");
+    setOrgRegion("Tel-Aviv");
+    setOrgLanguages(["he"]);
     setOrgLinks([]);
   };
 
@@ -665,6 +679,7 @@ export default function SubmitContent() {
                 >
                   <option value="Paid">Paid</option>
                   <option value="Free">Free</option>
+                  <option value="Donation">Donation</option>
                 </select>
               </div>
 
@@ -692,9 +707,10 @@ export default function SubmitContent() {
                   className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                 >
                   <option value="one-time">One-time Event</option>
+                  <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
                   <option value="bi-weekly">Bi-weekly</option>
+                  <option value="monthly">Monthly</option>
                 </select>
               </div>
 

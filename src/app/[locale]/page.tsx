@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { getEvents, FirestoreEvent, normalizeRegion } from "@/lib/db";
 import Header from "@/components/Header";
@@ -92,6 +92,7 @@ const getExpandedEvents = (
         expanded.push(event);
       }
     } else if (
+      event.recurrence === "daily" ||
       event.recurrence === "weekly" ||
       event.recurrence === "bi-weekly" ||
       event.recurrence === "monthly"
@@ -100,6 +101,30 @@ const getExpandedEvents = (
       const duration = event.endTime ? event.endTime - event.time : 0;
 
       const current = new Date(eventStart.getTime());
+
+      // Fast-forward current to just before startRange so the 500-iteration safety
+      // cap covers the visible window, not the gap between the event's birth date and today.
+      if (current.getTime() < startRange.getTime()) {
+        const MS = { daily: 86400000, weekly: 604800000, "bi-weekly": 1209600000 } as Record<
+          string,
+          number
+        >;
+        const stepMs = MS[event.recurrence];
+        if (stepMs) {
+          const stepsToSkip = Math.max(
+            0,
+            Math.floor((startRange.getTime() - current.getTime()) / stepMs) - 1
+          );
+          current.setTime(current.getTime() + stepsToSkip * stepMs);
+        } else if (event.recurrence === "monthly") {
+          const monthsApart =
+            (startRange.getFullYear() - current.getFullYear()) * 12 +
+            (startRange.getMonth() - current.getMonth());
+          const monthsToSkip = Math.max(0, monthsApart - 2);
+          if (monthsToSkip > 0) current.setMonth(current.getMonth() + monthsToSkip);
+        }
+      }
+
       let safetyCount = 0;
 
       while (current.getTime() <= endRange.getTime() && safetyCount < 500) {
@@ -115,13 +140,17 @@ const getExpandedEvents = (
           });
         }
 
-        if (event.recurrence === "weekly") {
+        if (event.recurrence === "daily") {
+          current.setDate(current.getDate() + 1);
+        } else if (event.recurrence === "weekly") {
           current.setDate(current.getDate() + 7);
         } else if (event.recurrence === "bi-weekly") {
           current.setDate(current.getDate() + 14);
         } else if (event.recurrence === "monthly") {
           const targetMonth = current.getMonth() + 1;
-          const origDay = eventStart.getDate();
+          // Use the Jerusalem-timezone day of the original event to anchor
+          // monthly recurrence correctly regardless of the browser's local timezone.
+          const origDay = getJerusalemParts(eventStart).day;
           current.setDate(1);
           current.setMonth(targetMonth);
           const daysInMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
@@ -179,6 +208,9 @@ export default function Home() {
   }, []);
 
   const featuredEvents = events.filter((e) => e.featured && !e.hidden);
+
+  // Clamp index so it never goes out of bounds if the featured list shrinks
+  const safeFeaturedIndex = featuredEvents.length > 0 ? featuredIndex % featuredEvents.length : 0;
 
   const nextFeatured = () => {
     if (featuredEvents.length === 0) return;
@@ -349,12 +381,11 @@ export default function Home() {
     return cells;
   };
 
-  const displayEvents = getExpandedEvents(
-    filteredEvents,
-    viewMode,
-    currentDate,
-    getStartOfWeek,
-    getMonthDaysGrid
+  const displayEvents = useMemo(
+    () =>
+      getExpandedEvents(filteredEvents, viewMode, currentDate, getStartOfWeek, getMonthDaysGrid),
+
+    [filteredEvents, viewMode, currentDate]
   );
 
   const getEventsForDay = (dayDate: Date): FirestoreEvent[] => {
@@ -415,14 +446,18 @@ export default function Home() {
   };
 
   // Group events by day for list view
-  const groupedEvents: { [key: string]: FirestoreEvent[] } = {};
-  displayEvents.forEach((e) => {
-    const dateStr = formatDate(e.time);
-    if (!groupedEvents[dateStr]) {
-      groupedEvents[dateStr] = [];
-    }
-    groupedEvents[dateStr].push(e);
-  });
+  const groupedEvents = useMemo(() => {
+    const groups: { [key: string]: FirestoreEvent[] } = {};
+    displayEvents.forEach((e) => {
+      const dateStr = formatDate(e.time);
+      if (!groups[dateStr]) {
+        groups[dateStr] = [];
+      }
+      groups[dateStr].push(e);
+    });
+    return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayEvents, locale]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
@@ -439,31 +474,31 @@ export default function Home() {
 
             <div className="flex-1 flex flex-col gap-3 text-center md:text-left rtl:md:text-right w-full mt-4 md:mt-0">
               <h2 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                {featuredEvents[featuredIndex].name}
+                {featuredEvents[safeFeaturedIndex].name}
               </h2>
               <p className="text-sm md:text-base text-zinc-300 max-w-2xl line-clamp-2">
-                {featuredEvents[featuredIndex].description}
+                {featuredEvents[safeFeaturedIndex].description}
               </p>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs sm:text-sm text-zinc-400 mt-2">
                 <span className="flex items-center gap-1.5">
                   <CalendarIcon className="w-4 h-4 text-indigo-400" />
-                  {formatDate(featuredEvents[featuredIndex].time)}
+                  {formatDate(featuredEvents[safeFeaturedIndex].time)}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-indigo-400" />
-                  {formatTime(featuredEvents[featuredIndex].time)}
+                  {formatTime(featuredEvents[safeFeaturedIndex].time)}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-indigo-400" />
-                  {featuredEvents[featuredIndex].location}
+                  {featuredEvents[safeFeaturedIndex].location}
                 </span>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto items-center justify-center">
               <button
-                onClick={() => setSelectedEvent(featuredEvents[featuredIndex])}
+                onClick={() => setSelectedEvent(featuredEvents[safeFeaturedIndex])}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-primary text-white font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition-all text-sm cursor-pointer"
               >
                 {t("details")}
@@ -478,7 +513,7 @@ export default function Home() {
                     <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
                   </button>
                   <span className="text-xs text-zinc-500 font-bold">
-                    {featuredIndex + 1} / {featuredEvents.length}
+                    {safeFeaturedIndex + 1} / {featuredEvents.length}
                   </span>
                   <button
                     onClick={nextFeatured}
@@ -581,6 +616,7 @@ export default function Home() {
                 <option value="all">{locale === "he" ? "הכל" : "All Costs"}</option>
                 <option value="Free">{locale === "he" ? "חינם בלבד" : "Free Only"}</option>
                 <option value="Paid">{locale === "he" ? "בתשלום בלבד" : "Paid Only"}</option>
+                <option value="Donation">{locale === "he" ? "תרומה בלבד" : "Donation Only"}</option>
               </select>
             </div>
 
@@ -743,10 +779,16 @@ export default function Home() {
                               className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
                                 event.cost === "Free"
                                   ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
-                                  : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                                  : event.cost === "Donation"
+                                    ? "bg-violet-500/5 border-violet-500/20 text-violet-400"
+                                    : "bg-amber-500/5 border-amber-500/20 text-amber-400"
                               }`}
                             >
-                              {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                              {event.cost === "Free"
+                                ? tFilters("costFree")
+                                : event.cost === "Donation"
+                                  ? tFilters("costDonation")
+                                  : tFilters("costPaid")}
                             </span>
                             <span className="px-2 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[10px] text-indigo-400 font-semibold uppercase">
                               {event.language}
@@ -949,7 +991,11 @@ export default function Home() {
                             <span
                               key={event.id}
                               className={`w-1 h-1 rounded-full ${
-                                event.cost === "Free" ? "bg-emerald-500" : "bg-amber-500"
+                                event.cost === "Free"
+                                  ? "bg-emerald-500"
+                                  : event.cost === "Donation"
+                                    ? "bg-violet-500"
+                                    : "bg-amber-500"
                               }`}
                             />
                           ))}
@@ -1009,10 +1055,16 @@ export default function Home() {
                                 className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border ${
                                   event.cost === "Free"
                                     ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
-                                    : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                                    : event.cost === "Donation"
+                                      ? "bg-violet-500/5 border-violet-500/20 text-violet-400"
+                                      : "bg-amber-500/5 border-amber-500/20 text-amber-400"
                                 }`}
                               >
-                                {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                                {event.cost === "Free"
+                                  ? tFilters("costFree")
+                                  : event.cost === "Donation"
+                                    ? tFilters("costDonation")
+                                    : tFilters("costPaid")}
                               </span>
                               <span className="px-1.5 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[9px] text-indigo-400 font-semibold uppercase">
                                 {event.language}
@@ -1089,7 +1141,11 @@ export default function Home() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <DollarSign className="w-4 h-4 text-indigo-400" />
-                  {selectedEvent.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                  {selectedEvent.cost === "Free"
+                    ? tFilters("costFree")
+                    : selectedEvent.cost === "Donation"
+                      ? tFilters("costDonation")
+                      : tFilters("costPaid")}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Globe className="w-4 h-4 text-indigo-400" />

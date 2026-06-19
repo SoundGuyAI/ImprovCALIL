@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-test.beforeAll(() => {
-  process.env.NEXT_PUBLIC_ADMIN_DEV_UID = "admin-test";
-});
+// Admin dev bypass is controlled by NEXT_PUBLIC_ADMIN_DEV_UID in .env.local (read by the
+// Next.js dev server process). Setting process.env here only affects the test runner and
+// has no effect on the server — the variable must be pre-configured in .env.local.
 
 test("admin CRUD - add event modal opens and closes", async ({ page }) => {
   // Navigate to admin

@@ -92,9 +92,8 @@ const getExpandedEvents = (
     );
   } else if (view === "week") {
     startRange = getStartOfWeekFn(anchorDate);
-    const p = getJerusalemParts(startRange);
-    const d = new Date(Date.UTC(p.year, p.month, p.day + 7));
-    endRange = jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59);
+    const endYmd = addJerusalemCalendarDays(startRange, 6);
+    endRange = jerusalemToDate(endYmd.year, endYmd.month, endYmd.day, 23, 59);
   } else {
     // month view
     const grid = getMonthDaysGridFn(anchorDate);

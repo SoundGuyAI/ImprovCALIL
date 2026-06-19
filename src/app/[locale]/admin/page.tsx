@@ -106,7 +106,8 @@ export default function AdminConsole() {
         // Only fetch what the active tab actually needs to avoid loading all three
         // Firestore collections on every tab switch.
         const needsEvents = activeTab === "dashboard" || activeTab === "events";
-        const needsOrganizers = activeTab === "dashboard" || activeTab === "organizers";
+        const needsOrganizers =
+          activeTab === "dashboard" || activeTab === "organizers" || activeTab === "events";
         const needsSubmissions = activeTab === "dashboard" || activeTab === "queue";
 
         const [evts, orgs, subs] = await Promise.all([

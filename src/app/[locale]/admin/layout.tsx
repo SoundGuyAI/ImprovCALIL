@@ -1,5 +1,5 @@
 import React from "react";
-import { getCurrentProfile } from "@/lib/auth/server";
+import { getCurrentProfile, isAdminDevBypassEnabled } from "@/lib/auth/server";
 import { isUserAdmin } from "@/lib/permissions";
 import { ShieldAlert, KeyRound } from "lucide-react";
 import Header from "@/components/Header";
@@ -7,14 +7,7 @@ import { AdminClientGate } from "@/components/admin/AdminClientGate";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const profile = await getCurrentProfile();
-  const isProdTestBypass =
-    process.env.NODE_ENV === "production" &&
-    process.env.E2E_ADMIN_BYPASS_SECRET === "e2e-bypass-secret-12345";
-
-  const devBypass =
-    (process.env.NODE_ENV === "development" || isProdTestBypass) &&
-    process.env.ALLOW_DEV_BYPASS === "true" &&
-    process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
+  const devBypass = isAdminDevBypassEnabled();
   const isAdmin = devBypass || isUserAdmin(profile);
 
   if (!isAdmin) {

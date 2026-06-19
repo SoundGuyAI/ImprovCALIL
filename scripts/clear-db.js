@@ -190,9 +190,7 @@ async function main() {
       );
       process.exit(1);
     }
-    const allowedProjects = ["improv-calendar-il"];
     const isAllowed =
-      allowedProjects.includes(projectId) ||
       projectId.includes("dev") ||
       projectId.includes("staging") ||
       projectId.includes("test") ||

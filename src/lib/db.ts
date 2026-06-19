@@ -484,12 +484,7 @@ export async function getEvents(filters?: {
         normalizeRegion(data.region) !== normalizeRegion(filters.region)
       )
         continue;
-      if (
-        filters?.type &&
-        filters.type !== "all" &&
-        data.recurrence !== filters.type &&
-        data.type !== filters.type
-      ) {
+      if (filters?.type && filters.type !== "all" && data.type !== filters.type) {
         continue;
       }
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
@@ -516,13 +511,7 @@ export async function getEvents(filters?: {
         normalizeRegion(data.region) !== normalizeRegion(filters.region)
       )
         return false;
-      if (
-        filters?.type &&
-        filters.type !== "all" &&
-        data.recurrence !== filters.type &&
-        data.type !== filters.type
-      )
-        return false;
+      if (filters?.type && filters.type !== "all" && data.type !== filters.type) return false;
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
         return false;
       if (filters?.cost && filters.cost !== "all" && data.cost !== filters.cost) return false;

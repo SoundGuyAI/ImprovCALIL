@@ -104,9 +104,7 @@ export async function POST(request: Request) {
       if (result.status === "fulfilled") {
         submissionIds.push(result.value);
       } else {
-        errors.push(
-          `Event at index ${index} failed: ${result.reason instanceof Error ? result.reason.message : String(result.reason ?? "Unknown error")}`
-        );
+        errors.push(`Event at index ${index} failed: submission could not be stored`);
       }
     });
 

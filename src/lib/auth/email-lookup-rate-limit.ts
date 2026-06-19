@@ -54,7 +54,9 @@ export function checkEmailLookupRateLimit(
   const exceedsUniqueEmailLimit = uniqueEmails.size >= uniqueEmailLimit && wouldAddUniqueEmail;
 
   if (exceedsRequestLimit || exceedsUniqueEmailLimit) {
-    const oldestRelevantAttempt = recentAttempts.sort((a, b) => a.timestamp - b.timestamp)[0];
+    const oldestRelevantAttempt = recentAttempts
+      .slice()
+      .sort((a, b) => a.timestamp - b.timestamp)[0];
     const retryAfterMs = oldestRelevantAttempt
       ? Math.max(0, oldestRelevantAttempt.timestamp + EMAIL_LOOKUP_RATE_LIMIT_WINDOW_MS - now)
       : EMAIL_LOOKUP_RATE_LIMIT_WINDOW_MS;

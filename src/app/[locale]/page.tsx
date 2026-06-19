@@ -88,13 +88,15 @@ const getExpandedEvents = (
     const endYmd = addJerusalemCalendarDays(anchorDate, 90);
     startRange = jerusalemToDate(startYmd.year, startYmd.month, startYmd.day, 0, 0);
     endRange = new Date(
-      jerusalemToDate(endYmd.year, endYmd.month, endYmd.day, 0, 0).getTime() + 86400000 - 1
+      jerusalemToDate(endYmd.year, endYmd.month, endYmd.day + 1, 0, 0).getTime() - 1
     );
   } else if (view === "week") {
     startRange = getStartOfWeekFn(anchorDate);
     const p = getJerusalemParts(startRange);
     const d = new Date(Date.UTC(p.year, p.month, p.day + 7));
-    endRange = jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59);
+    endRange = new Date(
+      jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0).getTime() - 1
+    );
   } else {
     // month view
     const grid = getMonthDaysGridFn(anchorDate);
@@ -102,7 +104,7 @@ const getExpandedEvents = (
     startRange = jerusalemToDate(sp.year, sp.month, sp.day, 0, 0);
 
     const ep = getJerusalemParts(grid[grid.length - 1]);
-    endRange = jerusalemToDate(ep.year, ep.month, ep.day, 23, 59);
+    endRange = new Date(jerusalemToDate(ep.year, ep.month, ep.day + 1, 0, 0).getTime() - 1);
   }
 
   const expanded: FirestoreEvent[] = [];
@@ -178,11 +180,32 @@ const getExpandedEvents = (
         }
 
         if (event.recurrence === "daily") {
-          current.setTime(current.getTime() + 86400000);
+          const parts = getJerusalemParts(current);
+          current = jerusalemToDate(
+            parts.year,
+            parts.month,
+            parts.day + 1,
+            parts.hour,
+            parts.minute
+          );
         } else if (event.recurrence === "weekly") {
-          current.setTime(current.getTime() + 604800000);
+          const parts = getJerusalemParts(current);
+          current = jerusalemToDate(
+            parts.year,
+            parts.month,
+            parts.day + 7,
+            parts.hour,
+            parts.minute
+          );
         } else if (event.recurrence === "bi-weekly") {
-          current.setTime(current.getTime() + 1209600000);
+          const parts = getJerusalemParts(current);
+          current = jerusalemToDate(
+            parts.year,
+            parts.month,
+            parts.day + 14,
+            parts.hour,
+            parts.minute
+          );
         } else if (event.recurrence === "monthly") {
           const parts = getJerusalemParts(current);
           const origDay = getJerusalemParts(eventStart).day;
@@ -268,75 +291,82 @@ export default function Home() {
   };
 
   // Filter Logic
-  const filteredEvents = events.filter((e) => {
-    if (e.hidden) return false;
+  const filteredEvents = useMemo(
+    () =>
+      events.filter((e) => {
+        if (e.hidden) return false;
 
-    // Search Query
-    if (
-      search &&
-      !e.name.toLowerCase().includes(search.toLowerCase()) &&
-      !e.description.toLowerCase().includes(search.toLowerCase()) &&
-      !e.organizerName.toLowerCase().includes(search.toLowerCase())
-    ) {
-      return false;
-    }
-    // Region
-    if (selectedRegion !== "all" && normalizeRegion(e.region) !== normalizeRegion(selectedRegion))
-      return false;
-    // Event Type
-    if (selectedType !== "all") {
-      const typeLower = selectedType.toLowerCase();
-      if (e.type !== undefined && e.type !== null) {
-        if (e.type.toLowerCase() !== typeLower) {
+        // Search Query
+        if (
+          search &&
+          !e.name.toLowerCase().includes(search.toLowerCase()) &&
+          !e.description.toLowerCase().includes(search.toLowerCase()) &&
+          !e.organizerName.toLowerCase().includes(search.toLowerCase())
+        ) {
           return false;
         }
-      } else {
-        // Jam, Show, Workshop, Festival
+        // Region
         if (
-          typeLower === "show" &&
-          !e.name.toLowerCase().includes("show") &&
-          !e.name.toLowerCase().includes("מופע") &&
-          !e.description.toLowerCase().includes("show")
+          selectedRegion !== "all" &&
+          normalizeRegion(e.region) !== normalizeRegion(selectedRegion)
         )
           return false;
-        if (
-          typeLower === "jam" &&
-          !e.name.toLowerCase().includes("jam") &&
-          !e.name.toLowerCase().includes("ג'אם") &&
-          !e.description.toLowerCase().includes("jam")
-        )
-          return false;
-        if (
-          typeLower === "workshop" &&
-          !e.name.toLowerCase().includes("workshop") &&
-          !e.name.toLowerCase().includes("סדנ") &&
-          !e.description.toLowerCase().includes("workshop")
-        )
-          return false;
-        if (
-          typeLower === "festival" &&
-          !e.name.toLowerCase().includes("festival") &&
-          !e.name.toLowerCase().includes("פסטיבל") &&
-          !e.description.toLowerCase().includes("festival")
-        )
-          return false;
-      }
-    }
-    // Language
-    if (selectedLanguage !== "all") {
-      if (selectedLanguage === "other") {
-        if (e.language === "he" || e.language === "en" || e.language === "he/en") return false;
-      } else {
-        if (!e.language || !e.language.toLowerCase().includes(selectedLanguage)) return false;
-      }
-    }
-    // Cost
-    if (selectedCost !== "all" && e.cost !== selectedCost) return false;
-    // Access
-    if (selectedAccess !== "all" && e.access !== selectedAccess) return false;
+        // Event Type
+        if (selectedType !== "all") {
+          const typeLower = selectedType.toLowerCase();
+          if (e.type !== undefined && e.type !== null) {
+            if (e.type.toLowerCase() !== typeLower) {
+              return false;
+            }
+          } else {
+            // Jam, Show, Workshop, Festival
+            if (
+              typeLower === "show" &&
+              !e.name.toLowerCase().includes("show") &&
+              !e.name.toLowerCase().includes("מופע") &&
+              !e.description.toLowerCase().includes("show")
+            )
+              return false;
+            if (
+              typeLower === "jam" &&
+              !e.name.toLowerCase().includes("jam") &&
+              !e.name.toLowerCase().includes("ג'אם") &&
+              !e.description.toLowerCase().includes("jam")
+            )
+              return false;
+            if (
+              typeLower === "workshop" &&
+              !e.name.toLowerCase().includes("workshop") &&
+              !e.name.toLowerCase().includes("סדנ") &&
+              !e.description.toLowerCase().includes("workshop")
+            )
+              return false;
+            if (
+              typeLower === "festival" &&
+              !e.name.toLowerCase().includes("festival") &&
+              !e.name.toLowerCase().includes("פסטיבל") &&
+              !e.description.toLowerCase().includes("festival")
+            )
+              return false;
+          }
+        }
+        // Language
+        if (selectedLanguage !== "all") {
+          if (selectedLanguage === "other") {
+            if (e.language === "he" || e.language === "en" || e.language === "he/en") return false;
+          } else {
+            if (!e.language || !e.language.toLowerCase().includes(selectedLanguage)) return false;
+          }
+        }
+        // Cost
+        if (selectedCost !== "all" && e.cost !== selectedCost) return false;
+        // Access
+        if (selectedAccess !== "all" && e.access !== selectedAccess) return false;
 
-    return true;
-  });
+        return true;
+      }),
+    [events, search, selectedRegion, selectedType, selectedLanguage, selectedCost, selectedAccess]
+  );
 
   const getLinkIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -898,8 +928,11 @@ export default function Home() {
                 const dayEvents = getEventsForDay(day);
                 const isToday = isSameDay(day, new Date());
                 const localeStr = locale === "he" ? "he-IL" : "en-US";
-                const dayName = day.toLocaleDateString(localeStr, { weekday: "short" });
-                const dayNum = day.getDate();
+                const dayName = day.toLocaleDateString(localeStr, {
+                  weekday: "short",
+                  timeZone: "Asia/Jerusalem",
+                });
+                const dayNum = getJerusalemParts(day).day;
 
                 return (
                   <div
@@ -981,7 +1014,10 @@ export default function Home() {
                 {getMonthDaysGrid(currentDate).map((day) => {
                   const dayEvents = getEventsForDay(day);
                   const isToday = isSameDay(day, new Date());
-                  const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                  const dayJParts = getJerusalemParts(day);
+                  const curJParts = getJerusalemParts(currentDate);
+                  const isCurrentMonth =
+                    dayJParts.month === curJParts.month && dayJParts.year === curJParts.year;
                   const isSelected = selectedCalendarDay && isSameDay(day, selectedCalendarDay);
 
                   return (
@@ -1010,7 +1046,7 @@ export default function Home() {
                                   : "text-zinc-500"
                           }`}
                         >
-                          {day.getDate()}
+                          {getJerusalemParts(day).day}
                         </span>
                         {/* Event count badge on desktop */}
                         {dayEvents.length > 0 && (
@@ -1081,6 +1117,7 @@ export default function Home() {
                             day: "numeric",
                             month: "long",
                             year: "numeric",
+                            timeZone: "Asia/Jerusalem",
                           }
                         )}
                       </span>

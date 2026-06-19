@@ -40,7 +40,7 @@
             "Other areas"
           ]
         },
-        "language": { "type": "string", "minLength": 1 },
+        "language": { "type": "string", "enum": ["he", "en", "he/en", "other"] },
         "cost": { "type": "string", "enum": ["Free", "Paid", "Donation"] },
         "access": { "type": "string", "enum": ["Open", "Private"] },
         "links": {
@@ -60,7 +60,7 @@
         "access",
         "organizerName"
       ],
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
   "oneOf": [

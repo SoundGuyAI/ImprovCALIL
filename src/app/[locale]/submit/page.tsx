@@ -57,7 +57,16 @@ async function ensureFirebaseAdminAuth(): Promise<void> {
   }
 }
 
-const REGION_KEYS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
+const REGION_KEYS = [
+  "Tel-Aviv",
+  "Jerusalem",
+  "Beer-Sheva",
+  "Haifa",
+  "Hasharon",
+  "North",
+  "South",
+  "Other areas",
+];
 const ORGANIZER_TYPE_KEYS = ["Group", "School", "Theater", "Other"];
 
 export default function SubmitContent() {
@@ -389,6 +398,11 @@ export default function SubmitContent() {
     setEventMapLink("");
     setEventLinks([]);
     setFlyerText("");
+    setEventRegion("Tel-Aviv");
+    setEventLanguage("he");
+    setEventCost("Paid");
+    setEventAccess("Open");
+    setEventRecurrence("one-time");
   };
 
   const clearOrganizerForm = () => {

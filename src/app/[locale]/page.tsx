@@ -141,7 +141,13 @@ export default function Home() {
       }
     }
     // Language
-    if (selectedLanguage !== "all" && e.language !== selectedLanguage) return false;
+    if (selectedLanguage !== "all") {
+      if (selectedLanguage === "other") {
+        if (e.language === "he" || e.language === "en" || e.language === "he/en") return false;
+      } else {
+        if (!e.language || !e.language.toLowerCase().includes(selectedLanguage)) return false;
+      }
+    }
     // Cost
     if (selectedCost !== "all" && e.cost !== selectedCost) return false;
     // Access

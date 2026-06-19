@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createSubmission, getOrganizers, FirestoreOrganizer, approveSubmission } from "@/lib/db";
+import { convertJerusalemLocalToUtc } from "@/lib/date-utils";
 import Header from "@/components/Header";
 import {
   Sparkles,
@@ -232,8 +233,8 @@ export default function SubmitContent() {
           organizerId: eventOrganizerId || undefined,
           organizerName: selectedOrg ? selectedOrg.name : eventOrganizerString || "Unknown",
           description: eventDescription,
-          time: new Date(eventTime).getTime(),
-          endTime: eventEndTime ? new Date(eventEndTime).getTime() : undefined,
+          time: convertJerusalemLocalToUtc(eventTime),
+          endTime: eventEndTime ? convertJerusalemLocalToUtc(eventEndTime) : undefined,
           recurrence: eventRecurrence,
           location: eventLocation,
           mapLink: eventMapLink || undefined,

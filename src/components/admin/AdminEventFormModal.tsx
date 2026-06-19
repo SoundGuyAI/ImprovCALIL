@@ -5,6 +5,8 @@ import { X, Plus, Trash2, Link as LinkIcon } from "lucide-react";
 import { FirestoreEvent, FirestoreOrganizer, EventLink } from "@/lib/db";
 import { useTranslations } from "next-intl";
 
+import { convertJerusalemLocalToUtc, convertUtcToJerusalemLocal } from "@/lib/date-utils";
+
 interface AdminEventFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -89,15 +91,11 @@ export default function AdminEventFormModal({
   if (!isOpen) return null;
 
   const toDatetimeLocal = (ts?: number) => {
-    if (!ts) return "";
-    const d = new Date(ts);
-    if (isNaN(d.getTime())) return "";
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return convertUtcToJerusalemLocal(ts);
   };
 
   const fromDatetimeLocal = (str: string) => {
-    return new Date(str).getTime();
+    return convertJerusalemLocalToUtc(str);
   };
 
   const handleChange = (

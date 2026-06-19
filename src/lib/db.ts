@@ -893,7 +893,8 @@ export async function approveSubmission(id: string): Promise<void> {
         }
       }
 
-      const { isUpdateProposal, ...cleanData } = sData.data;
+      const cleanData = { ...sData.data };
+      delete cleanData.isUpdateProposal;
 
       batch.set(
         organizerRef,

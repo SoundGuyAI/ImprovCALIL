@@ -22,7 +22,8 @@ export async function POST(request: Request) {
   try {
     const profile = await getCurrentProfile();
     const devBypass =
-      (process.env.NODE_ENV === "development" || process.env.ALLOW_DEV_BYPASS === "true") &&
+      process.env.NODE_ENV === "development" &&
+      process.env.ALLOW_DEV_BYPASS === "true" &&
       process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
     if (!devBypass && !isUserAdmin(profile)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

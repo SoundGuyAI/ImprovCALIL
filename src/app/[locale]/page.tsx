@@ -141,11 +141,11 @@ const getExpandedEvents = (
         }
 
         if (event.recurrence === "daily") {
-          current.setDate(current.getDate() + 1);
+          current.setTime(current.getTime() + 86400000);
         } else if (event.recurrence === "weekly") {
-          current.setDate(current.getDate() + 7);
+          current.setTime(current.getTime() + 604800000);
         } else if (event.recurrence === "bi-weekly") {
-          current.setDate(current.getDate() + 14);
+          current.setTime(current.getTime() + 1209600000);
         } else if (event.recurrence === "monthly") {
           const targetMonth = current.getMonth() + 1;
           // Use the Jerusalem-timezone day of the original event to anchor

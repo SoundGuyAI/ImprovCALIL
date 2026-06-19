@@ -84,3 +84,58 @@ export function convertUtcToJerusalemLocal(ts?: number): string {
 
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
+
+/**
+ * Formats a UTC Unix timestamp into a datetime-local input value using the
+ * browser's local timezone (for <input type="datetime-local"> display).
+ */
+export function convertUtcToBrowserDatetimeLocal(ts?: number): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "";
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hour = String(d.getHours()).padStart(2, "0");
+  const minute = String(d.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+/**
+ * Parses a datetime-local input value (browser local wall time) into UTC ms.
+ */
+export function convertBrowserDatetimeLocalToUtc(localStr: string): number {
+  if (!localStr) return 0;
+  const match = localStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) {
+    const fallback = new Date(localStr).getTime();
+    return isNaN(fallback) ? 0 : fallback;
+  }
+  const [, yearStr, monthStr, dayStr, hourStr, minuteStr] = match;
+  const time = new Date(
+    parseInt(yearStr, 10),
+    parseInt(monthStr, 10) - 1,
+    parseInt(dayStr, 10),
+    parseInt(hourStr, 10),
+    parseInt(minuteStr, 10)
+  ).getTime();
+  return isNaN(time) ? 0 : time;
+}
+
+/** Converts a datetime-local picker value to a Jerusalem wall-clock string. */
+export function browserDatetimeLocalToJerusalemLocal(browserStr: string): string {
+  if (!browserStr) return "";
+  const utc = convertBrowserDatetimeLocalToUtc(browserStr);
+  if (!utc) return "";
+  return convertUtcToJerusalemLocal(utc);
+}
+
+/** Converts a Jerusalem wall-clock string to a datetime-local picker value. */
+export function jerusalemLocalToBrowserDatetimeLocal(jerusalemStr: string): string {
+  if (!jerusalemStr) return "";
+  const utc = convertJerusalemLocalToUtc(jerusalemStr);
+  if (!utc) return "";
+  return convertUtcToBrowserDatetimeLocal(utc);
+}

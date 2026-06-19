@@ -5,7 +5,12 @@ import { X, Plus, Trash2, Link as LinkIcon } from "lucide-react";
 import { FirestoreEvent, FirestoreOrganizer, EventLink } from "@/lib/db";
 import { useTranslations } from "next-intl";
 
-import { convertJerusalemLocalToUtc, convertUtcToJerusalemLocal } from "@/lib/date-utils";
+import {
+  browserDatetimeLocalToJerusalemLocal,
+  convertJerusalemLocalToUtc,
+  convertUtcToJerusalemLocal,
+  jerusalemLocalToBrowserDatetimeLocal,
+} from "@/lib/date-utils";
 
 interface AdminEventFormModalProps {
   isOpen: boolean;
@@ -91,11 +96,11 @@ export default function AdminEventFormModal({
   if (!isOpen) return null;
 
   const toDatetimeLocal = (ts?: number) => {
-    return convertUtcToJerusalemLocal(ts);
+    return jerusalemLocalToBrowserDatetimeLocal(convertUtcToJerusalemLocal(ts));
   };
 
   const fromDatetimeLocal = (str: string) => {
-    return convertJerusalemLocalToUtc(str);
+    return convertJerusalemLocalToUtc(browserDatetimeLocalToJerusalemLocal(str));
   };
 
   const handleChange = (
@@ -333,14 +338,21 @@ export default function AdminEventFormModal({
                   onChange={handleChange}
                   className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:outline-none focus:border-indigo-500"
                 >
-                  {["Tel-Aviv", "Jerusalem", "Haifa", "Hasharon", "North", "South", "Other"].map(
-                    (r) => (
-                      <option key={r} value={r}>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {tRegions(r as any) || r}
-                      </option>
-                    )
-                  )}
+                  {[
+                    "Tel-Aviv",
+                    "Jerusalem",
+                    "Beer-Sheva",
+                    "Haifa",
+                    "Hasharon",
+                    "North",
+                    "South",
+                    "Other",
+                  ].map((r) => (
+                    <option key={r} value={r}>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {tRegions(r as any) || r}
+                    </option>
+                  ))}
                 </select>
               </div>
 

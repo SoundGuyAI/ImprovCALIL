@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createSubmission, getOrganizers, FirestoreOrganizer, approveSubmission } from "@/lib/db";
-import { convertJerusalemLocalToUtc } from "@/lib/date-utils";
+import {
+  browserDatetimeLocalToJerusalemLocal,
+  convertJerusalemLocalToUtc,
+  convertUtcToJerusalemLocal,
+  jerusalemLocalToBrowserDatetimeLocal,
+} from "@/lib/date-utils";
 import Header from "@/components/Header";
 import {
   Sparkles,
@@ -47,7 +52,9 @@ export default function SubmitContent() {
     setPublishing(true);
     setPublishError(null);
     try {
-      await Promise.all(lastSubmissionIds.map((id) => approveSubmission(id)));
+      for (const id of lastSubmissionIds) {
+        await approveSubmission(id);
+      }
       setPublished(true);
     } catch (err: unknown) {
       console.error("Failed to approve immediately:", err);
@@ -213,10 +220,8 @@ export default function SubmitContent() {
       setEventCost(cost);
       setEventLanguage(lang);
       setEventRegion(region);
-      const futureDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-      const tzOffset = futureDate.getTimezoneOffset() * 60000;
-      const localISOTime = new Date(futureDate.getTime() - tzOffset).toISOString().slice(0, 16);
-      setEventTime(localISOTime); // 3 days in future (local timezone)
+      const futureUtc = Date.now() + 3 * 24 * 60 * 60 * 1000;
+      setEventTime(convertUtcToJerusalemLocal(futureUtc));
 
       setAiParsing(false);
       setActiveTab("event"); // Switch to review form
@@ -563,8 +568,10 @@ export default function SubmitContent() {
                 <input
                   type="datetime-local"
                   required
-                  value={eventTime}
-                  onChange={(e) => setEventTime(e.target.value)}
+                  value={jerusalemLocalToBrowserDatetimeLocal(eventTime)}
+                  onChange={(e) =>
+                    setEventTime(browserDatetimeLocalToJerusalemLocal(e.target.value))
+                  }
                   className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                 />
               </div>
@@ -576,8 +583,10 @@ export default function SubmitContent() {
                 </label>
                 <input
                   type="datetime-local"
-                  value={eventEndTime}
-                  onChange={(e) => setEventEndTime(e.target.value)}
+                  value={jerusalemLocalToBrowserDatetimeLocal(eventEndTime)}
+                  onChange={(e) =>
+                    setEventEndTime(browserDatetimeLocalToJerusalemLocal(e.target.value))
+                  }
                   className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                 />
               </div>

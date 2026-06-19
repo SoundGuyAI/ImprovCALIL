@@ -195,8 +195,7 @@ async function main() {
     if (
       !projectId.includes("dev") &&
       !projectId.includes("staging") &&
-      !projectId.includes("test") &&
-      !projectId.includes("il")
+      !projectId.includes("test")
     ) {
       console.error(
         `Safety Error: DB cleanup blocked on project ${projectId} to prevent production data loss.`

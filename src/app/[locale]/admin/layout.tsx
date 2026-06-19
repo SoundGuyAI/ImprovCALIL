@@ -8,7 +8,8 @@ import { AdminClientGate } from "@/components/admin/AdminClientGate";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const profile = await getCurrentProfile();
   const devBypass =
-    (process.env.NODE_ENV === "development" || process.env.ALLOW_DEV_BYPASS === "true") &&
+    process.env.NODE_ENV === "development" &&
+    process.env.ALLOW_DEV_BYPASS === "true" &&
     process.env.NEXT_PUBLIC_ADMIN_DEV_UID === "admin-test";
   const isAdmin = devBypass || isUserAdmin(profile);
 

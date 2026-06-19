@@ -249,6 +249,7 @@ export default function AdminConsole() {
   // 6. Ingestion Simulator trigger
   const runIngestionSim = () => {
     if (!simText.trim()) return;
+    if (simTimerRef.current !== null) clearTimeout(simTimerRef.current);
     setSimulating(true);
     setSimSuccess(false);
 

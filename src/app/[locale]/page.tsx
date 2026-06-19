@@ -293,21 +293,6 @@ export default function Home() {
     load();
   }, []);
 
-  const featuredEvents = events.filter((e) => e.featured && !e.hidden);
-
-  // Clamp index so it never goes out of bounds if the featured list shrinks
-  const safeFeaturedIndex = featuredEvents.length > 0 ? featuredIndex % featuredEvents.length : 0;
-
-  const nextFeatured = () => {
-    if (featuredEvents.length === 0) return;
-    setFeaturedIndex((prev) => (prev + 1) % featuredEvents.length);
-  };
-
-  const prevFeatured = () => {
-    if (featuredEvents.length === 0) return;
-    setFeaturedIndex((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length);
-  };
-
   // Filter Logic
   const filteredEvents = useMemo(
     () =>
@@ -478,6 +463,38 @@ export default function Home() {
     },
     [getStartOfWeek]
   );
+
+  const featuredEvents = useMemo(() => {
+    const rawFeatured = events.filter((e) => e.featured && !e.hidden);
+    const now = Date.now();
+    return rawFeatured.map((raw) => {
+      const occurrences = getExpandedEvents(
+        [raw],
+        "list",
+        new Date(),
+        getStartOfWeek,
+        getMonthDaysGrid
+      );
+      const upcoming = occurrences.filter((e) => e.time >= now).sort((a, b) => a.time - b.time);
+      if (upcoming.length > 0) return upcoming[0];
+      const past = occurrences.filter((e) => e.time < now).sort((a, b) => b.time - a.time);
+      if (past.length > 0) return past[0];
+      return raw;
+    });
+  }, [events, getStartOfWeek, getMonthDaysGrid]);
+
+  // Clamp index so it never goes out of bounds if the featured list shrinks
+  const safeFeaturedIndex = featuredEvents.length > 0 ? featuredIndex % featuredEvents.length : 0;
+
+  const nextFeatured = () => {
+    if (featuredEvents.length === 0) return;
+    setFeaturedIndex((prev) => (prev + 1) % featuredEvents.length);
+  };
+
+  const prevFeatured = () => {
+    if (featuredEvents.length === 0) return;
+    setFeaturedIndex((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length);
+  };
 
   const displayEvents = useMemo(
     () =>

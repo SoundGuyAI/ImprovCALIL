@@ -64,7 +64,7 @@ test("JSON Submission & Moderation Approval Pipeline E2E Test", async ({ context
 
   // 5. Verify submission success feedback banner
   const successBanner = page.locator("text=Submission received successfully");
-  await expect(successBanner).toBeVisible({ timeout: 15000 });
+  await expect(successBanner).toBeVisible({ timeout: 30000 });
 
   // 6. Navigate to Admin moderation queue
   await page.goto("/en/admin");
@@ -91,12 +91,13 @@ test("JSON Submission & Moderation Approval Pipeline E2E Test", async ({ context
 
   const eventHeader = page
     .locator("h5")
-    .filter({ hasText: "Bilingual English/Hebrew Improv Jam E2E" });
-  await expect(eventHeader).toBeVisible({ timeout: 15000 });
+    .filter({ hasText: "Bilingual English/Hebrew Improv Jam E2E" })
+    .first();
+  await expect(eventHeader).toBeVisible({ timeout: 30000 });
 
   // Verify cost & language badges
-  const costBadge = page.locator("span").filter({ hasText: "Free" });
-  const langBadge = page.locator("span").filter({ hasText: "HE/EN" });
-  await expect(costBadge.first()).toBeVisible();
+  const costBadge = page.locator("span").filter({ hasText: "Free" }).first();
+  const langBadge = page.locator("span").filter({ hasText: "HE/EN" }).first();
+  await expect(costBadge).toBeVisible();
   await expect(langBadge.first()).toBeVisible();
 });

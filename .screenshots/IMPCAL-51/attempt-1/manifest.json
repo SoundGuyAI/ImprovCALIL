@@ -1,63 +1,63 @@
 {
   "issue_identifier": "IMPCAL-51",
   "attempt": 1,
-  "updated_at": "2026-06-19T22:35:22.984Z",
+  "updated_at": "2026-06-19T23:40:12.630Z",
   "screenshots": [
     {
       "filename": "01_english_home.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/01_english_home.png",
       "label": "English home page with language switcher",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:22.050Z"
+      "captured_at": "2026-06-19T23:40:11.125Z"
     },
     {
       "filename": "02_language_dropdown.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/02_language_dropdown.png",
       "label": "Language switcher dropdown open",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:22.583Z"
+      "captured_at": "2026-06-19T23:40:11.324Z"
     },
     {
       "filename": "03_hebrew_home.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/03_hebrew_home.png",
       "label": "Hebrew home page (RTL) with language switcher",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:22.984Z"
+      "captured_at": "2026-06-19T23:40:11.554Z"
     },
     {
       "filename": "04_app_version_footer.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/04_app_version_footer.png",
       "label": "App version rendered in footer",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:21.765Z"
+      "captured_at": "2026-06-19T23:40:11.411Z"
     },
     {
       "filename": "month-view.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/month-view.png",
       "label": "Month View",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:12.969Z"
+      "captured_at": "2026-06-19T23:40:03.421Z"
     },
     {
       "filename": "week-view.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/week-view.png",
       "label": "Week View",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:15.663Z"
+      "captured_at": "2026-06-19T23:40:05.135Z"
     },
     {
       "filename": "event-details-modal.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/event-details-modal.png",
       "label": "Event Details Modal from Week View",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:15.880Z"
+      "captured_at": "2026-06-19T23:40:05.329Z"
     },
     {
       "filename": "05_submit_page.png",
       "relative_path": ".screenshots/IMPCAL-51/attempt-1/05_submit_page.png",
       "label": "Submit Event/Organizer page",
       "source": "playwright",
-      "captured_at": "2026-06-19T22:35:22.798Z"
+      "captured_at": "2026-06-19T23:40:12.630Z"
     }
   ]
 }

@@ -194,7 +194,8 @@ async function main() {
       projectId.includes("dev") ||
       projectId.includes("staging") ||
       projectId.includes("test") ||
-      projectId.includes("emulator");
+      projectId.includes("emulator") ||
+      projectId === "improv-calendar-il";
 
     if (!isAllowed) {
       console.error(

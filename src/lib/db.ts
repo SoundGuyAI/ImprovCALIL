@@ -810,17 +810,35 @@ export async function getPendingSubmissions(): Promise<FirestoreSubmission[]> {
 }
 
 // 7. Approve and Publish Submission
-export async function approveSubmissionsBatch(ids: string[]): Promise<void> {
+export interface ApproveSubmissionsBatchResult {
+  approved: string[];
+  failed: { id: string; error: string }[];
+}
+
+export async function approveSubmissionsBatch(
+  ids: string[]
+): Promise<ApproveSubmissionsBatchResult> {
   if (isMock) {
     console.log("[Mock] Batch approving submissions:", ids);
-    return;
+    return { approved: ids, failed: [] };
   }
 
-  if (ids.length === 0) return;
+  if (ids.length === 0) return { approved: [], failed: [] };
+
+  const approved: string[] = [];
+  const failed: { id: string; error: string }[] = [];
 
   for (const id of ids) {
-    await approveSubmission(id);
+    try {
+      await approveSubmission(id);
+      approved.push(id);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : String(err);
+      failed.push({ id, error });
+    }
   }
+
+  return { approved, failed };
 }
 
 export async function approveSubmission(id: string): Promise<void> {

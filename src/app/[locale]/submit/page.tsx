@@ -26,8 +26,36 @@ import {
   Plus,
   Code,
 } from "lucide-react";
+import { getIdToken, signInWithCustomToken } from "firebase/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { auth, isConfigMissing, isMock } from "@/lib/firebase";
 import { isUserAdmin } from "@/lib/permissions";
+
+async function ensureFirebaseAdminAuth(): Promise<void> {
+  if (isConfigMissing || !auth || isMock) return;
+
+  if (auth.currentUser) {
+    await getIdToken(auth.currentUser, true);
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch("/api/auth/custom-token", {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error("Unable to restore Firebase authentication for admin actions.");
+    }
+    const data = (await response.json()) as { customToken: string };
+    const credential = await signInWithCustomToken(auth, data.customToken);
+    await credential.user.getIdToken(true);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 const REGION_KEYS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
 const ORGANIZER_TYPE_KEYS = ["Group", "School", "Theater", "Other"];
@@ -57,8 +85,28 @@ export default function SubmitContent() {
     setPublishing(true);
     setPublishError(null);
     try {
-      await approveSubmissionsBatch(lastSubmissionIds);
-      setPublished(true);
+      await ensureFirebaseAdminAuth();
+      const result = await approveSubmissionsBatch(lastSubmissionIds);
+      if (result.failed.length === 0) {
+        setPublished(true);
+        return;
+      }
+      if (result.approved.length > 0) {
+        setLastSubmissionIds(result.failed.map((item) => item.id));
+        const failedSummary = result.failed.map((item) => `${item.id}: ${item.error}`).join("; ");
+        setPublishError(
+          locale === "he"
+            ? `אושרו ${result.approved.length} מתוך ${lastSubmissionIds.length}. כשלו: ${failedSummary}`
+            : `Approved ${result.approved.length} of ${lastSubmissionIds.length}. Failed: ${failedSummary}`
+        );
+        return;
+      }
+      const failedSummary = result.failed.map((item) => `${item.id}: ${item.error}`).join("; ");
+      setPublishError(
+        locale === "he"
+          ? `שגיאה באישור מיידי: ${failedSummary}`
+          : `Failed to approve immediately: ${failedSummary}`
+      );
     } catch (err: unknown) {
       console.error("Failed to approve immediately:", err);
       const msg = err instanceof Error ? err.message : String(err);

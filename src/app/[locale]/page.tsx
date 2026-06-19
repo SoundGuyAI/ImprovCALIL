@@ -496,7 +496,11 @@ export default function Home() {
 
   const getMonthLabel = (): string => {
     const localeStr = locale === "he" ? "he-IL" : "en-US";
-    return currentDate.toLocaleDateString(localeStr, { month: "long", year: "numeric" });
+    return currentDate.toLocaleDateString(localeStr, {
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jerusalem",
+    });
   };
 
   // Group events by day for list view

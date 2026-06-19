@@ -23,6 +23,7 @@ function shouldGrantAdminClaim(profileIsAdmin: boolean | undefined, uid: string)
   }
   return (
     (process.env.NODE_ENV === "development" || process.env.IS_LOCAL_TEST_ENV === "true") &&
+    process.env.ALLOW_DEV_BYPASS === "true" &&
     process.env.NEXT_PUBLIC_ADMIN_DEV_UID === uid
   );
 }

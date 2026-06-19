@@ -6,7 +6,6 @@ import {
   createSubmission,
   getOrganizers,
   FirestoreOrganizer,
-  approveSubmission,
   approveSubmissionsBatch,
 } from "@/lib/db";
 import {

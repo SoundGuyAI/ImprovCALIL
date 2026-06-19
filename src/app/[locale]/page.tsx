@@ -481,10 +481,15 @@ export default function Home() {
 
   const getWeekRangeLabel = (): string => {
     const start = getStartOfWeek(currentDate);
-    const end = new Date(start.getTime());
-    end.setDate(end.getDate() + 6);
+    const endYmd = addJerusalemCalendarDays(start, 6);
+    const end = jerusalemToDate(endYmd.year, endYmd.month, endYmd.day, 0, 0);
 
-    const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+    const options: Intl.DateTimeFormatOptions = {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Jerusalem",
+    };
     const localeStr = locale === "he" ? "he-IL" : "en-US";
     return `${start.toLocaleDateString(localeStr, options)} - ${end.toLocaleDateString(localeStr, options)}`;
   };

@@ -137,7 +137,26 @@ const getExpandedEvents = (
             0,
             Math.floor((startRange.getTime() - current.getTime()) / stepMs) - 1
           );
-          current.setTime(current.getTime() + stepsToSkip * stepMs);
+          if (stepsToSkip > 0) {
+            const daysToSkip =
+              event.recurrence === "daily"
+                ? stepsToSkip
+                : event.recurrence === "weekly"
+                  ? stepsToSkip * 7
+                  : stepsToSkip * 14;
+            const origParts = getJerusalemParts(eventStart);
+            const currentParts = getJerusalemParts(current);
+            const d = new Date(
+              Date.UTC(currentParts.year, currentParts.month, currentParts.day + daysToSkip)
+            );
+            current = jerusalemToDate(
+              d.getUTCFullYear(),
+              d.getUTCMonth(),
+              d.getUTCDate(),
+              origParts.hour,
+              origParts.minute
+            );
+          }
         } else if (event.recurrence === "monthly") {
           const startParts = getJerusalemParts(startRange);
           const currentParts = getJerusalemParts(current);

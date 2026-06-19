@@ -136,7 +136,15 @@
     "parsing": "AI is analyzing text and extracting event details...",
     "parsedFields": "AI Extracted Fields (Review and edit before submitting)",
     "submitJson": "Submit JSON",
-    "submittingJson": "Submitting JSON..."
+    "submittingJson": "Submitting JSON...",
+    "subtitle": "Submit upcoming events or listing proposals. Content will be published immediately after quick admin moderation.",
+    "adminPublishNotice": "You are logged in as an administrator. You can approve and publish this submission directly to the calendar.",
+    "approveImmediateError": "Failed to approve immediately: ",
+    "approveBatchResult": "Approved {approved} of {total}. Failed: {failed}",
+    "jsonPartialError": "Some events failed to submit: ",
+    "selectOrganizer": "-- Choose from Directory --",
+    "regionLabel": "Region",
+    "recurrenceLabel": "Recurrence"
   },
   "Admin": {
     "title": "Admin Moderation Console",
@@ -164,7 +172,24 @@
     "toggleFeatured": "Toggle Featured Status",
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
-    "statusPending": "Pending"
+    "statusPending": "Pending",
+    "subtitle": "Moderate community calendars, reference indexes, and review crowd-sourced submissions.",
+    "systemSettings": "System Settings",
+    "settingsSaveError": "Failed to save settings. Please try again.",
+    "approvalFailed": "Approval failed: ",
+    "rejectionFailed": "Rejection failed: ",
+    "deleteConfirm": "Are you sure you want to permanently delete this record?",
+    "aiPipelineTitle": "AI Ingestion Pipeline Overview",
+    "aiPipelineDesc": "This ecosystem integrates with scrape engines in WhatsApp groups and Telegram chats. Raw texts are structured using LLMs (Gemini), converting unstructured flyers into events, complete with maps, recurrence, and typed social links, pending admin one-click publish.",
+    "proposedChanges": "Proposed Changes (Edit Request)",
+    "liveVersion": "Live Version",
+    "proposedVersion": "Proposed Version",
+    "addEvent": "Add Event",
+    "eventCol": "Event",
+    "organizerCol": "Organizer",
+    "regionCol": "Region",
+    "typeCol": "Type",
+    "editBtn": "Edit"
   },
   "auth": {
     "profileMenu": {

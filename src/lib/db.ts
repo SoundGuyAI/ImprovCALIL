@@ -1103,7 +1103,10 @@ export async function updateEvent(
     if ("endTime" in eventData && eventData.endTime === undefined) {
       payload.endTime = deleteField();
     }
-    if ("mapLink" in eventData && eventData.mapLink === undefined) {
+    if (
+      "mapLink" in eventData &&
+      (eventData.mapLink === undefined || eventData.mapLink === "")
+    ) {
       payload.mapLink = deleteField();
     }
     batch.update(eventRef, payload);

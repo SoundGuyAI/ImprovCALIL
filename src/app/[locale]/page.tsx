@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { convertJerusalemLocalToUtc } from "@/lib/date-utils";
 import { getEvents, FirestoreEvent, normalizeRegion } from "@/lib/db";
 import Header from "@/components/Header";
 import {
@@ -26,7 +27,16 @@ import {
   CalendarRange,
 } from "lucide-react";
 
-const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
+const REGIONS = [
+  "Tel-Aviv",
+  "Jerusalem",
+  "Beer-Sheva",
+  "Haifa",
+  "Hasharon",
+  "North",
+  "South",
+  "Other areas",
+];
 const EVENT_TYPES = ["Show", "Jam", "Workshop", "Festival", "Other"];
 
 const getJerusalemParts = (date: Date) => {
@@ -50,6 +60,24 @@ const getJerusalemParts = (date: Date) => {
   };
 };
 
+const jerusalemToDate = (
+  year: number,
+  month: number,
+  day: number,
+  hour = 0,
+  minute = 0
+): Date => {
+  const localStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  return new Date(convertJerusalemLocalToUtc(localStr));
+};
+
+const addJerusalemCalendarDays = (date: Date, days: number) => {
+  const p = getJerusalemParts(date);
+  const d = new Date(Date.UTC(p.year, p.month, p.day));
+  d.setUTCDate(d.getUTCDate() + days);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: d.getUTCDate() };
+};
+
 const getExpandedEvents = (
   rawEvents: FirestoreEvent[],
   view: "list" | "week" | "month",
@@ -61,14 +89,13 @@ const getExpandedEvents = (
   let endRange: Date;
 
   if (view === "list") {
-    // 30 days in the past to 90 days in the future
-    startRange = new Date(anchorDate.getTime());
-    startRange.setDate(startRange.getDate() - 30);
-    startRange.setHours(0, 0, 0, 0);
-
-    endRange = new Date(anchorDate.getTime());
-    endRange.setDate(endRange.getDate() + 90);
-    endRange.setHours(23, 59, 59, 999);
+    // 30 days in the past to 90 days in the future (Jerusalem calendar days)
+    const startYmd = addJerusalemCalendarDays(anchorDate, -30);
+    const endYmd = addJerusalemCalendarDays(anchorDate, 90);
+    startRange = jerusalemToDate(startYmd.year, startYmd.month, startYmd.day, 0, 0);
+    endRange = new Date(
+      jerusalemToDate(endYmd.year, endYmd.month, endYmd.day, 0, 0).getTime() + 86400000 - 1
+    );
   } else if (view === "week") {
     startRange = getStartOfWeekFn(anchorDate);
     endRange = new Date(startRange.getTime());
@@ -117,11 +144,29 @@ const getExpandedEvents = (
           );
           current.setTime(current.getTime() + stepsToSkip * stepMs);
         } else if (event.recurrence === "monthly") {
+          const startParts = getJerusalemParts(startRange);
+          const currentParts = getJerusalemParts(current);
           const monthsApart =
-            (startRange.getFullYear() - current.getFullYear()) * 12 +
-            (startRange.getMonth() - current.getMonth());
+            (startParts.year - currentParts.year) * 12 +
+            (startParts.month - currentParts.month);
           const monthsToSkip = Math.max(0, monthsApart - 2);
-          if (monthsToSkip > 0) current.setMonth(current.getMonth() + monthsToSkip);
+          if (monthsToSkip > 0) {
+            let targetMonth = currentParts.month + monthsToSkip;
+            let targetYear = currentParts.year;
+            while (targetMonth > 11) {
+              targetMonth -= 12;
+              targetYear += 1;
+            }
+            const origDay = getJerusalemParts(eventStart).day;
+            const daysInMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+            current = jerusalemToDate(
+              targetYear,
+              targetMonth,
+              Math.min(origDay, daysInMonth),
+              currentParts.hour,
+              currentParts.minute
+            );
+          }
         }
       }
 
@@ -147,14 +192,22 @@ const getExpandedEvents = (
         } else if (event.recurrence === "bi-weekly") {
           current.setTime(current.getTime() + 1209600000);
         } else if (event.recurrence === "monthly") {
-          const targetMonth = current.getMonth() + 1;
-          // Use the Jerusalem-timezone day of the original event to anchor
-          // monthly recurrence correctly regardless of the browser's local timezone.
+          const parts = getJerusalemParts(current);
           const origDay = getJerusalemParts(eventStart).day;
-          current.setDate(1);
-          current.setMonth(targetMonth);
-          const daysInMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
-          current.setDate(Math.min(origDay, daysInMonth));
+          let targetMonth = parts.month + 1;
+          let targetYear = parts.year;
+          if (targetMonth > 11) {
+            targetMonth = 0;
+            targetYear += 1;
+          }
+          const daysInMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+          current = jerusalemToDate(
+            targetYear,
+            targetMonth,
+            Math.min(origDay, daysInMonth),
+            parts.hour,
+            parts.minute
+          );
         }
       }
     }

@@ -156,11 +156,7 @@ export default function AdminConsole() {
     } catch (err) {
       console.error(err);
       setAllowAnonymous(persistedAllowAnonymous);
-      setSettingsError(
-        locale === "he"
-          ? "שמירת ההגדרות נכשלה. נסו שוב."
-          : "Failed to save settings. Please try again."
-      );
+      setSettingsError(tAdmin("settingsSaveError"));
     } finally {
       setSavingSettings(false);
     }
@@ -175,9 +171,7 @@ export default function AdminConsole() {
     } catch (err) {
       console.error(err);
       setModerationError(
-        locale === "he"
-          ? "האישור נכשל. נסו שוב."
-          : `Approval failed: ${err instanceof Error ? err.message : "Unknown error"}`
+        `${tAdmin("approvalFailed")} ${err instanceof Error ? err.message : "Unknown error"}`
       );
     }
   };
@@ -190,9 +184,7 @@ export default function AdminConsole() {
     } catch (err) {
       console.error(err);
       setModerationError(
-        locale === "he"
-          ? "הדחייה נכשלה. נסו שוב."
-          : `Rejection failed: ${err instanceof Error ? err.message : "Unknown error"}`
+        `${tAdmin("rejectionFailed")} ${err instanceof Error ? err.message : "Unknown error"}`
       );
     }
   };
@@ -223,14 +215,7 @@ export default function AdminConsole() {
 
   // 4. Delete record
   const handleDelete = async (collectionName: "events" | "organizers", id: string) => {
-    if (
-      !confirm(
-        locale === "he"
-          ? "האם אתה בטוח שברצונך למחוק לצמיתות רשומה זו?"
-          : "Are you sure you want to permanently delete this record?"
-      )
-    )
-      return;
+    if (!confirm(tAdmin("deleteConfirm"))) return;
     try {
       await deleteRecord(collectionName, id);
       await refreshData();
@@ -349,11 +334,7 @@ export default function AdminConsole() {
             <ShieldCheck className="w-8 h-8 text-indigo-400" />
             <span>{tAdmin("title")}</span>
           </h1>
-          <p className="text-zinc-400 text-sm">
-            {locale === "he"
-              ? "נהלו את לוח האירועים, אינדקס המארגנים ואשרו הגשות חדשות מהקהילה."
-              : "Moderate community calendars, reference indexes, and review crowd-sourced submissions."}
-          </p>
+          <p className="text-zinc-400 text-sm">{tAdmin("subtitle")}</p>
         </div>
 
         {/* TABS HEADER */}
@@ -366,7 +347,7 @@ export default function AdminConsole() {
             { id: "simulator", label: tAdmin("simulator"), icon: Bot },
             {
               id: "settings",
-              label: locale === "he" ? "הגדרות מערכת" : "System Settings",
+              label: tAdmin("systemSettings"),
               icon: Settings,
             },
           ].map((tab) => {
@@ -440,12 +421,10 @@ export default function AdminConsole() {
             {/* Ingestion Overview */}
             <div className="glass-card rounded-2xl p-6 border border-zinc-900 flex flex-col gap-3">
               <h3 className="text-md font-bold text-white uppercase">
-                {locale === "he" ? "צינור קליטה מבוסס AI" : "AI Ingestion Pipeline Overview"}
+                {tAdmin("aiPipelineTitle")}
               </h3>
               <p className="text-xs text-zinc-400 leading-relaxed max-w-3xl">
-                {locale === "he"
-                  ? "מערכת זו משתלבת עם קבוצות וואטסאפ ובוט טלגרם. הודעות טקסט חופשיות נשלחות לעיבוד ב-Gemini ומחולצות אוטומטית לשדות מובנים (כמו מיקום, שפה, שעה). לאחר מכן הן מתווספות לתור האישורים כממתינות לבקרה ידנית."
-                  : "This ecosystem integrates with scrape engines in WhatsApp groups and Telegram chats. Raw texts are structured using LLMs (Gemini), converting unstructured flyers into events, complete with maps, recurrence, and typed social links, pending admin one-click publish."}
+                {tAdmin("aiPipelineDesc")}
               </p>
             </div>
           </div>
@@ -517,15 +496,13 @@ export default function AdminConsole() {
                             return (
                               <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
                                 <h4 className="text-xs font-extrabold uppercase text-indigo-400">
-                                  {locale === "he"
-                                    ? "השוואת שינויים (הצעת עריכה)"
-                                    : "Proposed Changes (Edit Request)"}
+                                  {tAdmin("proposedChanges")}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
                                   {/* Live version */}
                                   <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-900">
                                     <div className="font-semibold text-zinc-500 mb-2 uppercase text-[9px] tracking-wider">
-                                      {locale === "he" ? "נוכחי באתר" : "Live Version"}
+                                      {tAdmin("liveVersion")}
                                     </div>
                                     {(() => {
                                       const original =
@@ -560,7 +537,7 @@ export default function AdminConsole() {
                                   {/* Proposed version */}
                                   <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-900/30">
                                     <div className="font-semibold text-indigo-400 mb-2 uppercase text-[9px] tracking-wider">
-                                      {locale === "he" ? "הצעת שינוי" : "Proposed Version"}
+                                      {tAdmin("proposedVersion")}
                                     </div>
                                     <div className="flex flex-col gap-1 text-zinc-300">
                                       <div>
@@ -623,7 +600,7 @@ export default function AdminConsole() {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-500 bg-indigo-500/10 text-white text-xs font-bold transition-all cursor-pointer hover:bg-indigo-500/20"
                 >
                   <Plus className="w-4 h-4" />
-                  {locale === "he" ? "הוסף אירוע" : "Add Event"}
+                  {tAdmin("addEvent")}
                 </button>
                 <button
                   onClick={() => setShowHidden(!showHidden)}
@@ -654,13 +631,13 @@ export default function AdminConsole() {
                 <thead className="text-xs uppercase bg-zinc-950 text-zinc-500 border-b border-zinc-900">
                   <tr>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "אירוע" : "Event"}
+                      {tAdmin("eventCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "מארגן" : "Organizer"}
+                      {tAdmin("organizerCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "אזור" : "Region"}
+                      {tAdmin("regionCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
                       Time
@@ -728,7 +705,7 @@ export default function AdminConsole() {
                               setIsEventModalOpen(true);
                             }}
                             className="p-1.5 rounded bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer"
-                            title={locale === "he" ? "ערוך" : "Edit"}
+                            title={tAdmin("editBtn")}
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
@@ -794,13 +771,13 @@ export default function AdminConsole() {
                 <thead className="text-xs uppercase bg-zinc-950 text-zinc-500 border-b border-zinc-900">
                   <tr>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "מארגן" : "Organizer"}
+                      {tAdmin("organizerCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "סוג" : "Type"}
+                      {tAdmin("typeCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "אזור" : "Region"}
+                      {tAdmin("regionCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
                       Status
@@ -999,7 +976,7 @@ export default function AdminConsole() {
             <div className="border-b border-zinc-850 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Settings className="w-5 h-5 text-indigo-400" />
-                <span>{locale === "he" ? "הגדרות מערכת" : "System Settings"}</span>
+                <span>{tAdmin("systemSettings")}</span>
               </h2>
               <p className="text-xs text-zinc-400 mt-1">
                 {locale === "he"

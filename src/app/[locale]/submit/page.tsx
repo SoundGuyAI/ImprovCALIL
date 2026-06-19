@@ -101,24 +101,20 @@ export default function SubmitContent() {
         setLastSubmissionIds(result.failed.map((item) => item.id));
         const failedSummary = result.failed.map((item) => `${item.id}: ${item.error}`).join("; ");
         setPublishError(
-          locale === "he"
-            ? `אושרו ${result.approved.length} מתוך ${lastSubmissionIds.length}. כשלו: ${failedSummary}`
-            : `Approved ${result.approved.length} of ${lastSubmissionIds.length}. Failed: ${failedSummary}`
+          tSub("approveBatchResult", {
+            approved: result.approved.length,
+            total: lastSubmissionIds.length,
+            failed: failedSummary,
+          })
         );
         return;
       }
       const failedSummary = result.failed.map((item) => `${item.id}: ${item.error}`).join("; ");
-      setPublishError(
-        locale === "he"
-          ? `שגיאה באישור מיידי: ${failedSummary}`
-          : `Failed to approve immediately: ${failedSummary}`
-      );
+      setPublishError(`${tSub("approveImmediateError")} ${failedSummary}`);
     } catch (err: unknown) {
       console.error("Failed to approve immediately:", err);
       const msg = err instanceof Error ? err.message : String(err);
-      setPublishError(
-        locale === "he" ? `שגיאה באישור מיידי: ${msg}` : `Failed to approve immediately: ${msg}`
-      );
+      setPublishError(`${tSub("approveImmediateError")} ${msg}`);
     } finally {
       setPublishing(false);
     }
@@ -213,10 +209,7 @@ export default function SubmitContent() {
         return;
       }
       if (data.errors && data.errors.length > 0) {
-        setJsonError(
-          (locale === "he" ? "חלק מהאירועים נכשלו בהגשה: " : "Some events failed to submit: ") +
-            data.errors.join("; ")
-        );
+        setJsonError(tSub("jsonPartialError") + data.errors.join("; "));
         if (data.submissionIds && data.submissionIds.length > 0) {
           setSuccess(true);
           setLastSubmissionIds(data.submissionIds);
@@ -442,11 +435,7 @@ export default function SubmitContent() {
       <main className="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-extrabold text-white tracking-tight">{tSub("title")}</h1>
-          <p className="text-zinc-400 text-sm">
-            {locale === "he"
-              ? "הגישו אירועים או מארגנים חדשים ללוח. התכנים יפורסמו באופן מיידי לאחר בקרה ואישור מהירים."
-              : "Submit upcoming events or listing proposals. Content will be published immediately after quick admin moderation."}
-          </p>
+          <p className="text-zinc-400 text-sm">{tSub("subtitle")}</p>
         </div>
 
         {/* TABS NAVBAR */}
@@ -549,11 +538,7 @@ export default function SubmitContent() {
               <div className="mt-2 flex flex-col gap-3">
                 <div className="h-px bg-emerald-500/20 w-full" />
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-xs text-zinc-400">
-                    {locale === "he"
-                      ? "הנך מחובר כמנהל מערכת. באפשרותך לאשר ולפרסם הגשה זו ישירות ללוח האירועים."
-                      : "You are logged in as an administrator. You can approve and publish this submission directly to the calendar."}
-                  </p>
+                  <p className="text-xs text-zinc-400">{tSub("adminPublishNotice")}</p>
                   <button
                     onClick={handleApproveImmediately}
                     disabled={publishing}
@@ -613,7 +598,7 @@ export default function SubmitContent() {
               {/* Region */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "אזור בארץ" : "Region"} *
+                  {tSub("regionLabel")} *
                 </label>
                 <select
                   value={eventRegion}
@@ -694,9 +679,7 @@ export default function SubmitContent() {
                   onChange={(e) => setEventOrganizerId(e.target.value)}
                   className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                 >
-                  <option value="">
-                    {locale === "he" ? "-- בחר מארגן מהאינדקס --" : "-- Choose from Directory --"}
-                  </option>
+                  <option value="">{tSub("selectOrganizer")}</option>
                   {organizers.map((org) => (
                     <option key={org.id} value={org.id}>
                       {org.name}
@@ -772,7 +755,7 @@ export default function SubmitContent() {
 
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "מחזוריות" : "Recurrence"}
+                  {tSub("recurrenceLabel")}
                 </label>
                 <select
                   value={eventRecurrence}
@@ -978,9 +961,7 @@ export default function SubmitContent() {
                     onChange={(e) => setOrgTargetId(e.target.value)}
                     className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                   >
-                    <option value="">
-                      {locale === "he" ? "-- בחר מארגן מהאינדקס --" : "-- Choose from Directory --"}
-                    </option>
+                    <option value="">{tSub("selectOrganizer")}</option>
                     {organizers.map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.name}
@@ -1026,7 +1007,7 @@ export default function SubmitContent() {
               {/* Region */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "אזור מאגר" : "Region"} *
+                  {tSub("regionLabel")} *
                 </label>
                 <select
                   value={orgRegion}
@@ -1044,7 +1025,7 @@ export default function SubmitContent() {
               {/* Languages Supported */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "שפות פעילות" : "Languages"}
+                  {tSub("language")}
                 </label>
                 <div className="flex gap-3 mt-1.5">
                   {["he", "en"].map((lang) => {

@@ -1,12 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { createSubmission, getOrganizers, FirestoreOrganizer } from "@/lib/db";
+import {
+  createSubmission,
+  getOrganizers,
+  FirestoreOrganizer,
+  approveSubmissionsBatch,
+} from "@/lib/db";
+import { convertJerusalemLocalToUtc, convertUtcToJerusalemLocal } from "@/lib/date-utils";
 import Header from "@/components/Header";
-import { Sparkles, Clock, Mail, Phone, CheckCircle, Building, Trash2, Plus } from "lucide-react";
+import {
+  Sparkles,
+  Clock,
+  Mail,
+  Phone,
+  CheckCircle,
+  Building,
+  Trash2,
+  Plus,
+  Code,
+} from "lucide-react";
+import { signInWithCustomToken } from "firebase/auth";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { auth, isConfigMissing, isMock } from "@/lib/firebase";
+import { isUserAdmin } from "@/lib/permissions";
 
-const REGION_KEYS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
+async function ensureFirebaseAdminAuth(): Promise<void> {
+  if (isConfigMissing || !auth || isMock) return;
+
+  if (auth.currentUser) {
+    const tokenResult = await auth.currentUser.getIdTokenResult(true);
+    if (tokenResult.claims.isAdmin) {
+      return;
+    }
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch("/api/auth/custom-token", {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error("Unable to restore Firebase authentication for admin actions.");
+    }
+    const data = (await response.json()) as { customToken: string };
+    const credential = await signInWithCustomToken(auth, data.customToken);
+    await credential.user.getIdToken(true);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+const REGION_KEYS = [
+  "Tel-Aviv",
+  "Jerusalem",
+  "Beer-Sheva",
+  "Haifa",
+  "Hasharon",
+  "North",
+  "South",
+  "Other areas",
+];
 const ORGANIZER_TYPE_KEYS = ["Group", "School", "Theater", "Other"];
 
 export default function SubmitContent() {
@@ -15,10 +72,57 @@ export default function SubmitContent() {
   const tOrgTypes = useTranslations("OrganizerTypes");
   const locale = useLocale();
 
-  const [activeTab, setActiveTab] = useState<"event" | "organizer" | "ai">("event");
+  const [activeTab, setActiveTab] = useState<"event" | "organizer" | "ai" | "json">("event");
   const [organizers, setOrganizers] = useState<FirestoreOrganizer[]>([]);
+  const { profile } = useAuth();
+  const isAdmin = isUserAdmin(profile);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
+  const [lastSubmissionIds, setLastSubmissionIds] = useState<string[]>([]);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [submittingJson, setSubmittingJson] = useState(false);
+  const [submittingEvent, setSubmittingEvent] = useState(false);
+  const [submittingOrganizer, setSubmittingOrganizer] = useState(false);
+
+  const handleApproveImmediately = async () => {
+    if (lastSubmissionIds.length === 0) return;
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      await ensureFirebaseAdminAuth();
+      const result = await approveSubmissionsBatch(lastSubmissionIds);
+      if (result.failed.length === 0) {
+        setPublished(true);
+        return;
+      }
+      if (result.approved.length > 0) {
+        setLastSubmissionIds(result.failed.map((item) => item.id));
+        const failedSummary = result.failed.map((item) => `${item.id}: ${item.error}`).join("; ");
+        setPublishError(
+          tSub("approveBatchResult", {
+            approved: result.approved.length,
+            total: lastSubmissionIds.length,
+            failed: failedSummary,
+          })
+        );
+        return;
+      }
+      const failedSummary = result.failed.map((item) => `${item.id}: ${item.error}`).join("; ");
+      setPublishError(`${tSub("approveImmediateError")} ${failedSummary}`);
+    } catch (err: unknown) {
+      console.error("Failed to approve immediately:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setPublishError(`${tSub("approveImmediateError")} ${msg}`);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  // JSON State
+  const [jsonText, setJsonText] = useState("");
+  const [jsonError, setJsonError] = useState<string | null>(null);
 
   // 1. Structured Event Form State
   const [eventName, setEventName] = useState("");
@@ -53,21 +157,84 @@ export default function SubmitContent() {
   // 3. AI Parser State
   const [flyerText, setFlyerText] = useState("");
   const [aiParsing, setAiParsing] = useState(false);
+  const aiParseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (aiParseTimerRef.current !== null) {
+        clearTimeout(aiParseTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     async function load() {
-      const data = await getOrganizers({ locale: locale as "en" | "he" });
-      setOrganizers(data);
+      try {
+        const data = await getOrganizers({ locale: locale as "en" | "he" });
+        setOrganizers(data);
+      } catch (err) {
+        console.error("Failed to load organizers:", err);
+      }
     }
     load();
   }, [locale]);
 
-  // Simulating an LLM parser
+  const handleJsonSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(false);
+    setJsonError(null);
+    setLastSubmissionIds([]);
+    setPublished(false);
+    setPublishError(null);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setJsonError("Invalid JSON format: " + errorMessage);
+      return;
+    }
+
+    setSubmittingJson(true);
+    try {
+      const res = await fetch("/api/submissions/json", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setJsonError(data.error + (data.details ? ": " + JSON.stringify(data.details) : ""));
+        return;
+      }
+      if (data.errors && data.errors.length > 0) {
+        setJsonError(tSub("jsonPartialError") + data.errors.join("; "));
+        if (data.submissionIds && data.submissionIds.length > 0) {
+          setSuccess(true);
+          setLastSubmissionIds(data.submissionIds);
+        }
+        return;
+      }
+      setSuccess(true);
+      if (data.submissionIds && data.submissionIds.length > 0) {
+        setLastSubmissionIds(data.submissionIds);
+      }
+      setJsonText("");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setJsonError(errorMessage);
+      setError(true);
+    } finally {
+      setSubmittingJson(false);
+    }
+  };
+
   const handleAiParse = () => {
     if (!flyerText.trim()) return;
     setAiParsing(true);
 
-    setTimeout(() => {
+    aiParseTimerRef.current = setTimeout(() => {
       // Analyze text keywords to mock LLM structured extraction
       const lower = flyerText.toLowerCase();
 
@@ -80,6 +247,7 @@ export default function SubmitContent() {
       let cost = "Paid";
       if (lower.includes("free") || lower.includes("חינם") || lower.includes("כניסה חופשית"))
         cost = "Free";
+      else if (lower.includes("donation") || lower.includes("תרומה")) cost = "Donation";
 
       let lang = "he";
       if (lower.includes("english") || lower.includes("אנגלית")) lang = "en";
@@ -102,7 +270,8 @@ export default function SubmitContent() {
       setEventCost(cost);
       setEventLanguage(lang);
       setEventRegion(region);
-      setEventTime(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)); // 3 days in future
+      const futureUtc = Date.now() + 3 * 24 * 60 * 60 * 1000;
+      setEventTime(convertUtcToJerusalemLocal(futureUtc));
 
       setAiParsing(false);
       setActiveTab("event"); // Switch to review form
@@ -112,15 +281,26 @@ export default function SubmitContent() {
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(false);
+    setLastSubmissionIds([]);
+    setPublished(false);
+    setPublishError(null);
 
-    if (!eventName || !eventLocation || !submitterEmail) {
+    if (!eventName || !eventLocation || !submitterEmail || !eventTime) {
       setError(true);
       return;
     }
 
+    const eventTimeMs = convertJerusalemLocalToUtc(eventTime);
+    const eventEndTimeMs = eventEndTime ? convertJerusalemLocalToUtc(eventEndTime) : undefined;
+    if (!eventTimeMs || (eventEndTime && !eventEndTimeMs)) {
+      setError(true);
+      return;
+    }
+
+    setSubmittingEvent(true);
     try {
       const selectedOrg = organizers.find((o) => o.id === eventOrganizerId);
-      await createSubmission({
+      const subId = await createSubmission({
         type: "event",
         source: flyerText ? "free_text" : "web_form",
         submitterContact: {
@@ -132,8 +312,8 @@ export default function SubmitContent() {
           organizerId: eventOrganizerId || undefined,
           organizerName: selectedOrg ? selectedOrg.name : eventOrganizerString || "Unknown",
           description: eventDescription,
-          time: new Date(eventTime).getTime(),
-          endTime: eventEndTime ? new Date(eventEndTime).getTime() : undefined,
+          time: eventTimeMs,
+          endTime: eventEndTimeMs,
           recurrence: eventRecurrence,
           location: eventLocation,
           mapLink: eventMapLink || undefined,
@@ -147,24 +327,31 @@ export default function SubmitContent() {
         links: eventLinks,
       });
       setSuccess(true);
+      setLastSubmissionIds([subId]);
       clearEventForm();
     } catch (err) {
       console.error(err);
       setError(true);
+    } finally {
+      setSubmittingEvent(false);
     }
   };
 
   const handleOrganizerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(false);
+    setLastSubmissionIds([]);
+    setPublished(false);
+    setPublishError(null);
 
     if (!orgName || !orgDesc || !submitterEmail || (isUpdate && !orgTargetId)) {
       setError(true);
       return;
     }
 
+    setSubmittingOrganizer(true);
     try {
-      await createSubmission({
+      const subId = await createSubmission({
         type: "organizer",
         source: "web_form",
         ...(isUpdate && orgTargetId ? { targetDocumentId: orgTargetId } : {}),
@@ -187,10 +374,13 @@ export default function SubmitContent() {
         links: orgLinks,
       });
       setSuccess(true);
+      setLastSubmissionIds([subId]);
       clearOrganizerForm();
     } catch (err) {
       console.error(err);
       setError(true);
+    } finally {
+      setSubmittingOrganizer(false);
     }
   };
 
@@ -205,12 +395,21 @@ export default function SubmitContent() {
     setEventMapLink("");
     setEventLinks([]);
     setFlyerText("");
+    setEventRegion("Tel-Aviv");
+    setEventLanguage("he");
+    setEventCost("Paid");
+    setEventAccess("Open");
+    setEventRecurrence("one-time");
   };
 
   const clearOrganizerForm = () => {
+    setIsUpdate(false);
     setOrgTargetId("");
     setOrgName("");
+    setOrgType("Group");
     setOrgDesc("");
+    setOrgRegion("Tel-Aviv");
+    setOrgLanguages(["he"]);
     setOrgLinks([]);
   };
 
@@ -243,11 +442,7 @@ export default function SubmitContent() {
       <main className="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-extrabold text-white tracking-tight">{tSub("title")}</h1>
-          <p className="text-zinc-400 text-sm">
-            {locale === "he"
-              ? "הגישו אירועים או מארגנים חדשים ללוח. התכנים יפורסמו באופן מיידי לאחר בקרה ואישור מהירים."
-              : "Submit upcoming events or listing proposals. Content will be published immediately after quick admin moderation."}
-          </p>
+          <p className="text-zinc-400 text-sm">{tSub("subtitle")}</p>
         </div>
 
         {/* TABS NAVBAR */}
@@ -257,6 +452,9 @@ export default function SubmitContent() {
               setActiveTab("event");
               setSuccess(false);
               setError(false);
+              setLastSubmissionIds([]);
+              setPublished(false);
+              setPublishError(null);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
               activeTab === "event"
@@ -273,6 +471,9 @@ export default function SubmitContent() {
               setActiveTab("organizer");
               setSuccess(false);
               setError(false);
+              setLastSubmissionIds([]);
+              setPublished(false);
+              setPublishError(null);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
               activeTab === "organizer"
@@ -289,6 +490,9 @@ export default function SubmitContent() {
               setActiveTab("ai");
               setSuccess(false);
               setError(false);
+              setLastSubmissionIds([]);
+              setPublished(false);
+              setPublishError(null);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer relative overflow-hidden group border ${
               activeTab === "ai"
@@ -299,13 +503,69 @@ export default function SubmitContent() {
             <Sparkles className="w-4 h-4" />
             <span>{tSub("flyerTab")}</span>
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setActiveTab("json");
+                setSuccess(false);
+                setError(false);
+                setJsonError(null);
+                setLastSubmissionIds([]);
+                setPublished(false);
+                setPublishError(null);
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                activeTab === "json"
+                  ? "bg-zinc-800 text-white shadow-md"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"
+              }`}
+            >
+              <Code className="w-4 h-4 text-emerald-400" />
+              <span>JSON</span>
+            </button>
+          )}
         </div>
 
         {/* FEEDBACK BANNER */}
         {success && (
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-sm font-bold">
-            <CheckCircle className="w-5 h-5 flex-shrink-0" />
-            <span>{tSub("submitSuccess")}</span>
+          <div className="flex flex-col gap-4 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400">
+            <div className="flex items-center gap-3 text-sm font-bold">
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <span>{published ? tSub("publishedSuccess") : tSub("submitSuccess")}</span>
+            </div>
+
+            {jsonError && (
+              <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-sm font-semibold whitespace-pre-wrap">
+                {jsonError}
+              </div>
+            )}
+
+            {isAdmin && lastSubmissionIds.length > 0 && !published && (
+              <div className="mt-2 flex flex-col gap-3">
+                <div className="h-px bg-emerald-500/20 w-full" />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-zinc-400">{tSub("adminPublishNotice")}</p>
+                  <button
+                    onClick={handleApproveImmediately}
+                    disabled={publishing}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 text-white rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
+                  >
+                    {publishing ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                        <span>{tSub("publishing")}</span>
+                      </>
+                    ) : (
+                      <span>{tSub("approveImmediately")}</span>
+                    )}
+                  </button>
+                </div>
+                {publishError && (
+                  <p className="text-xs text-red-400 font-semibold mt-1">{publishError}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -345,7 +605,7 @@ export default function SubmitContent() {
               {/* Region */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "אזור בארץ" : "Region"} *
+                  {tSub("regionLabel")} *
                 </label>
                 <select
                   value={eventRegion}
@@ -426,9 +686,7 @@ export default function SubmitContent() {
                   onChange={(e) => setEventOrganizerId(e.target.value)}
                   className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                 >
-                  <option value="">
-                    {locale === "he" ? "-- בחר מארגן מהאינדקס --" : "-- Choose from Directory --"}
-                  </option>
+                  <option value="">{tSub("selectOrganizer")}</option>
                   {organizers.map((org) => (
                     <option key={org.id} value={org.id}>
                       {org.name}
@@ -484,6 +742,7 @@ export default function SubmitContent() {
                 >
                   <option value="Paid">Paid</option>
                   <option value="Free">Free</option>
+                  <option value="Donation">Donation</option>
                 </select>
               </div>
 
@@ -503,7 +762,7 @@ export default function SubmitContent() {
 
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "מחזוריות" : "Recurrence"}
+                  {tSub("recurrenceLabel")}
                 </label>
                 <select
                   value={eventRecurrence}
@@ -511,9 +770,10 @@ export default function SubmitContent() {
                   className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                 >
                   <option value="one-time">One-time Event</option>
+                  <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
                   <option value="bi-weekly">Bi-weekly</option>
+                  <option value="monthly">Monthly</option>
                 </select>
               </div>
 
@@ -528,7 +788,7 @@ export default function SubmitContent() {
                   value={eventDescription}
                   onChange={(e) => setEventDescription(e.target.value)}
                   placeholder="Tell the community what your event is about..."
-                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm resize-none"
+                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm resize-none"
                 />
               </div>
             </div>
@@ -632,9 +892,17 @@ export default function SubmitContent() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-primary text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer"
+              disabled={submittingEvent}
+              className="w-full py-3 rounded-xl bg-gradient-primary disabled:from-zinc-850 disabled:to-zinc-850 disabled:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer flex items-center justify-center gap-2"
             >
-              {tSub("submitBtn")}
+              {submittingEvent ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                  <span>{tSub("submitting")}</span>
+                </>
+              ) : (
+                <span>{tSub("submitBtn")}</span>
+              )}
             </button>
           </form>
         )}
@@ -700,9 +968,7 @@ export default function SubmitContent() {
                     onChange={(e) => setOrgTargetId(e.target.value)}
                     className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-300 focus:outline-none focus:border-indigo-500 text-sm"
                   >
-                    <option value="">
-                      {locale === "he" ? "-- בחר מארגן מהאינדקס --" : "-- Choose from Directory --"}
-                    </option>
+                    <option value="">{tSub("selectOrganizer")}</option>
                     {organizers.map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.name}
@@ -748,7 +1014,7 @@ export default function SubmitContent() {
               {/* Region */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "אזור מאגר" : "Region"} *
+                  {tSub("regionLabel")} *
                 </label>
                 <select
                   value={orgRegion}
@@ -766,7 +1032,7 @@ export default function SubmitContent() {
               {/* Languages Supported */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-extrabold uppercase text-zinc-400">
-                  {locale === "he" ? "שפות פעילות" : "Languages"}
+                  {tSub("language")}
                 </label>
                 <div className="flex gap-3 mt-1.5">
                   {["he", "en"].map((lang) => {
@@ -800,7 +1066,7 @@ export default function SubmitContent() {
                   value={orgDesc}
                   onChange={(e) => setOrgDesc(e.target.value)}
                   placeholder="Describe your troupe, school, theater or community platform..."
-                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm resize-none"
+                  className="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm resize-none"
                 />
               </div>
             </div>
@@ -819,7 +1085,7 @@ export default function SubmitContent() {
                     value={submitterEmail}
                     onChange={(e) => setSubmitterEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
               </div>
@@ -835,7 +1101,7 @@ export default function SubmitContent() {
                     value={submitterPhone}
                     onChange={(e) => setSubmitterPhone(e.target.value)}
                     placeholder="e.g. 054-1234567"
-                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full pl-10 pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
               </div>
@@ -843,9 +1109,17 @@ export default function SubmitContent() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-primary text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer"
+              disabled={submittingOrganizer}
+              className="w-full py-3 rounded-xl bg-gradient-primary disabled:from-zinc-850 disabled:to-zinc-850 disabled:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all text-sm mt-4 cursor-pointer flex items-center justify-center gap-2"
             >
-              {tSub("submitBtn")}
+              {submittingOrganizer ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                  <span>{tSub("submitting")}</span>
+                </>
+              ) : (
+                <span>{tSub("submitBtn")}</span>
+              )}
             </button>
           </form>
         )}
@@ -920,6 +1194,58 @@ export default function SubmitContent() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* 4. JSON SUBMISSION (ADMIN ONLY) */}
+        {isAdmin && activeTab === "json" && !success && (
+          <form
+            onSubmit={handleJsonSubmit}
+            className="glass-card rounded-2xl p-6 flex flex-col gap-6"
+          >
+            <div className="border-b border-zinc-850 pb-3">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Code className="w-5 h-5 text-emerald-400" />
+                <span>Bulk JSON Submission</span>
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Submit an event or array of events using JSON format.
+              </p>
+            </div>
+
+            {jsonError && (
+              <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 text-sm font-semibold whitespace-pre-wrap">
+                {jsonError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <textarea
+                rows={12}
+                required
+                value={jsonText}
+                onChange={(e) => setJsonText(e.target.value)}
+                placeholder={
+                  '[\n  {\n    "name": "My Event",\n    "description": "...",\n    "time": 1720000000000,\n    ...\n  }\n]'
+                }
+                className="w-full px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-950/60 text-zinc-100 font-mono text-xs placeholder-zinc-600 focus:outline-none focus:border-emerald-500 resize-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submittingJson}
+              className="w-full py-3 rounded-xl bg-emerald-600 disabled:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold hover:shadow-lg hover:shadow-emerald-500/25 transition-all text-sm mt-4 cursor-pointer flex items-center justify-center gap-2"
+            >
+              {submittingJson ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
+                  <span>{tSub("submittingJson")}</span>
+                </>
+              ) : (
+                <span>{tSub("submitJson")}</span>
+              )}
+            </button>
+          </form>
         )}
       </main>
     </div>

@@ -29,5 +29,10 @@ export default defineConfig({
           : `npx next dev -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
+    env: {
+      NEXT_PUBLIC_ADMIN_DEV_UID: "admin-test",
+      ALLOW_DEV_BYPASS: "true",
+      E2E_ADMIN_BYPASS_SECRET: "e2e-bypass-secret-12345",
+    },
   },
 });

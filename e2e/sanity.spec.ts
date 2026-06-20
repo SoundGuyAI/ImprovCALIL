@@ -124,4 +124,7 @@ test("navigation - verify routing across main pages", async ({ page }) => {
   const submitLink = page.locator("nav a[href='/en/submit']");
   await expect(submitLink).toBeVisible();
   await Promise.all([page.waitForURL(/\/en\/submit/, { timeout: 15000 }), submitLink.click()]);
+
+  // Take screenshot of Submit page
+  await captureScreenshot(page, "05_submit_page.png", "Submit Event/Organizer page");
 });

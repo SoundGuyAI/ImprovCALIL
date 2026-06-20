@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { convertJerusalemLocalToUtc } from "@/lib/date-utils";
 import { getEvents, FirestoreEvent, normalizeRegion } from "@/lib/db";
 import Header from "@/components/Header";
 import {
@@ -26,8 +27,227 @@ import {
   CalendarRange,
 } from "lucide-react";
 
-const REGIONS = ["Tel-Aviv", "Jerusalem", "Beer-Sheva", "Haifa", "Hasharon", "Other areas"];
+const REGIONS = [
+  "Tel-Aviv",
+  "Jerusalem",
+  "Beer-Sheva",
+  "Haifa",
+  "Hasharon",
+  "North",
+  "South",
+  "Other areas",
+];
 const EVENT_TYPES = ["Show", "Jam", "Workshop", "Festival", "Other"];
+
+const getJerusalemParts = (date: Date) => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jerusalem",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const getPart = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  return {
+    year: parseInt(getPart("year"), 10),
+    month: parseInt(getPart("month"), 10) - 1,
+    day: parseInt(getPart("day"), 10),
+    hour: parseInt(getPart("hour"), 10),
+    minute: parseInt(getPart("minute"), 10),
+  };
+};
+
+const jerusalemToDate = (year: number, month: number, day: number, hour = 0, minute = 0): Date => {
+  const localStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  return new Date(convertJerusalemLocalToUtc(localStr));
+};
+
+const addJerusalemCalendarDays = (date: Date, days: number) => {
+  const p = getJerusalemParts(date);
+  const d = new Date(Date.UTC(p.year, p.month, p.day));
+  d.setUTCDate(d.getUTCDate() + days);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: d.getUTCDate() };
+};
+
+const getExpandedEvents = (
+  rawEvents: FirestoreEvent[],
+  view: "list" | "week" | "month",
+  anchorDate: Date,
+  getStartOfWeekFn: (d: Date) => Date,
+  getMonthDaysGridFn: (refDate: Date) => Date[]
+): FirestoreEvent[] => {
+  let startRange: Date;
+  let endRange: Date;
+
+  if (view === "list") {
+    // 30 days in the past to 90 days in the future (Jerusalem calendar days)
+    const startYmd = addJerusalemCalendarDays(anchorDate, -30);
+    const endYmd = addJerusalemCalendarDays(anchorDate, 90);
+    startRange = jerusalemToDate(startYmd.year, startYmd.month, startYmd.day, 0, 0);
+    endRange = new Date(
+      jerusalemToDate(endYmd.year, endYmd.month, endYmd.day + 1, 0, 0).getTime() - 1
+    );
+  } else if (view === "week") {
+    startRange = getStartOfWeekFn(anchorDate);
+    const endYmd = addJerusalemCalendarDays(startRange, 6);
+    endRange = new Date(
+      jerusalemToDate(endYmd.year, endYmd.month, endYmd.day + 1, 0, 0).getTime() - 1
+    );
+  } else {
+    // month view
+    const grid = getMonthDaysGridFn(anchorDate);
+    const sp = getJerusalemParts(grid[0]);
+    startRange = jerusalemToDate(sp.year, sp.month, sp.day, 0, 0);
+
+    const ep = getJerusalemParts(grid[grid.length - 1]);
+    endRange = new Date(jerusalemToDate(ep.year, ep.month, ep.day + 1, 0, 0).getTime() - 1);
+  }
+
+  const expanded: FirestoreEvent[] = [];
+
+  for (const event of rawEvents) {
+    if (!event.recurrence || event.recurrence === "one-time") {
+      if (event.time >= startRange.getTime() && event.time <= endRange.getTime()) {
+        expanded.push(event);
+      }
+    } else if (
+      event.recurrence === "daily" ||
+      event.recurrence === "weekly" ||
+      event.recurrence === "bi-weekly" ||
+      event.recurrence === "monthly"
+    ) {
+      const eventStart = new Date(event.time);
+      const duration = event.endTime ? event.endTime - event.time : 0;
+      let current = new Date(eventStart.getTime());
+
+      // Fast-forward current to just before startRange so the 500-iteration safety
+      // cap covers the visible window, not the gap between the event's birth date and today.
+      if (current.getTime() < startRange.getTime()) {
+        const MS = { daily: 86400000, weekly: 604800000, "bi-weekly": 1209600000 } as Record<
+          string,
+          number
+        >;
+        const stepMs = MS[event.recurrence];
+        if (stepMs) {
+          const stepsToSkip = Math.max(
+            0,
+            Math.floor((startRange.getTime() - current.getTime()) / stepMs) - 1
+          );
+          if (stepsToSkip > 0) {
+            const daysToSkip =
+              event.recurrence === "daily"
+                ? stepsToSkip
+                : event.recurrence === "weekly"
+                  ? stepsToSkip * 7
+                  : stepsToSkip * 14;
+            const origParts = getJerusalemParts(eventStart);
+            const currentParts = getJerusalemParts(current);
+            const d = new Date(
+              Date.UTC(currentParts.year, currentParts.month, currentParts.day + daysToSkip)
+            );
+            current = jerusalemToDate(
+              d.getUTCFullYear(),
+              d.getUTCMonth(),
+              d.getUTCDate(),
+              origParts.hour,
+              origParts.minute
+            );
+          }
+        } else if (event.recurrence === "monthly") {
+          const startParts = getJerusalemParts(startRange);
+          const currentParts = getJerusalemParts(current);
+          const monthsApart =
+            (startParts.year - currentParts.year) * 12 + (startParts.month - currentParts.month);
+          const monthsToSkip = Math.max(0, monthsApart - 2);
+          if (monthsToSkip > 0) {
+            let targetMonth = currentParts.month + monthsToSkip;
+            let targetYear = currentParts.year;
+            while (targetMonth > 11) {
+              targetMonth -= 12;
+              targetYear += 1;
+            }
+            const origDay = getJerusalemParts(eventStart).day;
+            const daysInMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+            current = jerusalemToDate(
+              targetYear,
+              targetMonth,
+              Math.min(origDay, daysInMonth),
+              currentParts.hour,
+              currentParts.minute
+            );
+          }
+        }
+      }
+
+      let safetyCount = 0;
+
+      while (current.getTime() <= endRange.getTime() && safetyCount < 500) {
+        safetyCount++;
+        const currentMs = current.getTime();
+
+        if (currentMs >= startRange.getTime() && currentMs >= event.time) {
+          expanded.push({
+            ...event,
+            id: `${event.id}-${currentMs}`,
+            time: currentMs,
+            endTime: event.endTime ? currentMs + duration : undefined,
+          });
+        }
+
+        if (event.recurrence === "daily") {
+          const parts = getJerusalemParts(current);
+          current = jerusalemToDate(
+            parts.year,
+            parts.month,
+            parts.day + 1,
+            parts.hour,
+            parts.minute
+          );
+        } else if (event.recurrence === "weekly") {
+          const parts = getJerusalemParts(current);
+          current = jerusalemToDate(
+            parts.year,
+            parts.month,
+            parts.day + 7,
+            parts.hour,
+            parts.minute
+          );
+        } else if (event.recurrence === "bi-weekly") {
+          const parts = getJerusalemParts(current);
+          current = jerusalemToDate(
+            parts.year,
+            parts.month,
+            parts.day + 14,
+            parts.hour,
+            parts.minute
+          );
+        } else if (event.recurrence === "monthly") {
+          const parts = getJerusalemParts(current);
+          const origDay = getJerusalemParts(eventStart).day;
+          let targetMonth = parts.month + 1;
+          let targetYear = parts.year;
+          if (targetMonth > 11) {
+            targetMonth = 0;
+            targetYear += 1;
+          }
+          const daysInMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+          current = jerusalemToDate(
+            targetYear,
+            targetMonth,
+            Math.min(origDay, daysInMonth),
+            parts.hour,
+            parts.minute
+          );
+        }
+      }
+    }
+  }
+
+  return expanded.sort((a, b) => a.time - b.time);
+};
 
 export default function Home() {
   const t = useTranslations("Common");
@@ -73,82 +293,83 @@ export default function Home() {
     load();
   }, []);
 
-  const featuredEvents = events.filter((e) => e.featured && !e.hidden);
-
-  const nextFeatured = () => {
-    if (featuredEvents.length === 0) return;
-    setFeaturedIndex((prev) => (prev + 1) % featuredEvents.length);
-  };
-
-  const prevFeatured = () => {
-    if (featuredEvents.length === 0) return;
-    setFeaturedIndex((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length);
-  };
-
   // Filter Logic
-  const filteredEvents = events.filter((e) => {
-    if (e.hidden) return false;
+  const filteredEvents = useMemo(
+    () =>
+      events.filter((e) => {
+        if (e.hidden) return false;
 
-    // Search Query
-    if (
-      search &&
-      !e.name.toLowerCase().includes(search.toLowerCase()) &&
-      !e.description.toLowerCase().includes(search.toLowerCase()) &&
-      !e.organizerName.toLowerCase().includes(search.toLowerCase())
-    ) {
-      return false;
-    }
-    // Region
-    if (selectedRegion !== "all" && normalizeRegion(e.region) !== normalizeRegion(selectedRegion))
-      return false;
-    // Event Type
-    if (selectedType !== "all") {
-      const typeLower = selectedType.toLowerCase();
-      if (e.type !== undefined && e.type !== null) {
-        if (e.type.toLowerCase() !== typeLower) {
+        // Search Query
+        if (
+          search &&
+          !e.name.toLowerCase().includes(search.toLowerCase()) &&
+          !e.description.toLowerCase().includes(search.toLowerCase()) &&
+          !e.organizerName.toLowerCase().includes(search.toLowerCase())
+        ) {
           return false;
         }
-      } else {
-        // Jam, Show, Workshop, Festival
+        // Region
         if (
-          typeLower === "show" &&
-          !e.name.toLowerCase().includes("show") &&
-          !e.name.toLowerCase().includes("מופע") &&
-          !e.description.toLowerCase().includes("show")
+          selectedRegion !== "all" &&
+          normalizeRegion(e.region) !== normalizeRegion(selectedRegion)
         )
           return false;
-        if (
-          typeLower === "jam" &&
-          !e.name.toLowerCase().includes("jam") &&
-          !e.name.toLowerCase().includes("ג'אם") &&
-          !e.description.toLowerCase().includes("jam")
-        )
-          return false;
-        if (
-          typeLower === "workshop" &&
-          !e.name.toLowerCase().includes("workshop") &&
-          !e.name.toLowerCase().includes("סדנ") &&
-          !e.description.toLowerCase().includes("workshop")
-        )
-          return false;
-        if (
-          typeLower === "festival" &&
-          !e.name.toLowerCase().includes("festival") &&
-          !e.name.toLowerCase().includes("פסטיבל") &&
-          !e.description.toLowerCase().includes("festival")
-        )
-          return false;
-      }
-    }
-    // Language
-    if (selectedLanguage !== "all" && e.language !== selectedLanguage) return false;
-    // Cost
-    if (selectedCost !== "all" && e.cost !== selectedCost) return false;
-    // Access
-    if (selectedAccess !== "all" && e.access !== selectedAccess) return false;
+        // Event Type
+        if (selectedType !== "all") {
+          const typeLower = selectedType.toLowerCase();
+          if (e.type !== undefined && e.type !== null) {
+            if (e.type.toLowerCase() !== typeLower) {
+              return false;
+            }
+          } else {
+            // Jam, Show, Workshop, Festival
+            if (
+              typeLower === "show" &&
+              !e.name.toLowerCase().includes("show") &&
+              !e.name.toLowerCase().includes("מופע") &&
+              !e.description.toLowerCase().includes("show")
+            )
+              return false;
+            if (
+              typeLower === "jam" &&
+              !e.name.toLowerCase().includes("jam") &&
+              !e.name.toLowerCase().includes("ג'אם") &&
+              !e.description.toLowerCase().includes("jam")
+            )
+              return false;
+            if (
+              typeLower === "workshop" &&
+              !e.name.toLowerCase().includes("workshop") &&
+              !e.name.toLowerCase().includes("סדנ") &&
+              !e.description.toLowerCase().includes("workshop")
+            )
+              return false;
+            if (
+              typeLower === "festival" &&
+              !e.name.toLowerCase().includes("festival") &&
+              !e.name.toLowerCase().includes("פסטיבל") &&
+              !e.description.toLowerCase().includes("festival")
+            )
+              return false;
+          }
+        }
+        // Language
+        if (selectedLanguage !== "all") {
+          if (selectedLanguage === "other") {
+            if (e.language === "he" || e.language === "en" || e.language === "he/en") return false;
+          } else {
+            if (!e.language || !e.language.toLowerCase().includes(selectedLanguage)) return false;
+          }
+        }
+        // Cost
+        if (selectedCost !== "all" && e.cost !== selectedCost) return false;
+        // Access
+        if (selectedAccess !== "all" && e.access !== selectedAccess) return false;
 
-    return true;
-  });
+        return true;
+      }),
+    [events, search, selectedRegion, selectedType, selectedLanguage, selectedCost, selectedAccess]
+  );
 
   const getLinkIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -170,85 +391,133 @@ export default function Home() {
       weekday: "long",
       day: "numeric",
       month: "long",
+      timeZone: "Asia/Jerusalem",
     });
   };
 
   const formatTime = (timestamp: number) => {
     const d = new Date(timestamp);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString(locale === "he" ? "he-IL" : "en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jerusalem",
+    });
   };
 
   // Date Helpers for Calendar Views
-  const getStartOfWeek = (d: Date): Date => {
-    const date = new Date(d.getTime());
-    const day = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    date.setDate(date.getDate() - day);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  };
+  const getStartOfWeek = useCallback((date: Date): Date => {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Jerusalem",
+      weekday: "short",
+    });
+    const weekdayStr = formatter.format(date);
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dayOfWeek = days.indexOf(weekdayStr);
+
+    const p = getJerusalemParts(date);
+    const d = new Date(Date.UTC(p.year, p.month, p.day - dayOfWeek));
+    return jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0);
+  }, []);
 
   const getWeekDays = (startOfWeek: Date): Date[] => {
     const days = [];
+    const p = getJerusalemParts(startOfWeek);
     for (let i = 0; i < 7; i++) {
-      const d = new Date(startOfWeek.getTime());
-      d.setDate(d.getDate() + i);
-      days.push(d);
+      const d = new Date(Date.UTC(p.year, p.month, p.day + i));
+      days.push(jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0));
     }
     return days;
   };
 
   const isSameDay = (d1: Date, d2: Date): boolean => {
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
+    const p1 = getJerusalemParts(d1);
+    const p2 = getJerusalemParts(d2);
+    return p1.year === p2.year && p1.month === p2.month && p1.day === p2.day;
   };
 
   const addMonths = (date: Date, months: number): Date => {
-    const day = date.getDate();
-    const result = new Date(date.getFullYear(), date.getMonth() + months, 1);
-    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
-    result.setDate(Math.min(day, lastDay));
-    return result;
+    const p = getJerusalemParts(date);
+    const tempUtc = new Date(Date.UTC(p.year, p.month + months, 1, p.hour, p.minute));
+    const nextYear = tempUtc.getUTCFullYear();
+    const nextMonth = tempUtc.getUTCMonth();
+
+    const lastDayOfTargetMonth = new Date(Date.UTC(nextYear, nextMonth + 1, 0)).getUTCDate();
+    const targetDay = Math.min(p.day, lastDayOfTargetMonth);
+
+    return jerusalemToDate(nextYear, nextMonth, targetDay, p.hour, p.minute);
   };
 
-  const getMonthDaysGrid = (refDate: Date): Date[] => {
-    const year = refDate.getFullYear();
-    const month = refDate.getMonth();
+  const getMonthDaysGrid = useCallback(
+    (refDate: Date): Date[] => {
+      const p = getJerusalemParts(refDate);
+      const firstDay = jerusalemToDate(p.year, p.month, 1, 0, 0);
+      const startDate = getStartOfWeek(firstDay);
 
-    // First day of the current month
-    const firstDay = new Date(year, month, 1);
-    const firstDayOfWeek = firstDay.getDay(); // Sunday starts at 0
+      const cells: Date[] = [];
+      const startParts = getJerusalemParts(startDate);
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(Date.UTC(startParts.year, startParts.month, startParts.day + i));
+        cells.push(jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0));
+      }
+      return cells;
+    },
+    [getStartOfWeek]
+  );
 
-    // Start date is the Sunday of the week containing the 1st of the month
-    const startDate = new Date(firstDay.getTime());
-    startDate.setDate(startDate.getDate() - firstDayOfWeek);
+  const featuredEvents = useMemo(() => {
+    const rawFeatured = events.filter((e) => e.featured && !e.hidden);
+    const now = Date.now();
+    return rawFeatured.map((raw) => {
+      const occurrences = getExpandedEvents(
+        [raw],
+        "list",
+        new Date(),
+        getStartOfWeek,
+        getMonthDaysGrid
+      );
+      const upcoming = occurrences.filter((e) => e.time >= now).sort((a, b) => a.time - b.time);
+      if (upcoming.length > 0) return upcoming[0];
+      const past = occurrences.filter((e) => e.time < now).sort((a, b) => b.time - a.time);
+      if (past.length > 0) return past[0];
+      return raw;
+    });
+  }, [events, getStartOfWeek, getMonthDaysGrid]);
 
-    const cells: Date[] = [];
-    // 42 cells (6 weeks of 7 days)
-    for (let i = 0; i < 42; i++) {
-      const d = new Date(startDate.getTime());
-      d.setDate(d.getDate() + i);
-      cells.push(d);
-    }
-    return cells;
+  // Clamp index so it never goes out of bounds if the featured list shrinks
+  const safeFeaturedIndex = featuredEvents.length > 0 ? featuredIndex % featuredEvents.length : 0;
+
+  const nextFeatured = () => {
+    if (featuredEvents.length === 0) return;
+    setFeaturedIndex((prev) => (prev + 1) % featuredEvents.length);
   };
+
+  const prevFeatured = () => {
+    if (featuredEvents.length === 0) return;
+    setFeaturedIndex((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length);
+  };
+
+  const displayEvents = useMemo(
+    () =>
+      getExpandedEvents(filteredEvents, viewMode, currentDate, getStartOfWeek, getMonthDaysGrid),
+
+    [filteredEvents, viewMode, currentDate, getStartOfWeek, getMonthDaysGrid]
+  );
 
   const getEventsForDay = (dayDate: Date): FirestoreEvent[] => {
-    return filteredEvents.filter((event) => isSameDay(new Date(event.time), dayDate));
+    return displayEvents.filter((event) => isSameDay(new Date(event.time), dayDate));
   };
 
   const handlePrev = () => {
     if (viewMode === "week") {
       setCurrentDate((prev) => {
-        const nextD = new Date(prev.getTime());
-        nextD.setDate(nextD.getDate() - 7);
-        return nextD;
+        const p = getJerusalemParts(prev);
+        const d = new Date(Date.UTC(p.year, p.month, p.day - 7));
+        return jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0);
       });
     } else if (viewMode === "month") {
       setCurrentDate((prev) => {
-        const temp = new Date(prev.getFullYear(), prev.getMonth(), 1);
+        const p = getJerusalemParts(prev);
+        const temp = jerusalemToDate(p.year, p.month, 1, 0, 0);
         return addMonths(temp, -1);
       });
       setSelectedCalendarDay(null);
@@ -258,13 +527,14 @@ export default function Home() {
   const handleNext = () => {
     if (viewMode === "week") {
       setCurrentDate((prev) => {
-        const nextD = new Date(prev.getTime());
-        nextD.setDate(nextD.getDate() + 7);
-        return nextD;
+        const p = getJerusalemParts(prev);
+        const d = new Date(Date.UTC(p.year, p.month, p.day + 7));
+        return jerusalemToDate(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0);
       });
     } else if (viewMode === "month") {
       setCurrentDate((prev) => {
-        const temp = new Date(prev.getFullYear(), prev.getMonth(), 1);
+        const p = getJerusalemParts(prev);
+        const temp = jerusalemToDate(p.year, p.month, 1, 0, 0);
         return addMonths(temp, 1);
       });
       setSelectedCalendarDay(null);
@@ -279,28 +549,41 @@ export default function Home() {
 
   const getWeekRangeLabel = (): string => {
     const start = getStartOfWeek(currentDate);
-    const end = new Date(start.getTime());
-    end.setDate(end.getDate() + 6);
+    const endYmd = addJerusalemCalendarDays(start, 6);
+    const end = jerusalemToDate(endYmd.year, endYmd.month, endYmd.day, 0, 0);
 
-    const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+    const options: Intl.DateTimeFormatOptions = {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Jerusalem",
+    };
     const localeStr = locale === "he" ? "he-IL" : "en-US";
     return `${start.toLocaleDateString(localeStr, options)} - ${end.toLocaleDateString(localeStr, options)}`;
   };
 
   const getMonthLabel = (): string => {
     const localeStr = locale === "he" ? "he-IL" : "en-US";
-    return currentDate.toLocaleDateString(localeStr, { month: "long", year: "numeric" });
+    return currentDate.toLocaleDateString(localeStr, {
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jerusalem",
+    });
   };
 
-  // Group events by day for weekly view
-  const groupedEvents: { [key: string]: FirestoreEvent[] } = {};
-  filteredEvents.forEach((e) => {
-    const dateStr = formatDate(e.time);
-    if (!groupedEvents[dateStr]) {
-      groupedEvents[dateStr] = [];
-    }
-    groupedEvents[dateStr].push(e);
-  });
+  // Group events by day for list view
+  const groupedEvents = useMemo(() => {
+    const groups: { [key: string]: FirestoreEvent[] } = {};
+    displayEvents.forEach((e) => {
+      const dateStr = formatDate(e.time);
+      if (!groups[dateStr]) {
+        groups[dateStr] = [];
+      }
+      groups[dateStr].push(e);
+    });
+    return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayEvents, locale]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
@@ -317,31 +600,31 @@ export default function Home() {
 
             <div className="flex-1 flex flex-col gap-3 text-center md:text-left rtl:md:text-right w-full mt-4 md:mt-0">
               <h2 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                {featuredEvents[featuredIndex].name}
+                {featuredEvents[safeFeaturedIndex].name}
               </h2>
               <p className="text-sm md:text-base text-zinc-300 max-w-2xl line-clamp-2">
-                {featuredEvents[featuredIndex].description}
+                {featuredEvents[safeFeaturedIndex].description}
               </p>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs sm:text-sm text-zinc-400 mt-2">
                 <span className="flex items-center gap-1.5">
                   <CalendarIcon className="w-4 h-4 text-indigo-400" />
-                  {formatDate(featuredEvents[featuredIndex].time)}
+                  {formatDate(featuredEvents[safeFeaturedIndex].time)}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-indigo-400" />
-                  {formatTime(featuredEvents[featuredIndex].time)}
+                  {formatTime(featuredEvents[safeFeaturedIndex].time)}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-indigo-400" />
-                  {featuredEvents[featuredIndex].location}
+                  {featuredEvents[safeFeaturedIndex].location}
                 </span>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto items-center justify-center">
               <button
-                onClick={() => setSelectedEvent(featuredEvents[featuredIndex])}
+                onClick={() => setSelectedEvent(featuredEvents[safeFeaturedIndex])}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-primary text-white font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition-all text-sm cursor-pointer"
               >
                 {t("details")}
@@ -356,7 +639,7 @@ export default function Home() {
                     <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
                   </button>
                   <span className="text-xs text-zinc-500 font-bold">
-                    {featuredIndex + 1} / {featuredEvents.length}
+                    {safeFeaturedIndex + 1} / {featuredEvents.length}
                   </span>
                   <button
                     onClick={nextFeatured}
@@ -459,6 +742,7 @@ export default function Home() {
                 <option value="all">{locale === "he" ? "הכל" : "All Costs"}</option>
                 <option value="Free">{locale === "he" ? "חינם בלבד" : "Free Only"}</option>
                 <option value="Paid">{locale === "he" ? "בתשלום בלבד" : "Paid Only"}</option>
+                <option value="Donation">{locale === "he" ? "תרומה בלבד" : "Donation Only"}</option>
               </select>
             </div>
 
@@ -591,7 +875,7 @@ export default function Home() {
               <div className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-indigo-500 animate-spin"></div>
               <span>{t("loading")}</span>
             </div>
-          ) : viewMode === "list" && filteredEvents.length === 0 ? (
+          ) : viewMode === "list" && displayEvents.length === 0 ? (
             <div className="glass-card rounded-2xl py-16 text-center text-zinc-400 text-sm flex flex-col items-center justify-center gap-2">
               <span>{t("noEvents")}</span>
             </div>
@@ -621,10 +905,16 @@ export default function Home() {
                               className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
                                 event.cost === "Free"
                                   ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
-                                  : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                                  : event.cost === "Donation"
+                                    ? "bg-violet-500/5 border-violet-500/20 text-violet-400"
+                                    : "bg-amber-500/5 border-amber-500/20 text-amber-400"
                               }`}
                             >
-                              {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                              {event.cost === "Free"
+                                ? tFilters("costFree")
+                                : event.cost === "Donation"
+                                  ? tFilters("costDonation")
+                                  : tFilters("costPaid")}
                             </span>
                             <span className="px-2 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[10px] text-indigo-400 font-semibold uppercase">
                               {event.language}
@@ -676,8 +966,11 @@ export default function Home() {
                 const dayEvents = getEventsForDay(day);
                 const isToday = isSameDay(day, new Date());
                 const localeStr = locale === "he" ? "he-IL" : "en-US";
-                const dayName = day.toLocaleDateString(localeStr, { weekday: "short" });
-                const dayNum = day.getDate();
+                const dayName = day.toLocaleDateString(localeStr, {
+                  weekday: "short",
+                  timeZone: "Asia/Jerusalem",
+                });
+                const dayNum = getJerusalemParts(day).day;
 
                 return (
                   <div
@@ -759,7 +1052,10 @@ export default function Home() {
                 {getMonthDaysGrid(currentDate).map((day) => {
                   const dayEvents = getEventsForDay(day);
                   const isToday = isSameDay(day, new Date());
-                  const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                  const dayJParts = getJerusalemParts(day);
+                  const curJParts = getJerusalemParts(currentDate);
+                  const isCurrentMonth =
+                    dayJParts.month === curJParts.month && dayJParts.year === curJParts.year;
                   const isSelected = selectedCalendarDay && isSameDay(day, selectedCalendarDay);
 
                   return (
@@ -788,7 +1084,7 @@ export default function Home() {
                                   : "text-zinc-500"
                           }`}
                         >
-                          {day.getDate()}
+                          {getJerusalemParts(day).day}
                         </span>
                         {/* Event count badge on desktop */}
                         {dayEvents.length > 0 && (
@@ -827,7 +1123,11 @@ export default function Home() {
                             <span
                               key={event.id}
                               className={`w-1 h-1 rounded-full ${
-                                event.cost === "Free" ? "bg-emerald-500" : "bg-amber-500"
+                                event.cost === "Free"
+                                  ? "bg-emerald-500"
+                                  : event.cost === "Donation"
+                                    ? "bg-violet-500"
+                                    : "bg-amber-500"
                               }`}
                             />
                           ))}
@@ -855,6 +1155,7 @@ export default function Home() {
                             day: "numeric",
                             month: "long",
                             year: "numeric",
+                            timeZone: "Asia/Jerusalem",
                           }
                         )}
                       </span>
@@ -887,10 +1188,16 @@ export default function Home() {
                                 className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border ${
                                   event.cost === "Free"
                                     ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
-                                    : "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                                    : event.cost === "Donation"
+                                      ? "bg-violet-500/5 border-violet-500/20 text-violet-400"
+                                      : "bg-amber-500/5 border-amber-500/20 text-amber-400"
                                 }`}
                               >
-                                {event.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                                {event.cost === "Free"
+                                  ? tFilters("costFree")
+                                  : event.cost === "Donation"
+                                    ? tFilters("costDonation")
+                                    : tFilters("costPaid")}
                               </span>
                               <span className="px-1.5 py-0.5 rounded bg-indigo-500/5 border border-indigo-500/20 text-[9px] text-indigo-400 font-semibold uppercase">
                                 {event.language}
@@ -967,7 +1274,11 @@ export default function Home() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <DollarSign className="w-4 h-4 text-indigo-400" />
-                  {selectedEvent.cost === "Free" ? tFilters("free") : tFilters("paid")}
+                  {selectedEvent.cost === "Free"
+                    ? tFilters("costFree")
+                    : selectedEvent.cost === "Donation"
+                      ? tFilters("costDonation")
+                      : tFilters("costPaid")}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Globe className="w-4 h-4 text-indigo-400" />

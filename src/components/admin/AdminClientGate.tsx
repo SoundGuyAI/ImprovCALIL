@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getIdToken, signInWithCustomToken } from "firebase/auth";
+import { signInWithCustomToken } from "firebase/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { auth, isConfigMissing } from "@/lib/firebase";
+import { auth, isConfigMissing, isMock } from "@/lib/firebase";
 
 export function AdminClientGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -11,50 +11,59 @@ export function AdminClientGate({ children }: { children: React.ReactNode }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (isConfigMissing || !auth) {
+    if (isConfigMissing || !auth || isMock) {
       setReady(true);
       return;
     }
 
-    if (loading) {
-      return;
-    }
+    if (loading) return;
 
-    if (user && auth.currentUser) {
-      void getIdToken(auth.currentUser, true)
-        .then(() => setReady(true))
-        .catch(() => setFailed(true));
-      return;
-    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    let cancelled = false;
-
-    void (async () => {
+    const fetchCustomToken = async () => {
       try {
-        const response = await fetch("/api/auth/custom-token", { cache: "no-store" });
+        const response = await fetch("/api/auth/custom-token", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         if (!response.ok) {
-          if (!cancelled) {
-            setFailed(true);
-          }
+          if (!controller.signal.aborted) setFailed(true);
           return;
         }
-
         const data = (await response.json()) as { customToken: string };
         const credential = await signInWithCustomToken(auth, data.customToken);
         await credential.user.getIdToken(true);
-
-        if (!cancelled) {
-          setReady(true);
-        }
+        if (!controller.signal.aborted) setReady(true);
       } catch {
-        if (!cancelled) {
-          setFailed(true);
-        }
+        clearTimeout(timeoutId);
+        if (!controller.signal.aborted) setFailed(true);
       }
-    })();
+    };
+
+    if (user && auth.currentUser) {
+      void auth.currentUser
+        .getIdTokenResult(true)
+        .then((result) => {
+          if (result.claims.isAdmin) {
+            clearTimeout(timeoutId);
+            setReady(true);
+          } else {
+            void fetchCustomToken();
+          }
+        })
+        .catch(() => {
+          clearTimeout(timeoutId);
+          setFailed(true);
+        });
+    } else {
+      void fetchCustomToken();
+    }
 
     return () => {
-      cancelled = true;
+      controller.abort();
+      clearTimeout(timeoutId);
     };
   }, [user, loading]);
 

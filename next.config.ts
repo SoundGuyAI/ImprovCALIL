@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
   },
   // Ensure Firebase & other client packages render correctly in next router
   typescript: {
-    ignoreBuildErrors: true, // ignore TS build warnings for smooth dev loop
+    ignoreBuildErrors: process.env.NODE_ENV !== "production",
   },
 };
 

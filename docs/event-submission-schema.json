@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "eventLink": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "type": { "type": "string" },
+        "label": { "type": "string" }
+      },
+      "required": ["url", "type"]
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "type": "string" },
+        "organizerId": { "type": "string" },
+        "organizerName": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "time": { "type": "number", "minimum": 1 },
+        "endTime": { "type": "number", "minimum": 1 },
+        "recurrence": {
+          "type": "string",
+          "enum": ["one-time", "daily", "weekly", "bi-weekly", "monthly"]
+        },
+        "location": { "type": "string", "minLength": 1 },
+        "mapLink": { "type": "string" },
+        "region": {
+          "type": "string",
+          "enum": [
+            "Tel-Aviv",
+            "Jerusalem",
+            "Haifa",
+            "Beer-Sheva",
+            "Hasharon",
+            "North",
+            "South",
+            "Other",
+            "Other areas"
+          ]
+        },
+        "language": { "type": "string", "enum": ["he", "en", "he/en", "other"] },
+        "cost": { "type": "string", "enum": ["Free", "Paid", "Donation"] },
+        "access": { "type": "string", "enum": ["Open", "Private"] },
+        "links": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/eventLink" }
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "time",
+        "recurrence",
+        "location",
+        "region",
+        "language",
+        "cost",
+        "access",
+        "organizerName"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/definitions/event" },
+    {
+      "type": "array",
+      "items": { "$ref": "#/definitions/event" }
+    }
+  ]
+}

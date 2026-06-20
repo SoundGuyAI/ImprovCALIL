@@ -10,8 +10,8 @@ import {
   orderBy,
   addDoc,
   updateDoc,
-  deleteDoc,
   writeBatch,
+  deleteField,
 } from "firebase/firestore";
 
 export function normalizeRegion(region?: string | null): string {
@@ -484,12 +484,7 @@ export async function getEvents(filters?: {
         normalizeRegion(data.region) !== normalizeRegion(filters.region)
       )
         continue;
-      if (
-        filters?.type &&
-        filters.type !== "all" &&
-        data.recurrence !== filters.type &&
-        data.type !== filters.type
-      ) {
+      if (filters?.type && filters.type !== "all" && data.type !== filters.type) {
         continue;
       }
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
@@ -505,36 +500,31 @@ export async function getEvents(filters?: {
     const q = query(collection(db, "events"), orderBy("time", "asc"));
 
     const snap = await getDocs(q);
-    const events: FirestoreEvent[] = [];
 
-    for (const docOfSnap of snap.docs) {
+    // Client-side filtering to bypass Firestore index dependencies on first load
+    const filteredDocs = snap.docs.filter((docOfSnap) => {
       const data = docOfSnap.data();
-
-      // Client-side filtering to bypass Firestore index dependencies on first load
-      if (!filters?.includeHidden && data.hidden) continue;
+      if (!filters?.includeHidden && data.hidden) return false;
       if (
         filters?.region &&
         filters.region !== "all" &&
         normalizeRegion(data.region) !== normalizeRegion(filters.region)
       )
-        continue;
-      if (
-        filters?.type &&
-        filters.type !== "all" &&
-        data.recurrence !== filters.type &&
-        data.type !== filters.type
-      ) {
-        continue;
-      }
-
+        return false;
+      if (filters?.type && filters.type !== "all" && data.type !== filters.type) return false;
       if (filters?.language && filters.language !== "all" && data.language !== filters.language)
-        continue;
-      if (filters?.cost && filters.cost !== "all" && data.cost !== filters.cost) continue;
-      if (filters?.access && filters.access !== "all" && data.access !== filters.access) continue;
+        return false;
+      if (filters?.cost && filters.cost !== "all" && data.cost !== filters.cost) return false;
+      if (filters?.access && filters.access !== "all" && data.access !== filters.access)
+        return false;
+      return true;
+    });
 
-      const links = await fetchLinksForParent(docOfSnap.id);
+    const linksArrays = await Promise.all(filteredDocs.map((d) => fetchLinksForParent(d.id)));
 
-      events.push({
+    return filteredDocs.map((docOfSnap, i) => {
+      const data = docOfSnap.data();
+      return {
         id: docOfSnap.id,
         name: data.name || "",
         type: data.type,
@@ -553,11 +543,9 @@ export async function getEvents(filters?: {
         hidden: !!data.hidden,
         featured: !!data.featured,
         createdAt: data.createdAt || 0,
-        links,
-      });
-    }
-
-    return events;
+        links: linksArrays[i],
+      };
+    });
   } catch (err) {
     console.error("Error fetching events:", err);
     return [];
@@ -591,31 +579,33 @@ export async function getOrganizers(filters?: {
   try {
     const q = query(collection(db, "organizers"), orderBy("name", "asc"));
     const snap = await getDocs(q);
-    const organizers: FirestoreOrganizer[] = [];
+    const locale = filters?.locale ?? getLocaleFromPath();
 
-    for (const d of snap.docs) {
+    const filteredDocs = snap.docs.filter((d) => {
       const data = d.data();
-
-      if (!filters?.includeHidden && data.hidden) continue;
-      if (data.publishStatus !== "published" && !filters?.includeHidden) continue;
+      if (!filters?.includeHidden && data.hidden) return false;
+      if (data.publishStatus !== "published" && !filters?.includeHidden) return false;
       if (
         filters?.region &&
         filters.region !== "all" &&
         normalizeRegion(data.region) !== normalizeRegion(filters.region)
       )
-        continue;
-      if (filters?.type && filters.type !== "all" && data.type !== filters.type) continue;
+        return false;
+      if (filters?.type && filters.type !== "all" && data.type !== filters.type) return false;
+      return true;
+    });
 
-      const links = await fetchLinksForParent(d.id);
+    const linksArrays = await Promise.all(filteredDocs.map((d) => fetchLinksForParent(d.id)));
 
+    return filteredDocs.map((d, i) => {
+      const data = d.data();
       const { name, description } = localizeOrganizer(
         d.id,
         data.name || "",
         data.description || "",
-        filters?.locale ?? getLocaleFromPath()
+        locale
       );
-
-      organizers.push({
+      return {
         id: d.id,
         name,
         type: data.type || "Other",
@@ -627,11 +617,9 @@ export async function getOrganizers(filters?: {
         hidden: !!data.hidden,
         createdAt: data.createdAt || 0,
         ownerUid: data.ownerUid || null,
-        links,
-      });
-    }
-
-    return organizers;
+        links: linksArrays[i],
+      };
+    });
   } catch (err) {
     console.error("Error fetching organizers:", err);
     return [];
@@ -661,6 +649,7 @@ export async function getOrganizerDetails(
     if (!d.exists()) return { organizer: null, events: [] };
 
     const data = d.data();
+    if (data.hidden) return { organizer: null, events: [] };
     const links = await fetchLinksForParent(d.id);
 
     const { name, description } = localizeOrganizer(
@@ -694,10 +683,11 @@ export async function getOrganizerDetails(
     const snap = await getDocs(q);
     const events: FirestoreEvent[] = [];
 
-    for (const evtDoc of snap.docs) {
+    const visibleEvtDocs = snap.docs.filter((d) => !d.data().hidden);
+    const evtLinksArrays = await Promise.all(visibleEvtDocs.map((d) => fetchLinksForParent(d.id)));
+
+    visibleEvtDocs.forEach((evtDoc, i) => {
       const evtData = evtDoc.data();
-      if (evtData.hidden) continue;
-      const evtLinks = await fetchLinksForParent(evtDoc.id);
       events.push({
         id: evtDoc.id,
         name: evtData.name || "",
@@ -717,9 +707,9 @@ export async function getOrganizerDetails(
         hidden: !!evtData.hidden,
         featured: !!evtData.featured,
         createdAt: evtData.createdAt || 0,
-        links: evtLinks,
+        links: evtLinksArrays[i],
       });
-    }
+    });
 
     return { organizer, events };
   } catch (err) {
@@ -728,10 +718,42 @@ export async function getOrganizerDetails(
   }
 }
 
+// Mock Submissions for Offline Dev/Test
+function getMockSubmissions(): FirestoreSubmission[] {
+  return [
+    {
+      id: "sub-mock-1",
+      type: "event",
+      status: "pending",
+      source: "web_form",
+      createdAt: Date.now() - 3600000,
+      submitterContact: { email: "user@example.com" },
+      data: {
+        name: "Mock Jam Event",
+        description: "This is a mock community jam event proposal submitted via the web form.",
+        time: Date.now() + 86400000,
+        endTime: Date.now() + 93600000,
+        recurrence: "weekly",
+        location: "Mock Studio, Tel Aviv",
+        region: "Tel-Aviv",
+        language: "he",
+        cost: "Free",
+        access: "Open",
+        organizerName: "Mock Improv Group",
+      },
+      links: [{ url: "https://example.com", type: "Website" }],
+    },
+  ];
+}
+
 // 5. Submit Event or Organizer from Forms
 export async function createSubmission(
   submission: Omit<FirestoreSubmission, "id" | "createdAt" | "status">
 ): Promise<string> {
+  if (isMock) {
+    console.log("[Mock] Creating submission:", submission);
+    return "sub-" + Math.random().toString(36).substring(2, 9);
+  }
   try {
     const docRef = await addDoc(collection(db, "submissions"), {
       ...submission,
@@ -747,24 +769,29 @@ export async function createSubmission(
 
 // 6. Get Pending Submissions
 export async function getPendingSubmissions(): Promise<FirestoreSubmission[]> {
+  if (isMock) {
+    return getMockSubmissions();
+  }
   try {
-    const q = query(collection(db, "submissions"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "submissions"), where("status", "==", "pending"));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: d.id,
-        type: data.type,
-        status: data.status,
-        source: data.source || "web_form",
-        data: data.data,
-        links: data.links || [],
-        createdAt: data.createdAt,
-        submitterContact: data.submitterContact,
-        moderationFeedback: data.moderationFeedback,
-        targetDocumentId: data.targetDocumentId,
-      };
-    });
+    return snap.docs
+      .map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          type: data.type,
+          status: data.status,
+          source: data.source || "web_form",
+          data: data.data,
+          links: data.links || [],
+          createdAt: data.createdAt,
+          submitterContact: data.submitterContact,
+          moderationFeedback: data.moderationFeedback,
+          targetDocumentId: data.targetDocumentId,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
   } catch (err) {
     console.error("Error fetching pending submissions:", err);
     return [];
@@ -772,14 +799,58 @@ export async function getPendingSubmissions(): Promise<FirestoreSubmission[]> {
 }
 
 // 7. Approve and Publish Submission
-export async function approveSubmission(id: string): Promise<void> {
+export interface ApproveSubmissionsBatchResult {
+  approved: string[];
+  failed: { id: string; error: string }[];
+}
+
+export async function approveSubmissionsBatch(
+  ids: string[]
+): Promise<ApproveSubmissionsBatchResult> {
+  if (isMock) {
+    console.log("[Mock] Batch approving submissions:", ids);
+    return { approved: ids, failed: [] };
+  }
+
+  if (ids.length === 0) return { approved: [], failed: [] };
+
+  const approved: string[] = [];
+  const failed: { id: string; error: string }[] = [];
+
+  for (const id of ids) {
+    try {
+      const didApprove = await approveSubmission(id);
+      if (didApprove) {
+        approved.push(id);
+      } else {
+        failed.push({ id, error: "Submission not found or already approved" });
+      }
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : String(err);
+      failed.push({ id, error });
+    }
+  }
+
+  return { approved, failed };
+}
+
+export async function approveSubmission(id: string): Promise<boolean> {
+  if (isMock) {
+    console.log("[Mock] Approving submission:", id);
+    return true;
+  }
   try {
     const sDoc = await getDoc(doc(db, "submissions", id));
-    if (!sDoc.exists()) return;
+    if (!sDoc.exists()) return false;
     const sData = sDoc.data();
 
+    if (sData.status === "approved") return false;
+    if (sData.status !== "pending") {
+      throw new Error(`Submission is not pending (status: ${sData.status})`);
+    }
+
     const batch = writeBatch(db);
-    const targetDocumentId = sData.targetDocumentId || sData.data?.id;
+    const targetDocumentId = sData.targetDocumentId;
     const isEdit = !!targetDocumentId;
 
     if (sData.type === "event") {
@@ -787,17 +858,23 @@ export async function approveSubmission(id: string): Promise<void> {
       // Satisfy test check: const eventRef = doc(collection(db, "events"));
       const newEventId = eventRef.id;
 
-      batch.set(
-        eventRef,
-        {
+      if (isEdit) {
+        // Merge submitted fields only — do not touch admin-managed fields (hidden, featured, createdAt)
+        // so that concurrent admin changes are not silently overwritten.
+        const submittedFields = { ...sData.data };
+        delete submittedFields.hidden;
+        delete submittedFields.featured;
+        delete submittedFields.createdAt;
+        batch.set(eventRef, { ...submittedFields, id: newEventId }, { merge: true });
+      } else {
+        batch.set(eventRef, {
           ...sData.data,
           id: newEventId,
           hidden: false,
           featured: false,
-          createdAt: sData.data.createdAt || Date.now(),
-        },
-        { merge: true }
-      );
+          createdAt: Date.now(),
+        });
+      }
 
       // If it's an edit, delete existing links
       if (isEdit) {
@@ -829,17 +906,28 @@ export async function approveSubmission(id: string): Promise<void> {
       // Satisfy test check: const organizerRef = doc(collection(db, "organizers"));
       const newOrganizerId = organizerRef.id;
 
-      batch.set(
-        organizerRef,
-        {
-          ...sData.data,
+      const cleanData = { ...sData.data };
+      delete cleanData.isUpdateProposal;
+
+      if (isEdit) {
+        // Merge submitted fields only — do not touch admin-managed fields (hidden, createdAt).
+        const submittedFields = { ...cleanData };
+        delete submittedFields.hidden;
+        delete submittedFields.createdAt;
+        batch.set(
+          organizerRef,
+          { ...submittedFields, id: newOrganizerId, publishStatus: "published" },
+          { merge: true }
+        );
+      } else {
+        batch.set(organizerRef, {
+          ...cleanData,
           id: newOrganizerId,
           publishStatus: "published",
           hidden: false,
-          createdAt: sData.data.createdAt || Date.now(),
-        },
-        { merge: true }
-      );
+          createdAt: Date.now(),
+        });
+      }
 
       // If it's an edit, delete existing links
       if (isEdit) {
@@ -864,11 +952,15 @@ export async function approveSubmission(id: string): Promise<void> {
           });
         });
       }
+    } else {
+      // Unknown or future type — refuse to silently mark as approved with nothing written.
+      throw new Error(`Cannot approve submission with unknown type: "${sData.type}"`);
     }
 
     // Update submission status to approved
     batch.update(doc(db, "submissions", id), { status: "approved" });
     await batch.commit();
+    return true;
   } catch (err) {
     console.error("Error approving submission:", err);
     throw err;
@@ -877,6 +969,10 @@ export async function approveSubmission(id: string): Promise<void> {
 
 // 8. Reject Submission
 export async function rejectSubmission(id: string, feedback?: string): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Rejecting submission:", id, feedback);
+    return;
+  }
   try {
     await updateDoc(doc(db, "submissions", id), {
       status: "rejected",
@@ -894,6 +990,10 @@ export async function updateRecordVisibility(
   id: string,
   hidden: boolean
 ): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating visibility:", collectionName, id, hidden);
+    return;
+  }
   try {
     await updateDoc(doc(db, collectionName, id), { hidden });
   } catch (err) {
@@ -904,6 +1004,10 @@ export async function updateRecordVisibility(
 
 // 10. Update Event Featured Status
 export async function updateEventFeatured(id: string, featured: boolean): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating event featured:", id, featured);
+    return;
+  }
   try {
     await updateDoc(doc(db, "events", id), { featured });
   } catch (err) {
@@ -917,8 +1021,21 @@ export async function deleteRecord(
   collectionName: "events" | "organizers",
   id: string
 ): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Deleting record:", collectionName, id);
+    return;
+  }
   try {
-    await deleteDoc(doc(db, collectionName, id));
+    const batch = writeBatch(db);
+    batch.delete(doc(db, collectionName, id));
+
+    const q = query(collection(db, "links"), where("parentId", "==", id));
+    const snap = await getDocs(q);
+    snap.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+
+    await batch.commit();
   } catch (err) {
     console.error("Error deleting record:", err);
     throw err;
@@ -941,11 +1058,109 @@ export async function getSubmissionsConfig(): Promise<{ allowAnonymous: boolean 
 
 // 13. Update Submissions Config
 export async function updateSubmissionsConfig(allowAnonymous: boolean): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating submissions config:", allowAnonymous);
+    return;
+  }
   try {
     const { setDoc } = await import("firebase/firestore");
     await setDoc(doc(db, "config", "submissions"), { allowAnonymous });
   } catch (err) {
     console.error("Error updating submissions config:", err);
+    throw err;
+  }
+}
+
+// 14. Create Event (Admin CRUD)
+export async function createEvent(
+  eventData: Omit<FirestoreEvent, "id" | "createdAt" | "links">,
+  links?: EventLink[]
+): Promise<string> {
+  if (isMock) {
+    console.log("[Mock] Creating event:", eventData, links);
+    return "evt-" + Math.random().toString(36).substring(2, 9);
+  }
+  try {
+    const batch = writeBatch(db);
+    const eventRef = doc(collection(db, "events"));
+    const newEventId = eventRef.id;
+
+    batch.set(eventRef, {
+      ...eventData,
+      id: newEventId,
+      createdAt: Date.now(),
+    });
+
+    if (links && links.length > 0) {
+      links.forEach((lnk: EventLink, idx: number) => {
+        const lnkRef = doc(collection(db, "links"));
+        batch.set(lnkRef, {
+          parentId: newEventId,
+          parentType: "event",
+          url: lnk.url,
+          type: lnk.type || "Other",
+          label: lnk.label || "",
+          sortOrder: idx,
+        });
+      });
+    }
+
+    await batch.commit();
+    return newEventId;
+  } catch (err) {
+    console.error("Error creating event:", err);
+    throw err;
+  }
+}
+
+// 15. Update Event (Admin CRUD)
+export async function updateEvent(
+  eventId: string,
+  eventData: Partial<Omit<FirestoreEvent, "id" | "createdAt" | "links">>,
+  links?: EventLink[]
+): Promise<void> {
+  if (isMock) {
+    console.log("[Mock] Updating event:", eventId, eventData, links);
+    return;
+  }
+  try {
+    const batch = writeBatch(db);
+    const eventRef = doc(db, "events", eventId);
+
+    // Map optional fields that are explicitly undefined to deleteField() so Firestore
+    // actually removes them rather than silently ignoring the undefined value.
+    const payload: Record<string, unknown> = { ...eventData };
+    if ("endTime" in eventData && eventData.endTime === undefined) {
+      payload.endTime = deleteField();
+    }
+    if ("mapLink" in eventData && (eventData.mapLink === undefined || eventData.mapLink === "")) {
+      payload.mapLink = deleteField();
+    }
+    batch.update(eventRef, payload);
+
+    if (links !== undefined) {
+      const q = query(collection(db, "links"), where("parentId", "==", eventId));
+      const snap = await getDocs(q);
+      snap.docs.forEach((d) => {
+        batch.delete(d.ref);
+      });
+
+      links.forEach((lnk: EventLink, idx: number) => {
+        const lnkRef = doc(collection(db, "links"));
+        batch.set(lnkRef, {
+          parentId: eventId,
+          parentType: "event",
+          url: lnk.url,
+          type: lnk.type || "Other",
+          label: lnk.label || "",
+          sortOrder: idx,
+        });
+      });
+    }
+
+    await batch.commit();
+  } catch (err) {
+    console.error("Error updating event:", err);
     throw err;
   }
 }

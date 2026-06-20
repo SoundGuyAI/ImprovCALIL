@@ -1,5 +1,5 @@
 import React from "react";
-import { getCurrentProfile } from "@/lib/auth/server";
+import { getCurrentProfile, isAdminDevBypassEnabled } from "@/lib/auth/server";
 import { isUserAdmin } from "@/lib/permissions";
 import { ShieldAlert, KeyRound } from "lucide-react";
 import Header from "@/components/Header";
@@ -7,7 +7,8 @@ import { AdminClientGate } from "@/components/admin/AdminClientGate";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const profile = await getCurrentProfile();
-  const isAdmin = isUserAdmin(profile);
+  const devBypass = isAdminDevBypassEnabled();
+  const isAdmin = devBypass || isUserAdmin(profile);
 
   if (!isAdmin) {
     return (

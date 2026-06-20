@@ -180,7 +180,10 @@ export function buildUserProfileWrite(
     email: existingEmail ?? tokenEmail,
     username: editable.username ?? normalizeUsername(existingProfile?.username),
     phone: editable.phone ?? normalizePhone(existingProfile?.phone),
-    links: editable.links.length > 0 ? editable.links : storedLinks(existingProfile),
+    links:
+      "links" in requestedProfile && requestedProfile.links !== undefined
+        ? editable.links
+        : storedLinks(existingProfile),
     bio: editable.bio ?? normalizeBio(existingProfile?.bio),
     locale: normalizeAuthLocale(existingProfile?.locale ?? locale),
     isAdmin: existingProfile?.isAdmin === true,

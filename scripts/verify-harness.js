@@ -389,6 +389,8 @@ async function main() {
 
   // Use production server for E2E tests in the harness to avoid lazy compilation timeouts
   process.env.PLAYWRIGHT_START_PROD = "true";
+  process.env.NEXT_PUBLIC_ADMIN_DEV_UID = "admin-test";
+  process.env.ALLOW_DEV_BYPASS = "true";
 
   // Dynamic port allocation for E2E testing
   if (!process.env.PORT) {
@@ -406,9 +408,34 @@ async function main() {
     console.log(`📡 Using pre-configured E2E port from environment: ${process.env.PORT}`);
   }
 
+  const { execSync } = require("child_process");
+  function runScript(scriptRelativePath) {
+    console.log(`\n⚙️ Running database helper: ${scriptRelativePath}...`);
+    execSync(`node ${path.join(__dirname, "..", scriptRelativePath)}`, {
+      stdio: "inherit",
+      env: process.env,
+    });
+  }
+
   try {
     for (const step of STEPS) {
+      if (step.name === "End-to-End Tests") {
+        try {
+          runScript("scripts/seed.js");
+        } catch (err) {
+          console.error("Failed to seed database for E2E tests:", err.message);
+        }
+      }
+
       await runCommand(step);
+    }
+
+    // Restore database to clean user state with only Tuesday Night Improv
+    try {
+      runScript("scripts/clear-db.js");
+      runScript("scripts/seed-tuesday-improv.js");
+    } catch (err) {
+      console.error("Failed to restore Tuesday Night Improv:", err.message);
     }
 
     const duration = ((Date.now() - start) / 1000).toFixed(1);
@@ -425,6 +452,14 @@ async function main() {
 
     process.exit(0);
   } catch (error) {
+    // Restore database to clean user state with only Tuesday Night Improv even on test failure
+    try {
+      runScript("scripts/clear-db.js");
+      runScript("scripts/seed-tuesday-improv.js");
+    } catch (err) {
+      console.error("Failed to restore Tuesday Night Improv on failure:", err.message);
+    }
+
     writeFailuresReport(error);
     process.exit(error.exitCode || 1);
   }

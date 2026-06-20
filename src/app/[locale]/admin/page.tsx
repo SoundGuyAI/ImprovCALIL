@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   getEvents,
@@ -13,11 +13,15 @@ import {
   deleteRecord,
   getSubmissionsConfig,
   updateSubmissionsConfig,
+  createEvent,
+  updateEvent,
   FirestoreEvent,
   FirestoreOrganizer,
   FirestoreSubmission,
+  EventLink,
 } from "@/lib/db";
 import Header from "@/components/Header";
+import AdminEventFormModal from "@/components/admin/AdminEventFormModal";
 import {
   ShieldCheck,
   Calendar as CalendarIcon,
@@ -34,6 +38,8 @@ import {
   Search,
   Activity,
   Settings,
+  Pencil,
+  Plus,
 } from "lucide-react";
 
 export default function AdminConsole() {
@@ -54,17 +60,31 @@ export default function AdminConsole() {
   const [showHidden, setShowHidden] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Event Modal State
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<FirestoreEvent | null>(null);
+
   // Simulator State
   const [simSource, setSimSource] = useState<"telegram" | "whatsapp">("telegram");
   const [simText, setSimText] = useState("");
   const [simulating, setSimulating] = useState(false);
   const [simSuccess, setSimSuccess] = useState(false);
 
+  // Moderation error feedback
+  const [moderationError, setModerationError] = useState<string | null>(null);
+
   // Settings State
   const [allowAnonymous, setAllowAnonymous] = useState(true);
   const persistedAllowAnonymousRef = useRef(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const simTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (simTimerRef.current !== null) clearTimeout(simTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadSettings() {
@@ -83,12 +103,28 @@ export default function AdminConsole() {
     async function load() {
       setLoading(true);
       try {
-        const evts = await getEvents({ includeHidden: true });
-        const orgs = await getOrganizers({ includeHidden: true, locale: locale as "en" | "he" });
-        const subs = await getPendingSubmissions();
-        setEvents(evts);
-        setOrganizers(orgs);
-        setSubmissions(subs);
+        // Only fetch what the active tab actually needs to avoid loading all three
+        // Firestore collections on every tab switch.
+        const needsEvents =
+          activeTab === "dashboard" || activeTab === "events" || activeTab === "queue";
+        const needsOrganizers =
+          activeTab === "dashboard" ||
+          activeTab === "organizers" ||
+          activeTab === "events" ||
+          activeTab === "queue";
+        const needsSubmissions = activeTab === "dashboard" || activeTab === "queue";
+
+        const [evts, orgs, subs] = await Promise.all([
+          needsEvents ? getEvents({ includeHidden: true }) : Promise.resolve(null),
+          needsOrganizers
+            ? getOrganizers({ includeHidden: true, locale: locale as "en" | "he" })
+            : Promise.resolve(null),
+          needsSubmissions ? getPendingSubmissions() : Promise.resolve(null),
+        ]);
+
+        if (evts !== null) setEvents(evts);
+        if (orgs !== null) setOrganizers(orgs);
+        if (subs !== null) setSubmissions(subs);
       } catch (err) {
         console.error(err);
       } finally {
@@ -124,11 +160,7 @@ export default function AdminConsole() {
     } catch (err) {
       console.error(err);
       setAllowAnonymous(persistedAllowAnonymous);
-      setSettingsError(
-        locale === "he"
-          ? "שמירת ההגדרות נכשלה. נסו שוב."
-          : "Failed to save settings. Please try again."
-      );
+      setSettingsError(tAdmin("settingsSaveError"));
     } finally {
       setSavingSettings(false);
     }
@@ -136,20 +168,28 @@ export default function AdminConsole() {
 
   // 1. Moderation actions
   const handleApprove = async (id: string) => {
+    setModerationError(null);
     try {
       await approveSubmission(id);
       await refreshData();
     } catch (err) {
       console.error(err);
+      setModerationError(
+        `${tAdmin("approvalFailed")} ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     }
   };
 
   const handleReject = async (id: string) => {
+    setModerationError(null);
     try {
       await rejectSubmission(id);
       await refreshData();
     } catch (err) {
       console.error(err);
+      setModerationError(
+        `${tAdmin("rejectionFailed")} ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     }
   };
 
@@ -179,14 +219,7 @@ export default function AdminConsole() {
 
   // 4. Delete record
   const handleDelete = async (collectionName: "events" | "organizers", id: string) => {
-    if (
-      !confirm(
-        locale === "he"
-          ? "האם אתה בטוח שברצונך למחוק לצמיתות רשומה זו?"
-          : "Are you sure you want to permanently delete this record?"
-      )
-    )
-      return;
+    if (!confirm(tAdmin("deleteConfirm"))) return;
     try {
       await deleteRecord(collectionName, id);
       await refreshData();
@@ -195,13 +228,32 @@ export default function AdminConsole() {
     }
   };
 
-  // 5. Ingestion Simulator trigger
+  // 5. Save Event (Create/Update)
+  const handleSaveEvent = async (
+    data: Omit<FirestoreEvent, "id" | "createdAt" | "links">,
+    links: EventLink[]
+  ) => {
+    try {
+      if (editingEvent) {
+        await updateEvent(editingEvent.id, data, links);
+      } else {
+        await createEvent(data, links);
+      }
+      await refreshData();
+    } catch (err) {
+      console.error("Error saving event:", err);
+      throw err;
+    }
+  };
+
+  // 6. Ingestion Simulator trigger
   const runIngestionSim = () => {
     if (!simText.trim()) return;
+    if (simTimerRef.current !== null) clearTimeout(simTimerRef.current);
     setSimulating(true);
     setSimSuccess(false);
 
-    setTimeout(async () => {
+    simTimerRef.current = setTimeout(async () => {
       // Simulate LLM parse and add to submissions
       try {
         const mockSubmissionData = {
@@ -249,22 +301,31 @@ export default function AdminConsole() {
   };
 
   // Filter lists based on Show Hidden & Search query
-  const filteredEvents = events.filter((e) => {
-    if (!showHidden && e.hidden) return false;
-    if (
-      searchQuery &&
-      !e.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !e.organizerName.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-      return false;
-    return true;
-  });
+  const filteredEvents = useMemo(
+    () =>
+      events.filter((e) => {
+        if (!showHidden && e.hidden) return false;
+        if (
+          searchQuery &&
+          !e.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !e.organizerName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+          return false;
+        return true;
+      }),
+    [events, showHidden, searchQuery]
+  );
 
-  const filteredOrganizers = organizers.filter((org) => {
-    if (!showHidden && org.hidden) return false;
-    if (searchQuery && !org.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  const filteredOrganizers = useMemo(
+    () =>
+      organizers.filter((org) => {
+        if (!showHidden && org.hidden) return false;
+        if (searchQuery && !org.name.toLowerCase().includes(searchQuery.toLowerCase()))
+          return false;
+        return true;
+      }),
+    [organizers, showHidden, searchQuery]
+  );
 
   const pendingSubsCount = submissions.filter((s) => s.status === "pending").length;
 
@@ -278,11 +339,7 @@ export default function AdminConsole() {
             <ShieldCheck className="w-8 h-8 text-indigo-400" />
             <span>{tAdmin("title")}</span>
           </h1>
-          <p className="text-zinc-400 text-sm">
-            {locale === "he"
-              ? "נהלו את לוח האירועים, אינדקס המארגנים ואשרו הגשות חדשות מהקהילה."
-              : "Moderate community calendars, reference indexes, and review crowd-sourced submissions."}
-          </p>
+          <p className="text-zinc-400 text-sm">{tAdmin("subtitle")}</p>
         </div>
 
         {/* TABS HEADER */}
@@ -295,7 +352,7 @@ export default function AdminConsole() {
             { id: "simulator", label: tAdmin("simulator"), icon: Bot },
             {
               id: "settings",
-              label: locale === "he" ? "הגדרות מערכת" : "System Settings",
+              label: tAdmin("systemSettings"),
               icon: Settings,
             },
           ].map((tab) => {
@@ -304,7 +361,9 @@ export default function AdminConsole() {
             return (
               <button
                 key={tab.id}
-                onClick={() =>
+                onClick={() => {
+                  setIsEventModalOpen(false);
+                  setEditingEvent(null);
                   setActiveTab(
                     tab.id as
                       | "dashboard"
@@ -313,8 +372,8 @@ export default function AdminConsole() {
                       | "organizers"
                       | "simulator"
                       | "settings"
-                  )
-                }
+                  );
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                   isSelected
                     ? "bg-zinc-800 text-white shadow-md"
@@ -369,12 +428,10 @@ export default function AdminConsole() {
             {/* Ingestion Overview */}
             <div className="glass-card rounded-2xl p-6 border border-zinc-900 flex flex-col gap-3">
               <h3 className="text-md font-bold text-white uppercase">
-                {locale === "he" ? "צינור קליטה מבוסס AI" : "AI Ingestion Pipeline Overview"}
+                {tAdmin("aiPipelineTitle")}
               </h3>
               <p className="text-xs text-zinc-400 leading-relaxed max-w-3xl">
-                {locale === "he"
-                  ? "מערכת זו משתלבת עם קבוצות וואטסאפ ובוט טלגרם. הודעות טקסט חופשיות נשלחות לעיבוד ב-Gemini ומחולצות אוטומטית לשדות מובנים (כמו מיקום, שפה, שעה). לאחר מכן הן מתווספות לתור האישורים כממתינות לבקרה ידנית."
-                  : "This ecosystem integrates with scrape engines in WhatsApp groups and Telegram chats. Raw texts are structured using LLMs (Gemini), converting unstructured flyers into events, complete with maps, recurrence, and typed social links, pending admin one-click publish."}
+                {tAdmin("aiPipelineDesc")}
               </p>
             </div>
           </div>
@@ -384,6 +441,12 @@ export default function AdminConsole() {
         {!loading && activeTab === "queue" && (
           <div className="flex flex-col gap-6">
             <h2 className="text-lg font-bold text-white">{tAdmin("queue")}</h2>
+
+            {moderationError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {moderationError}
+              </div>
+            )}
 
             {submissions.filter((s) => s.status === "pending").length === 0 ? (
               <div className="glass-card rounded-2xl py-12 text-center text-zinc-500 text-sm">
@@ -416,7 +479,13 @@ export default function AdminConsole() {
                           <div className="flex flex-wrap items-center gap-4 text-[10px] text-zinc-500 font-bold mt-1">
                             {sub.data.location && <span>Location: {sub.data.location}</span>}
                             {sub.data.time && (
-                              <span>Time: {new Date(sub.data.time).toLocaleString()}</span>
+                              <span>
+                                Time:{" "}
+                                {new Date(sub.data.time).toLocaleString(
+                                  locale === "he" ? "he-IL" : "en-US",
+                                  { timeZone: "Asia/Jerusalem" }
+                                )}
+                              </span>
                             )}
                             {sub.submitterContact?.email && (
                               <span>Submitter: {sub.submitterContact.email}</span>
@@ -434,15 +503,13 @@ export default function AdminConsole() {
                             return (
                               <div className="mt-4 p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 flex flex-col gap-3 max-w-2xl w-full">
                                 <h4 className="text-xs font-extrabold uppercase text-indigo-400">
-                                  {locale === "he"
-                                    ? "השוואת שינויים (הצעת עריכה)"
-                                    : "Proposed Changes (Edit Request)"}
+                                  {tAdmin("proposedChanges")}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
                                   {/* Live version */}
                                   <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-900">
                                     <div className="font-semibold text-zinc-500 mb-2 uppercase text-[9px] tracking-wider">
-                                      {locale === "he" ? "נוכחי באתר" : "Live Version"}
+                                      {tAdmin("liveVersion")}
                                     </div>
                                     {(() => {
                                       const original =
@@ -477,7 +544,7 @@ export default function AdminConsole() {
                                   {/* Proposed version */}
                                   <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-900/30">
                                     <div className="font-semibold text-indigo-400 mb-2 uppercase text-[9px] tracking-wider">
-                                      {locale === "he" ? "הצעת שינוי" : "Proposed Version"}
+                                      {tAdmin("proposedVersion")}
                                     </div>
                                     <div className="flex flex-col gap-1 text-zinc-300">
                                       <div>
@@ -530,8 +597,18 @@ export default function AdminConsole() {
         {!loading && activeTab === "events" && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              {/* Show Hidden and Search controls */}
+              {/* Show Hidden, Add Event, and Search controls */}
               <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-500 bg-indigo-500/10 text-white text-xs font-bold transition-all cursor-pointer hover:bg-indigo-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  {tAdmin("addEvent")}
+                </button>
                 <button
                   onClick={() => setShowHidden(!showHidden)}
                   className={`px-4 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
@@ -551,7 +628,7 @@ export default function AdminConsole() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search events..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-xs"
                 />
               </div>
             </div>
@@ -561,13 +638,13 @@ export default function AdminConsole() {
                 <thead className="text-xs uppercase bg-zinc-950 text-zinc-500 border-b border-zinc-900">
                   <tr>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "אירוע" : "Event"}
+                      {tAdmin("eventCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "מארגן" : "Organizer"}
+                      {tAdmin("organizerCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "אזור" : "Region"}
+                      {tAdmin("regionCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
                       Time
@@ -596,7 +673,11 @@ export default function AdminConsole() {
                       </td>
                       <td className="px-6 py-4 text-xs font-semibold">{evt.organizerName}</td>
                       <td className="px-6 py-4 text-xs">{tRegions(evt.region)}</td>
-                      <td className="px-6 py-4 text-xs">{new Date(evt.time).toLocaleString()}</td>
+                      <td className="px-6 py-4 text-xs">
+                        {new Date(evt.time).toLocaleString(locale === "he" ? "he-IL" : "en-US", {
+                          timeZone: "Asia/Jerusalem",
+                        })}
+                      </td>
                       <td className="px-6 py-4 text-xs">
                         <div className="flex gap-1.5 flex-wrap">
                           {evt.hidden && (
@@ -623,6 +704,17 @@ export default function AdminConsole() {
                             ) : (
                               <EyeOff className="w-4 h-4 text-zinc-500" />
                             )}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setEditingEvent(evt);
+                              setIsEventModalOpen(true);
+                            }}
+                            className="p-1.5 rounded bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer"
+                            title={tAdmin("editBtn")}
+                          >
+                            <Pencil className="w-4 h-4" />
                           </button>
 
                           <button
@@ -676,7 +768,7 @@ export default function AdminConsole() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search organizers..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-xs"
                 />
               </div>
             </div>
@@ -686,13 +778,13 @@ export default function AdminConsole() {
                 <thead className="text-xs uppercase bg-zinc-950 text-zinc-500 border-b border-zinc-900">
                   <tr>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "מארגן" : "Organizer"}
+                      {tAdmin("organizerCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "סוג" : "Type"}
+                      {tAdmin("typeCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
-                      {locale === "he" ? "אזור" : "Region"}
+                      {tAdmin("regionCol")}
                     </th>
                     <th scope="col" className="px-6 py-4 font-bold">
                       Status
@@ -870,13 +962,28 @@ export default function AdminConsole() {
           </div>
         )}
 
+        {/* EVENT FORM MODAL — only mounted when the events tab is active */}
+        {activeTab === "events" && (
+          <AdminEventFormModal
+            isOpen={isEventModalOpen}
+            onClose={() => {
+              setIsEventModalOpen(false);
+              setEditingEvent(null);
+            }}
+            onSave={handleSaveEvent}
+            initialData={editingEvent}
+            organizers={organizers}
+            locale={locale}
+          />
+        )}
+
         {/* F. SYSTEM SETTINGS */}
         {!loading && activeTab === "settings" && (
           <div className="glass-card rounded-2xl p-6 flex flex-col gap-6 animate-fadeIn">
             <div className="border-b border-zinc-850 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Settings className="w-5 h-5 text-indigo-400" />
-                <span>{locale === "he" ? "הגדרות מערכת" : "System Settings"}</span>
+                <span>{tAdmin("systemSettings")}</span>
               </h2>
               <p className="text-xs text-zinc-400 mt-1">
                 {locale === "he"

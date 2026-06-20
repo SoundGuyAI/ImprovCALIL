@@ -86,16 +86,27 @@ export default function OrganizerDetailsPage({ params }: { params: Promise<{ id:
       weekday: "short",
       day: "numeric",
       month: "short",
+      timeZone: "Asia/Jerusalem",
     });
   };
 
   const formatTime = (timestamp: number) => {
     const d = new Date(timestamp);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString(locale === "he" ? "he-IL" : "en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jerusalem",
+    });
   };
 
-  const upcomingEvents = events.filter((e) => e.time >= Date.now() && !e.hidden);
-  const pastEvents = events.filter((e) => e.time < Date.now() && !e.hidden);
+  // Recurring events have no definitive end date — always show them as upcoming
+  // regardless of their original start date.
+  const upcomingEvents = events.filter(
+    (e) => !e.hidden && (e.recurrence !== "one-time" || e.time >= Date.now())
+  );
+  const pastEvents = events.filter(
+    (e) => !e.hidden && e.recurrence === "one-time" && e.time < Date.now()
+  );
 
   if (loading) {
     return (

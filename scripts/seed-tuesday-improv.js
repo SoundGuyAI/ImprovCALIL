@@ -25,10 +25,12 @@ envContent.split("\n").forEach((line) => {
 });
 
 let db;
+let projectId;
 try {
   const admin = require("firebase-admin");
+  const serviceAccount = JSON.parse(config.FIREBASE_SERVICE_ACCOUNT_KEY);
+  projectId = config.NEXT_PUBLIC_FIREBASE_PROJECT_ID || serviceAccount.project_id;
   if (admin.apps.length === 0) {
-    const serviceAccount = JSON.parse(config.FIREBASE_SERVICE_ACCOUNT_KEY);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
@@ -39,6 +41,28 @@ try {
   process.exit(1);
 }
 
+function assertAllowedProject() {
+  if (!projectId) {
+    console.error(
+      "Safety Error: projectId is undefined. Cannot safely determine target project for seeding."
+    );
+    process.exit(1);
+  }
+  const isAllowed =
+    projectId.includes("dev") ||
+    projectId.includes("staging") ||
+    projectId.includes("test") ||
+    projectId.includes("emulator") ||
+    projectId === "improv-calendar-il"; // pragma: allowlist secret
+
+  if (!isAllowed) {
+    console.error(
+      `Safety Error: seeding blocked on project ${projectId} to prevent production data mutation.`
+    );
+    process.exit(1);
+  }
+}
+
 const eventId = "Yhg71ZRexo269ahEp9SV";
 const linkId = "C8CF4dT2XIy1Zoik2xIC";
 const submissionId = "VbBcoarFRZsWNNBLDvFN";
@@ -47,6 +71,8 @@ const startTime = 1782234000000; // Tuesday June 23, 2026 20:00 IDT (17:00 UTC)
 const endTime = 1782241200000; // Tuesday June 23, 2026 22:00 IDT (19:00 UTC)
 
 async function seed() {
+  assertAllowedProject();
+
   const eventDoc = await db.collection("events").doc(eventId).get();
   if (eventDoc.exists) {
     console.log("Tuesday Night Improv event already exists. Skipping seed.");

@@ -290,6 +290,13 @@ export default function SubmitContent() {
       return;
     }
 
+    const eventTimeMs = convertJerusalemLocalToUtc(eventTime);
+    const eventEndTimeMs = eventEndTime ? convertJerusalemLocalToUtc(eventEndTime) : undefined;
+    if (!eventTimeMs || (eventEndTime && !eventEndTimeMs)) {
+      setError(true);
+      return;
+    }
+
     setSubmittingEvent(true);
     try {
       const selectedOrg = organizers.find((o) => o.id === eventOrganizerId);
@@ -305,8 +312,8 @@ export default function SubmitContent() {
           organizerId: eventOrganizerId || undefined,
           organizerName: selectedOrg ? selectedOrg.name : eventOrganizerString || "Unknown",
           description: eventDescription,
-          time: convertJerusalemLocalToUtc(eventTime),
-          endTime: eventEndTime ? convertJerusalemLocalToUtc(eventEndTime) : undefined,
+          time: eventTimeMs,
+          endTime: eventEndTimeMs,
           recurrence: eventRecurrence,
           location: eventLocation,
           mapLink: eventMapLink || undefined,
